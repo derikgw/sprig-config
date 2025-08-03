@@ -1,7 +1,16 @@
 #!/bin/bash
 
-# PyCharm path (adjust if needed later)
-PYCHARM_PATH="/c/Users/Derik/AppData/Local/Programs/PyCharm Professional/bin/pycharm64.exe"
+# Detect OS and set PyCharm path
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+    # Windows (Git Bash / Cygwin)
+    PYCHARM_PATH="/c/Users/Derik/AppData/Local/Programs/PyCharm Professional/bin/pycharm64.exe"
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS
+    PYCHARM_PATH="/Applications/PyCharm.app/Contents/MacOS/pycharm"
+else
+    echo "❌ Unsupported OS: $OSTYPE"
+    exit 1
+fi
 
 show_help() {
     echo "Usage: $0 {module|tools|root} [pycharm|code]"
