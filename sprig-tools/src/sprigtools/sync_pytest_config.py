@@ -20,9 +20,20 @@ REQUIRED_PACKAGES = {
     "tomli_w": "Needed to write TOML files"
 }
 
+
+class HelpOnErrorParser(argparse.ArgumentParser):
+    """Custom parser that prints help on error automatically."""
+
+    def error(self, message):
+        sys.stderr.write(f"❌ {message}\n\n")
+        self.print_help()
+        sys.exit(2)
+
+
 def check_dependency(package):
     """Return True if package is installed, else False."""
     return importlib.util.find_spec(package) is not None
+
 
 def install_dependencies():
     """Install missing dependencies using pip."""
@@ -39,6 +50,7 @@ def install_dependencies():
     except subprocess.CalledProcessError as e:
         print(f"❌ Failed to install dependencies: {e}")
         return False
+
 
 def pyproject_to_ini(pyproject_path, pytest_ini_path):
     """Generate pytest.ini from pyproject.toml"""
@@ -66,6 +78,7 @@ def pyproject_to_ini(pyproject_path, pytest_ini_path):
 
     pytest_ini.write_text("\n".join(lines))
     print(f"✅ Generated {pytest_ini} from {pyproject}")
+
 
 def ini_to_pyproject(pyproject_path, pytest_ini_path):
     """Import pytest.ini into pyproject.toml"""
@@ -103,52 +116,75 @@ def ini_to_pyproject(pyproject_path, pytest_ini_path):
 
     print(f"✅ Updated {pyproject} from {pytest_ini}")
 
+
 def main():
-    parser = argparse.ArgumentParser(
-        description="Sync pytest config between pyproject.toml and pytest.ini",
-        add_help=False
+    parser = HelpOnErrorParser(
+        description="Synchronize pytest configuration between pyproject.toml and pytest.ini."
     )
 
-    parser.add_argument("action", nargs="?", choices=["to-ini", "to-toml", "/?", "=?"],
-                        help="Action: to-ini (generate pytest.ini) | to-toml (update pyproject.toml)")
+    parser.add_argument(
+        "action",
+        choices=["to-ini", "to-toml"],
+        help=(
+            "Required action:\n"
+            "  to-ini   - Generate or update pytest.ini based on pyproject.toml.\n"
+            "  to-toml  - Generate or update pyproject.toml based on pytest.ini."
+        )
+    )
 
-    parser.add_argument("--install-dependencies", action="store_true",
-                        help="Install all missing dependencies before running")
+    parser.add_argument(
+        "--install-dependencies",
+        action="store_true",
+        help="Install missing dependencies required for TOML parsing before running."
+    )
 
-    parser.add_argument("--pyproject", default=DEFAULT_PYPROJECT,
-                        help=f"Path to pyproject.toml (default: {DEFAULT_PYPROJECT})")
+    parser.add_argument(
+        "--pyproject",
+        default=DEFAULT_PYPROJECT,
+        help=f"Path to pyproject.toml (default: {DEFAULT_PYPROJECT})."
+    )
 
-    parser.add_argument("--pytest-ini", default=DEFAULT_PYTEST_INI,
-                        help=f"Path to pytest.ini (default: {DEFAULT_PYTEST_INI})")
+    parser.add_argument(
+        "--pytest-ini",
+        default=DEFAULT_PYTEST_INI,
+        help=f"Path to pytest.ini (default: {DEFAULT_PYTEST_INI})."
+    )
 
-    parser.add_argument("-h", "--help", action="help",
-                        help="Show this help message and exit")
+    parser.add_argument(
+        "--sync-all",
+        action="store_true",
+        help="Synchronize pytest configuration for all projects in a mono-repo."
+    )
+
+    parser.add_argument(
+        "--project",
+        choices=["module", "tools"],
+        help=(
+            "Shortcut to select a specific mono-repo project configuration.\n"
+            "  module - Sync pytest config for the application module.\n"
+            "  tools  - Sync pytest config for the tooling utilities."
+        )
+    )
+
+    parser.add_argument(
+        "--update",
+        action="store_true",
+        help="Write changes directly to files instead of showing a preview."
+    )
 
     args = parser.parse_args()
 
-    # If neither action nor flags given → show help
-    if not args.action and not args.install_dependencies:
-        parser.print_help()
-        sys.exit(0)
-
-    # Install dependencies if requested
+    # Handle dependencies
     if args.install_dependencies:
         if not install_dependencies():
             sys.exit(1)
-        # If only installing deps, exit early
-        if not args.action:
-            sys.exit(0)
 
-    # If action is help-style, show help
-    if args.action in ["/?", "=?"]:
-        parser.print_help()
-        sys.exit(0)
-
-    # Execute actions
+    # Execute selected action
     if args.action == "to-ini":
         pyproject_to_ini(args.pyproject, args.pytest_ini)
     elif args.action == "to-toml":
         ini_to_pyproject(args.pyproject, args.pytest_ini)
+
 
 if __name__ == "__main__":
     main()

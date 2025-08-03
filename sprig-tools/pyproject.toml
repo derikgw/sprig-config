@@ -6,15 +6,16 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "sprig-config"
+name = "sprig-tools"
 version = "0.1.0"
-description = "Spring-like deep merge configuration loader for Python"
+description = "Helper utilities for SprigConfig (e.g., pytest sync, requirements-to-TOML)"
 authors = [
     { name = "Derik G. Wilson" },
 ]
 readme = "README.md"
 dependencies = [
-    "PyYAML>=6.0.2",
+    "tomli>=2.2.1",
+    "tomli_w>=1.2.0",
 ]
 
 [project.license]
@@ -22,17 +23,18 @@ text = "MIT"
 
 [project.optional-dependencies]
 dev = [
-    "build>=1.3.0",
     "colorama>=0.4.6",
     "coverage>=7.10.1",
     "iniconfig>=2.1.0",
     "packaging>=25.0",
     "pluggy>=1.6.0",
     "Pygments>=2.19.2",
-    "pyproject_hooks>=1.2.0",
     "pytest-cov>=6.2.1",
     "pytest>=8.4.1",
 ]
+
+[project.scripts]
+sprig-tool = "sprigtools.cli:main"
 
 [tool.setuptools.package-dir]
 "" = "src"
@@ -41,4 +43,3 @@ dev = [
 addopts = "-v"
 testpaths = "tests"
 pythonpath = "src"
-something = "someValue"
