@@ -1,0 +1,47 @@
+# ==========================
+# Default Behavior
+# ==========================
+# Automatically normalize line endings to LF in repo
+* text=auto eol=lf
+
+# ==========================
+# Python Files
+# ==========================
+*.py text diff=python
+*.pyw text diff=python
+
+# ==========================
+# Configuration Files
+# ==========================
+*.toml text
+*.yml text
+*.yaml text
+*.ini text
+*.cfg text
+*.env text
+
+# ==========================
+# Scripts
+# ==========================
+*.sh text eol=lf
+*.bash text eol=lf
+*.ps1 text eol=crlf
+
+# ==========================
+# Documentation
+# ==========================
+*.md text
+*.txt text
+
+# ==========================
+# Binary Files
+# ==========================
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.tar.gz binary
+*.whl binary
