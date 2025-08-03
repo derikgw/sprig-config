@@ -1,0 +1,11 @@
+colorama==0.4.6
+coverage==7.10.1
+iniconfig==2.1.0
+packaging==25.0
+pluggy==1.6.0
+Pygments==2.19.2
+pytest==8.4.1
+pytest-cov==6.2.1
+-e git+ssh://git@gitlab.com/dgw_software/sprig-config.git@91581110eb9535c58281ebb7a8821cf732ed3ca0#egg=sprig_tools&subdirectory=sprig-tools
+tomli==2.2.1
+tomli_w==1.2.0
