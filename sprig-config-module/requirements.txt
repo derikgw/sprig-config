@@ -9,4 +9,4 @@ pyproject_hooks==1.2.0
 pytest==8.4.1
 pytest-cov==6.2.1
 PyYAML==6.0.2
--e git+ssh://git@gitlab.com/dgw_software/sprig-config.git@91581110eb9535c58281ebb7a8821cf732ed3ca0#egg=sprig_config&subdirectory=sprig-config-module
+
