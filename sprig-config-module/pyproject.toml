@@ -41,4 +41,6 @@ dev = [
 addopts = "-v"
 testpaths = "tests"
 pythonpath = "src"
-something = "someValue"
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')"
+]

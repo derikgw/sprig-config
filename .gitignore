@@ -50,3 +50,4 @@
 sprig-config-root.code-workspace
 sprig-config-module/sprig-config-module.code-workspace
 sprig-tools/sprig-tools.code-workspace
+*.zip

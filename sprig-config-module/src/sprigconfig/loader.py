@@ -6,21 +6,12 @@ from pathlib import Path
 from typing import Dict, Any
 import yaml
 from cryptography.fernet import Fernet
+from sprigconfig.lazy_secret import LazySecret
+from sprigconfig.exceptions import ConfigLoadError
 
 logger = logging.getLogger(__name__)
 
 ENV_PATTERN = re.compile(r"\$\{([^}:]+)(?::([^}]+))?\}")
-
-
-class ConfigLoadError(Exception):
-    """Raised when configuration fails to load or parse."""
-
-
-def detect_test_profile():
-    """Detect pytest runs and default to 'test' profile if none is set."""
-    if "pytest" in sys.modules and not os.getenv("APP_PROFILE"):
-        logger.debug("Pytest detected. Defaulting APP_PROFILE to 'test'.")
-        os.environ["APP_PROFILE"] = "test"
 
 
 def deep_merge(base: Dict[str, Any], override: Dict[str, Any], suppress_warnings=False, path=""):
@@ -46,9 +37,11 @@ def deep_merge(base: Dict[str, Any], override: Dict[str, Any], suppress_warnings
 
 def expand_env_vars(text: str) -> str:
     """Replace ${VAR} or ${VAR:default} with environment values."""
+
     def replacer(match):
         var, default = match.groups()
         return os.getenv(var, default if default is not None else match.group(0))
+
     return ENV_PATTERN.sub(replacer, text)
 
 
@@ -69,30 +62,43 @@ def decrypt_secret(value: str) -> str:
     """Decrypt ENC(...) values using Fernet key from APP_SECRET_KEY."""
     if not (value.startswith("ENC(") and value.endswith(")")):
         return value
-    
+
     key = os.getenv("APP_SECRET_KEY")
     if not key:
         raise ConfigLoadError("APP_SECRET_KEY is required to decrypt secrets")
-    
+
     fernet = Fernet(key.encode() if isinstance(key, str) else key)
     encrypted_data = value[4:-1].encode()
     return fernet.decrypt(encrypted_data).decode()
 
 
 def process_secrets(config: Dict[str, Any]):
-    """Walk through config and decrypt secrets if encrypted: true."""
-    secrets = config.get("app", {}).get("secrets", {})
-    if secrets.get("encrypted") is True:
-        for k, v in secrets.items():
-            if isinstance(v, str) and v.startswith("ENC("):
-                secrets[k] = decrypt_secret(v)
+    """
+    Traverse config and wrap ENC(...) values in LazySecret.
+    No 'secrets:' block or 'encrypted: true' flag required.
+    Decryption happens lazily when the LazySecret is accessed.
+    """
+
+    def recurse(node):
+        if isinstance(node, dict):
+            for k, v in node.items():
+                if isinstance(v, str) and v.startswith("ENC(") and v.endswith(")"):
+                    # Wrap encrypted values as lazy secrets
+                    node[k] = LazySecret(v)
+                elif isinstance(v, dict):
+                    recurse(v)
+                elif isinstance(v, list):
+                    for idx, item in enumerate(v):
+                        if isinstance(item, str) and item.startswith("ENC(") and item.endswith(")"):
+                            v[idx] = LazySecret(item)
+                        elif isinstance(item, dict):
+                            recurse(item)
+        return node
+
+    recurse(config)
 
 
 def load_config(profile: str = None, config_dir: Path = None) -> Dict[str, Any]:
-    detect_test_profile()
-    
-    active_profile = profile or os.getenv("APP_PROFILE", "dev")
-
     # Config directory defaults to ./config relative to caller
     if config_dir is None:
         config_dir = Path(
@@ -103,16 +109,20 @@ def load_config(profile: str = None, config_dir: Path = None) -> Dict[str, Any]:
 
     # Load base config
     base_file = config_dir / "application.yml"
-    if not base_file.exists():
-        if active_profile in ("prod", "test"):
-            raise ConfigLoadError(
-                f"Base config application.yml is required for profile '{active_profile}', "
-                f"but was not found in {config_dir}"
-            )
+    if base_file.exists():
+        base_config = load_yaml_file(base_file)
+    else:
         logger.warning("No application.yml found. Using empty defaults.")
         base_config = {}
-    else:
-        base_config = load_yaml_file(base_file)
+
+    # Determine active profile
+    yml_profile = base_config.get("app", {}).get("profile")
+    active_profile = (
+        profile or
+        os.getenv("APP_PROFILE") or
+        yml_profile or
+        ("test" if "pytest" in sys.modules else "dev")
+    )
 
     suppress_warnings = base_config.get("suppress_config_merge_warnings", False)
 
@@ -157,7 +167,7 @@ def load_config(profile: str = None, config_dir: Path = None) -> Dict[str, Any]:
 
         valid_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
 
-        if "level" not in base_config.get("logging", {}) or base_config["logging"]["level"] is None:
+        if not log_level:
             logger.warning("No logging.level set in production; defaulting to INFO.")
             base_config.setdefault("logging", {})["level"] = "INFO"
 
@@ -177,6 +187,6 @@ def load_config(profile: str = None, config_dir: Path = None) -> Dict[str, Any]:
         base_config.setdefault("logging", {}).setdefault("level", "INFO")
 
     process_secrets(base_config)
-    
+
     logger.info(f"Active profile: {active_profile}")
     return base_config
