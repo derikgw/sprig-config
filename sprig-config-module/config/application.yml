@@ -1,0 +1,15 @@
+# sprig-config-module/config/application.yml
+server:
+  port: 8080
+logging:
+  level: INFO
+app:
+  profile: ${APP_PROFILE:dev}
+features:
+  auth:
+    enabled: true
+    methods: [basic]
+  cache:
+    ttl: 300
+
+

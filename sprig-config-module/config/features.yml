@@ -1,0 +1,4 @@
+# sprig-config-module/config/features.yml
+features:
+  auth:
+    methods: [basic, oauth]
