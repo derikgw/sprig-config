@@ -7,19 +7,18 @@ SprigConfig supports secure storage of sensitive values in configuration files u
 ## 📦 How ENC() Works
 SprigConfig uses [Fernet encryption](https://cryptography.io/en/latest/fernet/) (AES-128 + HMAC-SHA256) to:
 - Encrypt sensitive values (outside of runtime) into `ENC(...)` format
-- Decrypt values transparently at runtime using a master key
+- Decrypt values lazily at runtime using a master key
 
 **Example:**
 ```yaml
-secrets:
-  username: ENC(gAAAAABokVDE6uM8TItupVCEB9URRjbKzxO5bddjHPPBG_9NGjinUdhq3P0sLYFQ76gRrt87Yy3haINdh2_NrO7KobeKokz37A==)
-  password: ENC(gAAAAABokVDE3fwikJO6YqTStG4xnh5cPjWNAT3JXw0zB-HDtdqCCRGvNBNogl2yVQDedyvfffc44e2guTs8JHZpD7sBaOqEmQ==)
+username: ENC(gAAAAABokVDE6uM8TItupVCEB9URRjbKzxO5bddjHPPBG_9NGjinUdhq3P0sLYFQ76gRrt87Yy3haINdh2_NrO7KobeKokz37A==)
+password: ENC(gAAAAABokVDE3fwikJO6YqTStG4xnh5cPjWNAT3JXw0zB-HDtdqCCRGvNBNogl2yVQDedyvfffc44e2guTs8JHZpD7sBaOqEmQ==)
 ```
 
 At runtime:
 - SprigConfig detects `ENC(...)` values
-- Decrypts them using `APP_SECRET_KEY`
-- Provides plaintext values to your application
+- Wraps them as `LazySecret` (not decrypted until accessed)
+- Decryption occurs only when `.get()` is called, limiting exposure in memory
 
 ---
 
@@ -28,7 +27,7 @@ At runtime:
 2. **Encrypt values** into `ENC(...)` using developer tooling (`sprig-tools`)
 3. **Commit ENC values** to config files (never plaintext)
 4. **Deploy application** with `APP_SECRET_KEY` provided securely at runtime
-5. **SprigConfig decrypts automatically** when loading configuration
+5. **SprigConfig decrypts lazily** when values are accessed
 
 ---
 
@@ -102,8 +101,6 @@ At runtime, the correct key is chosen based on the version tag. This allows:
 ## 📌 Summary
 SprigConfig ENC provides:
 - Secure encryption for configuration secrets
-- Clear separation between **runtime decryption** and **developer encryption**
+- Lazy runtime decryption for minimal in-memory exposure
 - Compatibility with enterprise-grade secret management
 - Support for future enhancements like key rotation
-
-By following these best practices, you can keep secrets safe across all environments while maintaining Spring Boot–style convenience.
