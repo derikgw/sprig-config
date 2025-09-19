@@ -1,4 +1,6 @@
-# sprig-config-module/config/features.yml
-features:
+﻿features:
+  cache: true
   auth:
-    methods: [basic, oauth]
+    enabled: true
+    methods:
+      - password

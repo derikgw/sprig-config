@@ -1,12 +1,14 @@
-# sprig-config-module/config/application-dev.yml
+﻿# sprig-config-module/config/application-dev.yml
 server:
   port: 9090
 imports:
   - features.yml
   - override.yml
 secrets:
-  username: ENC(gAAAAABokVDE6uM8TItupVCEB9URRjbKzxO5bddjHPPBG_9NGjinUdhq3P0sLYFQ76gRrt87Yy3haINdh2_NrO7KobeKokz37A==)
-  password: ENC(gAAAAABokVDE3fwikJO6YqTStG4xnh5cPjWNAT3JXw0zB-HDtdqCCRGvNBNogl2yVQDedyvfffc44e2guTs8JHZpD7sBaOqEmQ==)
-  apiKey: ENC(gAAAAABokVDEPTHqVtIzELGMtFN89vAcLZcsd-B094VA04b91N8byC5hyZdZKlleq_NqVlO2z1Kke3yQm0nBGvNPG8tjYbKfpQ==)
+  username: ENC(gAAAAABozWRRqOx9K-2E-QtxIYDJiXu4vZIfRVEvRSRAeSGRtj2xhpeZpw1w7wEyp4IuSxH6tflBfYdF0duY6XFD4iQ4ksTm_g==)
+  password: ENC(gAAAAABozWSpUwzco8JDOUrOx2np2N9EB3eWTh65bBqc6cLNqY7D_cyjwPe8Ln5Xj4aU_o5Od_Uhz_Ow7O6dvmUjG-KKmP1wzQ==)
+  apiKey: ENC(gAAAAABozWXSi6ORnnHGQq5XJEmgVr2r2Nlqk9GDf4CTHytjc8fAW1jXtK9vIZRKPKtUo2L0ybOHvC1xbewPB6DcE2HhBfmao6tXLJYAU0S23jzgpfLMMxMWhiApNCNppaMvhwp6DQfh)
+
+
 
 

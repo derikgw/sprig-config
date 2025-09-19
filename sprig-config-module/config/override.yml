@@ -1,6 +1,7 @@
-# sprig-config-module/config/override.yml
-server:
-  port: 9999
+﻿server:
+  port: 9090
 features:
   auth:
-    methods: [basic, oauth, booty_twap]
+    methods:
+      - password
+      - oauth

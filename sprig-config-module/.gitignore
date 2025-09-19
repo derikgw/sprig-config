@@ -1,5 +1,6 @@
 # Build Artifacts
 dist/
 build/
+**/.env
 *.egg-info/
 **/test_logs/

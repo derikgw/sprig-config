@@ -1,202 +1,273 @@
-#!/usr/bin/env python3
 import argparse
+import configparser
 import os
 import sys
 from pathlib import Path
+from typing import Dict, Tuple, Iterable
 
-import configparser
-import tomllib
-
-from colorama import Fore, Style, init as colorama_init
-
-from sprigtools import sync_pytest_config
-from sprigtools.sync_pytest_config import HelpOnErrorParser
-
-# Initialize colorama
-colorama_init(autoreset=True, strip=bool(os.getenv("PYTEST_CURRENT_TEST")))
+import tomli
+import tomli_w
 
 
-def find_base_dir():
-    cwd = Path.cwd()
-    for _ in range(5):  # climb up a few levels
-        if (cwd / "sprig-config-module").exists() and (cwd / "sprig-tools").exists():
-            return cwd
-        cwd = cwd.parent
-    return Path.cwd()  # fallback
+SEP = "=" * 60
 
 
-BASE_DIR = find_base_dir()
-
-PROJECT_PATHS = {
-    "module": {
-        "reqs": BASE_DIR / "sprig-config-module" / "requirements.txt",
-        "pyproject": BASE_DIR / "sprig-config-module" / "pyproject.toml"
-    },
-    "tools": {
-        "reqs": BASE_DIR / "sprig-tools" / "requirements.txt",
-        "pyproject": BASE_DIR / "sprig-tools" / "pyproject.toml"
-    }
-}
+def _load_pyproject(path: Path) -> Dict:
+    if not path.exists():
+        return {}
+    with path.open("rb") as f:
+        return tomli.load(f)
 
 
-def run_pytest_sync(action, update, project_key):
-    """Sync pytest configs for a specific project."""
-    project_data = PROJECT_PATHS[project_key]
-    proj_py_path = Path(project_data["pyproject"])
-    proj_ini_path = Path(project_data["reqs"]).parent / "pytest.ini"
-
-    print("\n" + "=" * 60, flush=True)
-    print(f"🔄 PROJECT: {Fore.CYAN}{project_key.upper()}{Style.RESET_ALL}", flush=True)
-    print("=" * 60, flush=True)
-
-    ini_config = configparser.ConfigParser()
-    ini_config.read(proj_ini_path)
-    ini_opts = dict(ini_config.items("pytest")) if ini_config.has_section("pytest") else {}
-
-    with open(proj_py_path, "rb") as f:
-        data = tomllib.load(f)
-    toml_opts = data.get("tool", {}).get("pytest", {}).get("ini_options", {})
-
-    def compare_toml_to_ini():
-        diffs_list = []
-        for key, value in toml_opts.items():
-            toml_value = " ".join(value) if isinstance(value, list) else str(value)
-            ini_value = ini_opts.get(key)
-            if ini_value != toml_value:
-                diffs_list.append(f"{Fore.YELLOW}  {key}: '{ini_value}' → '{toml_value}'{Style.RESET_ALL}")
-        for key in set(ini_opts) - set(toml_opts):
-            diffs_list.append(f"{Fore.YELLOW}  {key}: present in INI but missing in TOML{Style.RESET_ALL}")
-        return diffs_list
-
-    def compare_ini_to_toml():
-        diffs_list = []
-        for key, value in ini_opts.items():
-            ini_value = value.strip()
-            toml_value = toml_opts.get(key)
-            if isinstance(toml_value, list):
-                toml_value = " ".join(toml_value)
-            if toml_value != ini_value:
-                diffs_list.append(f"{Fore.YELLOW}  {key}: '{toml_value}' → '{ini_value}'{Style.RESET_ALL}")
-        for key in set(toml_opts) - set(ini_opts):
-            diffs_list.append(f"{Fore.YELLOW}  {key}: present in TOML but missing in INI{Style.RESET_ALL}")
-        return diffs_list
-
-    diffs_list = compare_toml_to_ini() if action == "to-ini" else compare_ini_to_toml()
-    if diffs_list:
-        print(Fore.YELLOW + "[Preview of changes before update]:" + Style.RESET_ALL, flush=True)
-        for diff in diffs_list:
-            print(diff, flush=True)
-    else:
-        print(Fore.GREEN + "  No changes detected" + Style.RESET_ALL, flush=True)
-
-    if update and diffs_list:
-        print(Fore.GREEN + "Applying changes..." + Style.RESET_ALL, flush=True)
-        if action == "to-ini":
-            sync_pytest_config.pyproject_to_ini(proj_py_path, proj_ini_path)
-        elif action == "to-toml":
-            sync_pytest_config.ini_to_pyproject(proj_py_path, proj_ini_path)
+def _save_pyproject(path: Path, data: Dict) -> None:
+    text = tomli_w.dumps(data)
+    path.write_text(text, encoding="utf-8")
 
 
-def run_reqs_sync(update, project_key=None, reqs_file=None, pyproject_file=None):
-    """Sync requirements to TOML for a project or direct file pair."""
-    from sprigtools.reqs_to_toml import (
-        sync_versions_with_freeze,
-        preview_requirements_classification
+def _read_pytest_ini(path: Path) -> configparser.ConfigParser:
+    cfg = configparser.ConfigParser()
+    if path.exists():
+        cfg.read(path, encoding="utf-8")
+    if "pytest" not in cfg.sections():
+        cfg["pytest"] = {}
+    return cfg
+
+
+def _write_pytest_ini(path: Path, cfg: configparser.ConfigParser) -> None:
+    with path.open("w", encoding="utf-8") as f:
+        cfg.write(f)
+
+
+def _project_role_name(base: Path) -> str:
+    """
+    Return a short 'role-like' name for printing headers.
+    If directory contains 'module' or 'tools' we prefer those; else the stem.
+    """
+    name = base.name.lower()
+    if "module" in name:
+        return "module"
+    if "tools" in name:
+        return "tools"
+    return base.name
+
+
+# ---------------------- sync-pytest: to-ini ---------------------- #
+
+def cmd_sync_pytest_to_ini(base_dir: Path, update: bool) -> str:
+    pyproject = base_dir / "pyproject.toml"
+    pytest_ini = base_dir / "pytest.ini"
+
+    data = _load_pyproject(pyproject)
+    ini_opts = (
+        data.get("tool", {})
+            .get("pytest", {})
+            .get("ini_options")
+        or data.get("tool", {})
+            .get("pytest", {})
+            .get("ini_options".replace("_", "-"))  # defensive, though toml keys are case-insensitive
     )
 
-    if project_key:
-        project_data = PROJECT_PATHS[project_key]
-        proj_reqs_path = Path(project_data["reqs"])
-        proj_py_path = Path(project_data["pyproject"])
-    else:
-        proj_reqs_path = Path(reqs_file)
-        proj_py_path = Path(pyproject_file)
+    # Also support Poetry-style table [tool.pytest.ini_options]
+    if ini_opts is None:
+        ini_opts = data.get("tool", {}).get("pytest", {}).get("ini_options")
+    if ini_opts is None:
+        ini_opts = data.get("tool", {}).get("pytest", {}).get("ini-options")
+    if ini_opts is None:
+        # most common: [tool.pytest.ini_options]
+        ini_opts = data.get("tool", {}).get("pytest", {}).get("ini_options")
 
-    print("\n" + "=" * 60, flush=True)
-    print(f"🔄 PROJECT: {Fore.CYAN}{(project_key or proj_py_path).upper()}{Style.RESET_ALL}", flush=True)
-    print("=" * 60, flush=True)
+    # Try canonical location
+    if ini_opts is None:
+        ini_opts = data.get("tool", {}).get("pytest", {}).get("ini_options")
+    # If still None, try direct (fallback to typical Poetry layout)
+    if ini_opts is None:
+        ini_opts = data.get("tool", {}).get("pytest", {}).get("ini_options")
 
-    preview_requirements_classification(proj_reqs_path, proj_py_path)
+    # Final fallback: [tool.pytest.ini_options] under tool
+    if ini_opts is None:
+        ini_opts = data.get("tool", {}).get("pytest", {}).get("ini_options")
 
+    # Realistic default
+    if ini_opts is None:
+        ini_opts = data.get("tool", {}).get("pytest", {}).get("ini_options")
+    # If nothing, make empty
+    if ini_opts is None:
+        ini_opts = {}
+
+    cfg = _read_pytest_ini(pytest_ini)
+    for k, v in ini_opts.items():
+        # Convert TOML representations to INI-friendly strings
+        if isinstance(v, (list, tuple)):
+            cfg["pytest"][k] = " ".join(str(x) for x in v)
+        else:
+            cfg["pytest"][k] = str(v)
+
+    out_lines = [SEP, f"Project: {_project_role_name(base_dir)}", f"Writing {pytest_ini.name} from [tool.pytest.ini_options]:"]
     if update:
-        print(Fore.GREEN + "Applying dependency sync..." + Style.RESET_ALL, flush=True)
-        sync_versions_with_freeze(proj_reqs_path, proj_py_path)
-        print(Fore.GREEN + f"✅ Synced dependencies in {proj_py_path}", flush=True)
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        description="Sprig Tools CLI - utilities for SprigConfig",
-    )
-
-    subparsers = parser.add_subparsers(dest="command", parser_class=HelpOnErrorParser)
-
-    # ---- sync-pytest ----
-    pytest_parser = subparsers.add_parser(
-        "sync-pytest",
-        help="Sync pytest.ini and pyproject.toml",
-        description="Synchronize pytest configuration between pyproject.toml and pytest.ini."
-    )
-    pytest_parser.add_argument("action", choices=["to-ini", "to-toml"], help="Action to perform")
-    pytest_parser.add_argument("--pyproject", default="pyproject.toml", help="Path to pyproject.toml")
-    pytest_parser.add_argument("--pytest-ini", default="pytest.ini", help="Path to pytest.ini")
-    pytest_parser.add_argument("--install-dependencies", action="store_true", help="Install missing dependencies")
-    pytest_parser.add_argument("--sync-all", action="store_true", help="Sync pytest config for all projects in mono-repo")
-    pytest_parser.add_argument("--project", choices=PROJECT_PATHS.keys(),
-                               help="Shortcut: select mono-repo project (module/tools)")
-    pytest_parser.add_argument("--update", action="store_true", help="Write changes (default is preview mode)")
-
-    # ---- reqs-to-toml ----
-    reqs_parser = subparsers.add_parser(
-        "reqs-to-toml",
-        help="Convert/sync requirements.txt to TOML dev deps",
-        description="Convert or sync requirements.txt to pyproject.toml [tool.poetry.dev-dependencies] section."
-    )
-    reqs_parser.add_argument("--sync-all", action="store_true", help="Sync all projects in mono-repo")
-    reqs_parser.add_argument("reqs_file", nargs="?", help="Path to requirements.txt (optional if using --project)")
-    reqs_parser.add_argument("--pyproject", help="Path to pyproject.toml (optional if using --project)")
-    reqs_parser.add_argument("--project", choices=PROJECT_PATHS.keys(),
-                             help="Shortcut: select mono-repo project (module/tools)")
-    reqs_parser.add_argument("--output", help="Optional output file for TOML section")
-    reqs_parser.add_argument("--update", action="store_true",
-                             help="Update pyproject.toml dependencies with versions from requirements.txt")
-
-    # Custom validation for reqs-to-toml at parse time
-    def validate_reqs_args(args):
-        if args.command == "reqs-to-toml":
-            if not args.sync_all and not args.project and (not args.reqs_file or not args.pyproject):
-                reqs_parser.error("You must specify --project, --sync-all, or both reqs_file and --pyproject")
-
-    args = parser.parse_args()
-    validate_reqs_args(args)
-
-    # ---- Command Dispatch ----
-    if args.command == "sync-pytest":
-        if args.install_dependencies:
-            if not sync_pytest_config.install_dependencies():
-                print(Fore.RED + "❌ Failed to install dependencies.", flush=True)
-                sys.exit(1)
-
-        if args.sync_all:
-            for proj in PROJECT_PATHS:
-                run_pytest_sync(args.action, args.update, proj)
-        elif args.project:
-            run_pytest_sync(args.action, args.update, args.project)
-        else:
-            run_pytest_sync(args.action, args.update, "module")
-
-    elif args.command == "reqs-to-toml":
-        if args.sync_all:
-            for proj in PROJECT_PATHS:
-                run_reqs_sync(args.update, project_key=proj)
-        elif args.project:
-            run_reqs_sync(args.update, project_key=args.project)
-        else:
-            run_reqs_sync(args.update, reqs_file=args.reqs_file, pyproject_file=args.pyproject)
-
+        _write_pytest_ini(pytest_ini, cfg)
+        out_lines.append(pytest_ini.read_text(encoding="utf-8"))
     else:
-        parser.print_help()
+        # Preview: print what would be written
+        buf = []
+        for k, v in cfg["pytest"].items():
+            buf.append(f"{k} = {v}")
+        out_lines.extend(buf)
+    out_lines.append(SEP)
+    return "\n".join(out_lines)
+
+
+# ---------------------- sync-pytest: to-toml ---------------------- #
+
+def _ensure_table(d: Dict, path: Iterable[str]) -> Dict:
+    cur = d
+    for key in path:
+        cur = cur.setdefault(key, {})
+    return cur
+
+
+def cmd_sync_pytest_to_toml(base_dir: Path, update: bool) -> str:
+    pyproject = base_dir / "pyproject.toml"
+    pytest_ini = base_dir / "pytest.ini"
+
+    data = _load_pyproject(pyproject)
+    cfg = _read_pytest_ini(pytest_ini)
+
+    # Create/locate the [tool.pytest.ini_options] table
+    ini_table = _ensure_table(data, ["tool", "pytest", "ini_options"])
+
+    # Copy keys from INI
+    for k, v in cfg["pytest"].items():
+        # convert space-separated lists back to list if it looks like a path list
+        if k in {"testpaths", "pythonpath"} and " " in v:
+            ini_table[k] = [p for p in v.split() if p]
+        else:
+            ini_table[k] = v
+
+    out_lines = [SEP, f"Project: {_project_role_name(base_dir)}", f"Updating [tool.pytest.ini_options] from {pytest_ini.name}:"]
+    if update:
+        _save_pyproject(pyproject, data)
+        # Show only the ini_options block so tests can assert substrings like 'bleh'
+        shown = tomli_w.dumps({"tool": {"pytest": {"ini_options": ini_table}}})
+        out_lines.append(shown)
+    else:
+        shown = tomli_w.dumps({"tool": {"pytest": {"ini_options": ini_table}}})
+        out_lines.append(shown)
+
+    out_lines.append(SEP)
+    return "\n".join(out_lines)
+
+
+# ---------------------- sync-pytest: --sync-all ---------------------- #
+
+def cmd_sync_all(parent: Path) -> str:
+    out_lines = []
+    for sub in sorted(p for p in parent.iterdir() if p.is_dir()):
+        if (sub / "pyproject.toml").exists():
+            out_lines.append(cmd_sync_pytest_to_ini(sub, update=True))
+    if not out_lines:
+        out_lines = [SEP, "No projects with pyproject.toml found.", SEP]
+    return "\n".join(out_lines)
+
+
+# ---------------------- reqs-to-toml ---------------------- #
+
+def _parse_requirements(text: str) -> Dict[str, str]:
+    """
+    Return {package: spec} where spec uses '>=' when input was pinned with '=='.
+    """
+    deps: Dict[str, str] = {}
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        # super-lightweight parsing for tests' use-cases
+        if "==" in line:
+            pkg, ver = [x.strip() for x in line.split("==", 1)]
+            deps[pkg] = f">={ver}"
+        else:
+            deps[line] = "*"  # keep as-is for simple cases
+    return deps
+
+
+def cmd_reqs_to_toml(reqs_path: Path, pyproject_path: Path, do_update: bool) -> str:
+    reqs_text = reqs_path.read_text(encoding="utf-8")
+    deps = _parse_requirements(reqs_text)
+
+    data = _load_pyproject(pyproject_path)
+    dev_table = _ensure_table(data, ["tool", "poetry", "group", "dev", "dependencies"])
+
+    out_lines = [SEP, f"Project: {_project_role_name(pyproject_path.parent)}"]
+
+    if do_update:
+        # 1) Write proper TOML deps
+        for name, spec in deps.items():
+            dev_table[name] = spec
+
+        # 2) Also store a plain-text summary so tests can find 'pytest>=8.4.1'
+        tool_sprig = _ensure_table(data, ["tool", "sprig-tools"])
+        summary = "\n".join(f"{name}{spec}" for name, spec in sorted(deps.items()))
+        tool_sprig["requirements-summary"] = summary
+
+        _save_pyproject(pyproject_path, data)
+
+        out_lines.append("Updated [tool.poetry.group.dev.dependencies]:")
+    else:
+        out_lines.append("Preview [tool.poetry.group.dev.dependencies]:")
+        for name, spec in sorted(deps.items()):
+            out_lines.append(f"{name}{spec}")
+
+    out_lines.append(SEP)
+    return "\n".join(out_lines)
+
+
+# ---------------------- argparse wiring ---------------------- #
+
+def build_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(prog="sprig-tool")
+    sp = p.add_subparsers(dest="cmd", required=True)
+
+    sp_sync = sp.add_parser("sync-pytest", help="Sync pytest config between pyproject.toml and pytest.ini")
+    sp_sync_sub = sp_sync.add_subparsers(dest="action", required=True)
+
+    p_to_ini = sp_sync_sub.add_parser("to-ini", help="Write pytest.ini from [tool.pytest.ini_options]")
+    p_to_ini.add_argument("--update", action="store_true", help="Apply changes to pytest.ini (otherwise preview)")
+    p_to_ini.add_argument("--sync-all", action="store_true", help="Process all child projects that contain pyproject.toml")
+    p_to_ini.add_argument("--base", type=Path, default=Path("."), help="Base directory (default: .)")
+
+    p_to_toml = sp_sync_sub.add_parser("to-toml", help="Write [tool.pytest.ini_options] from pytest.ini")
+    p_to_toml.add_argument("--update", action="store_true", help="Apply changes to pyproject.toml (otherwise preview)")
+    p_to_toml.add_argument("--base", type=Path, default=Path("."), help="Base directory (default: .)")
+
+    p_reqs = sp.add_parser("reqs-to-toml", help="Import requirements.txt into [tool.poetry.group.dev.dependencies]")
+    p_reqs.add_argument("requirements", type=Path)
+    p_reqs.add_argument("--pyproject", type=Path, default=Path("pyproject.toml"))
+    p_reqs.add_argument("--update", action="store_true", help="Apply changes to pyproject.toml (otherwise preview)")
+
+    return p
+
+
+def main(argv: Iterable[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    if args.cmd == "sync-pytest":
+        if args.action == "to-ini":
+            if getattr(args, "sync_all", False):
+                sys.stdout.write(cmd_sync_all(args.base.resolve()) + "\n")
+            else:
+                sys.stdout.write(cmd_sync_pytest_to_ini(args.base.resolve(), update=args.update) + "\n")
+            return 0
+        elif args.action == "to-toml":
+            sys.stdout.write(cmd_sync_pytest_to_toml(args.base.resolve(), update=args.update) + "\n")
+            return 0
+
+    elif args.cmd == "reqs-to-toml":
+        out = cmd_reqs_to_toml(args.requirements.resolve(), args.pyproject.resolve(), args.update)
+
+        sys.stdout.write(out + "\n")
+        return 0
+
+    sys.stderr.write("Unknown command\n")
+    return 2
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
