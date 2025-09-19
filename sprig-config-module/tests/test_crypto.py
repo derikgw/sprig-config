@@ -97,4 +97,4 @@ def test_real_config_profiles_and_lazy_secrets(monkeypatch):
     # Access returns decrypted values
     assert secrets["username"].get() == "myusername"
     assert secrets["password"].get() == "mypassword"
-    assert secrets["apiKey"].get()    == "23773DC1-5345-40A3-890A-D83C1F82C268"
+    assert secrets["apiKey"].get()    == os.getenv("API_KEY")
