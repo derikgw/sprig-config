@@ -37,19 +37,17 @@ def deep_merge(base: Dict[str, Any], override: Dict[str, Any], suppress_warnings
 
 def expand_env_vars(text: str) -> str:
     """Replace ${VAR} or ${VAR:default} with environment values."""
-
     def replacer(match):
         var, default = match.groups()
         return os.getenv(var, default if default is not None else match.group(0))
-
     return ENV_PATTERN.sub(replacer, text)
 
 
 def load_yaml_file(file_path: Path) -> Dict[str, Any]:
-    """Load a YAML file if it exists, expand env vars, and parse it."""
+    """Load a YAML file if it exists, expand env vars, and parse it (BOM-safe)."""
     if file_path.exists():
         try:
-            text = file_path.read_text()
+            text = file_path.read_text(encoding="utf-8-sig")  # strip BOM if present
             expanded = expand_env_vars(text)
             return yaml.safe_load(expanded) or {}
         except yaml.YAMLError as e:
@@ -78,12 +76,10 @@ def process_secrets(config: Dict[str, Any]):
     No 'secrets:' block or 'encrypted: true' flag required.
     Decryption happens lazily when the LazySecret is accessed.
     """
-
     def recurse(node):
         if isinstance(node, dict):
-            for k, v in node.items():
+            for k, v in list(node.items()):
                 if isinstance(v, str) and v.startswith("ENC(") and v.endswith(")"):
-                    # Wrap encrypted values as lazy secrets
                     node[k] = LazySecret(v)
                 elif isinstance(v, dict):
                     recurse(v)
@@ -99,11 +95,9 @@ def process_secrets(config: Dict[str, Any]):
 
 
 def load_config(profile: str = None, config_dir: Path = None) -> Dict[str, Any]:
-    # Config directory defaults to ./config relative to caller
+    # Config directory defaults to ./config relative to CWD or APP_CONFIG_DIR
     if config_dir is None:
-        config_dir = Path(
-            os.getenv("APP_CONFIG_DIR", Path.cwd() / "config")
-        ).resolve()
+        config_dir = Path(os.getenv("APP_CONFIG_DIR", Path.cwd() / "config")).resolve()
 
     logger.debug(f"Using config directory: {config_dir}")
 
@@ -115,14 +109,21 @@ def load_config(profile: str = None, config_dir: Path = None) -> Dict[str, Any]:
         logger.warning("No application.yml found. Using empty defaults.")
         base_config = {}
 
-    # Determine active profile
-    yml_profile = base_config.get("app", {}).get("profile")
+    # Determine active profile (env/param only — do NOT *select* from files)
+    yml_profile = base_config.get("app", {}).get("profile")  # only used to warn on conflicts
     active_profile = (
-        profile or
-        os.getenv("APP_PROFILE") or
-        yml_profile or
-        ("test" if "pytest" in sys.modules else "dev")
+        profile
+        or os.getenv("APP_PROFILE")
+        or ("test" if "pytest" in sys.modules else "dev")
     )
+
+    # Warn if files specify a different app.profile than the runtime-selected one
+    if yml_profile and yml_profile != active_profile:
+        logger.warning(
+            "Ignoring app.profile from files (%s); using active profile %s. "
+            "Consider removing app.profile from files to avoid confusion.",
+            yml_profile, active_profile
+        )
 
     suppress_warnings = base_config.get("suppress_config_merge_warnings", False)
 
@@ -164,29 +165,29 @@ def load_config(profile: str = None, config_dir: Path = None) -> Dict[str, Any]:
     if active_profile == "prod":
         log_level = base_config.get("logging", {}).get("level")
         allow_debug = base_config.get("allow_debug_in_prod", False)
-
         valid_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
 
         if not log_level:
             logger.warning("No logging.level set in production; defaulting to INFO.")
             base_config.setdefault("logging", {})["level"] = "INFO"
-
         elif log_level.upper() not in valid_levels:
             logger.warning(f"Invalid logging.level '{log_level}' in production; defaulting to INFO.")
             base_config["logging"]["level"] = "INFO"
-
         elif log_level.upper() == "DEBUG" and not allow_debug:
             raise ConfigLoadError(
                 "DEBUG logging is not allowed in production without allow_debug_in_prod: true"
             )
-
         elif log_level.upper() == "DEBUG" and allow_debug:
             logger.warning("DEBUG logging is enabled in production via allow_debug_in_prod.")
-
     else:
         base_config.setdefault("logging", {}).setdefault("level", "INFO")
 
+    # Wrap ENC(...) values with LazySecret
     process_secrets(base_config)
+
+    # Inject the active profile into the final config (env wins over files)
+    base_config.setdefault("app", {})
+    base_config["app"]["profile"] = active_profile
 
     logger.info(f"Active profile: {active_profile}")
     return base_config

@@ -1,0 +1,8 @@
+[project]
+name = "dummy"
+version = "0.1.0"
+
+[tool.pytest.ini_options]
+addopts = "-v"
+testpaths = ["tests"]
+pythonpath = ["src"]

@@ -1,20 +1,18 @@
-# sprig-tools/tests/test_cli_sync_pytest.py
+# tests/test_cli_sync_pytest.py
 import subprocess
 import sys
 import textwrap
 from pathlib import Path
 
-
 def run_cli(tmp_path, *args):
     """Helper to run sprig-tool CLI in temp directory."""
-    cmd = [sys.executable,  "-u", "-m", "sprigtools.cli", *args]
+    cmd = [sys.executable, "-u", "-m", "sprigtools.cli", *args]
     result = subprocess.run(cmd, cwd=tmp_path, capture_output=True, text=True)
     return result.stdout, result.stderr
 
-
 def make_pyproject(tmp_path, extra_ini_options=None):
     """Create a minimal pyproject.toml with pytest options."""
-    ini_options = textwrap.dedent(f"""
+    ini_options = textwrap.dedent("""
     [tool.pytest.ini_options]
     addopts = "-v"
     testpaths = ["tests"]
@@ -33,14 +31,13 @@ def make_pyproject(tmp_path, extra_ini_options=None):
     """))
     return pyproject
 
-
 def make_pytest_ini(tmp_path, extra=None):
     """Create a minimal pytest.ini."""
     lines = [
         "[pytest]",
         "addopts = -v",
         "testpaths = tests",
-        "pythonpath = src"
+        "pythonpath = src",
     ]
     if extra:
         lines.append(extra)
@@ -48,26 +45,21 @@ def make_pytest_ini(tmp_path, extra=None):
     pytest_ini.write_text("\n".join(lines))
     return pytest_ini
 
-
 def test_to_ini_preview_and_update(tmp_path):
     pyproject = make_pyproject(tmp_path, extra_ini_options='somevar = "bleh"\n')
     pytest_ini = make_pytest_ini(tmp_path)
 
-    # PREVIEW: Should show somevar diff
     out, err = run_cli(tmp_path, "sync-pytest", "to-ini", "--update")
     assert "bleh" in out
-    assert pytest_ini.read_text().find("somevar") != -1
-
+    assert "somevar" in pytest_ini.read_text()
 
 def test_to_toml_preview_and_update(tmp_path):
     pyproject = make_pyproject(tmp_path)
-    pytest_ini = make_pytest_ini(tmp_path, extra="somevar = bleh")
+    make_pytest_ini(tmp_path, extra="somevar = bleh")
 
-    # PREVIEW: Should show missing somevar
     out, err = run_cli(tmp_path, "sync-pytest", "to-toml", "--update")
     assert "bleh" in out
     assert "somevar" in pyproject.read_text()
-
 
 def test_reqs_to_toml_preview_and_update(tmp_path):
     reqs = tmp_path / "requirements.txt"

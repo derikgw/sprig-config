@@ -1,43 +1,36 @@
 [build-system]
-requires = [
-    "setuptools>=61.0",
-    "wheel",
-]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core>=1.9.0"]
+build-backend = "poetry.core.masonry.api"
 
-[project]
+[tool.poetry]
 name = "sprig-tools"
 version = "0.1.0"
 description = "Helper utilities for SprigConfig (e.g., pytest sync, requirements-to-TOML)"
-authors = [
-    { name = "Derik G. Wilson" },
-]
+authors = ["Derik G. Wilson"]
 readme = "README.md"
-dependencies = [
-    "tomli>=2.2.1",
-    "tomli_w>=1.2.0",
-]
+license = "MIT"
+packages = [{ include = "sprigtools", from = "src" }]
 
-[project.license]
-text = "MIT"
+[tool.poetry.dependencies]
+python = ">=3.12,<3.14"
+tomli = ">=2.2.1"
+tomli-w = ">=1.2.0"   # note: package name uses a hyphen; import is `tomli_w`
+cryptography = "^46.0.1"
 
-[project.optional-dependencies]
-dev = [
-    "colorama>=0.4.6",
-    "coverage>=7.10.1",
-    "iniconfig>=2.1.0",
-    "packaging>=25.0",
-    "pluggy>=1.6.0",
-    "Pygments>=2.19.2",
-    "pytest-cov>=6.2.1",
-    "pytest>=8.4.1",
-]
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.4.1"
+pytest-cov = ">=6.2.1"
+coverage = ">=7.10.1"
+colorama = ">=0.4.6"
+iniconfig = ">=2.1.0"
+packaging = ">=25.0"
+pluggy = ">=1.6.0"
+Pygments = ">=2.19.2"
 
-[project.scripts]
+[tool.poetry.scripts]
 sprig-tool = "sprigtools.cli:main"
-
-[tool.setuptools.package-dir]
-"" = "src"
+secret-cli = "sprigtools.secret_cli:main"
+secret-quickdemo = "sprigtools.secret_quickdemo:run"
 
 [tool.pytest.ini_options]
 addopts = "-v"
