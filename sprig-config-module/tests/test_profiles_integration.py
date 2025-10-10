@@ -13,7 +13,7 @@ load_dotenv()
 CONFIG_DIR = Path(__file__).resolve().parents[1] / "config"
 
 
-@pytest.mark.integration
+@pytest.mark.crypto
 @pytest.mark.parametrize("profile", ["dev", "prod", "test"])
 def test_profiles_load_correctly(profile, monkeypatch):
     # Profile now comes only from the environment (not from config files)

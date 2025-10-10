@@ -1,4 +1,5 @@
 # tests/conftest.py
+import os
 import logging
 import sys
 from datetime import datetime
@@ -60,6 +61,13 @@ def pytest_addoption(parser):
     parser.addoption("--dump-config-no-redact", action="store_true",
                      help="when resolving secrets, print plaintext instead of ****")
 
+def pytest_collection_modifyitems(config, items):
+    """Skip @pytest.mark.crypto tests unless RUN_CRYPTO=true"""
+    if os.getenv("RUN_CRYPTO", "").lower() not in ("1", "true", "yes", "on"):
+        skip_crypto = pytest.mark.skip(reason="Skipping crypto tests (RUN_CRYPTO not set)")
+        for item in items:
+            if "crypto" in item.keywords:
+                item.add_marker(skip_crypto)
 
 @pytest.fixture
 def maybe_dump(request):
