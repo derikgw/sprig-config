@@ -98,7 +98,7 @@ bandit:
 # -----------------------
 deploy_pypi:
   stage: deploy
-  image: python:3.13-slim
+  extends: .default_setup        # ✅ Inherit Poetry setup
   only:
     - main
   when: manual
