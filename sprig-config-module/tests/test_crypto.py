@@ -80,7 +80,7 @@ def test_mixed_plain_and_enc_values(tmp_path, monkeypatch):
     assert config["app"]["secrets"]["password"].get() == "plainSecretPass"
 
 
-@pytest.mark.integration(reason="Validates real config with profiles and lazy secrets")
+@pytest.mark.crypto(reason="Validates real config with profiles and lazy secrets")
 def test_real_config_profiles_and_lazy_secrets(monkeypatch):
     # Optional: make the profile explicit for determinism
     monkeypatch.setenv("APP_PROFILE", "dev")
