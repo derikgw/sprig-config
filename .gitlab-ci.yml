@@ -105,8 +105,6 @@ deploy_pypi:
   variables:
     POETRY_HTTP_BASIC_GITLAB_PYPI_USERNAME: "__token__"
     POETRY_HTTP_BASIC_GITLAB_PYPI_PASSWORD: "${CI_JOB_TOKEN}"
-  before_script:
-    - pip install --no-cache-dir "poetry==$POETRY_VERSION"
   script:
     - echo "🔹 Building package for PyPI..."
     - poetry build
