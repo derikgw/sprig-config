@@ -1,5 +1,6 @@
 # src/sprigconfig/lazy_secret.py
-import os
+from typing import Optional
+
 from cryptography.fernet import Fernet
 from sprigconfig.exceptions import ConfigLoadError
 
@@ -10,24 +11,19 @@ class LazySecret:
     Decrypts only when accessed via get() or __str__().
     """
 
-    __slots__ = ("_encrypted_value", "_decrypted_value")
+    __slots__ = ("_encrypted_value", "_decrypted_value", "_key")
 
-    def __init__(self, enc_value: str):
-        if not (enc_value.startswith("ENC(") and enc_value.endswith(")")):
-            raise ValueError("LazySecret must wrap ENC(...) value")
-
-        self._encrypted_value = enc_value[4:-1]  # strip ENC(...)
-        self._decrypted_value = None  # decrypted only on demand
+    def __init__(self, enc_value: str, key: Optional[str] = None):
+        self._encrypted_value = enc_value[4:-1]
+        self._decrypted_value = None
+        self._key = key
 
     def _decrypt(self):
         if self._decrypted_value is not None:
             return self._decrypted_value
-
-        key = os.getenv("APP_SECRET_KEY")
-        if not key:
-            raise ConfigLoadError("APP_SECRET_KEY is required to decrypt secrets")
-
-        fernet = Fernet(key.encode() if isinstance(key, str) else key)
+        if not self._key:
+            raise ConfigLoadError("No key provided to LazySecret.")
+        fernet = Fernet(self._key.encode() if isinstance(self._key, str) else self._key)
         self._decrypted_value = fernet.decrypt(self._encrypted_value.encode()).decode()
         return self._decrypted_value
 

@@ -7,7 +7,67 @@ from pathlib import Path
 import pytest
 
 import json, yaml
+
+from sprigconfig import load_config
 from sprigconfig.lazy_secret import LazySecret
+
+@pytest.fixture(scope="session")
+def patch_config_dir() -> Path:
+    """Return the default config directory used for SprigConfig tests."""
+    return Path(__file__).resolve().parent / "config"
+
+CONFIG_DIR = Path(__file__).resolve().parent / "config"
+
+@pytest.fixture
+def base_config_dir(tmp_path_factory, monkeypatch):
+    """
+    Creates a temporary config directory with a minimal base application.yml
+    so tests using load_config() always have a valid starting point.
+
+    Each test gets an isolated directory.
+    """
+    config_dir = tmp_path_factory.mktemp("config")
+
+    base = {
+        "logging": {"level": "INFO", "format": "%(message)s"},
+        "app": {"name": "test-app"},
+    }
+
+    import yaml
+    (config_dir / "application.yml").write_text(yaml.safe_dump(base))
+
+    # Let SprigConfig discover this directory automatically
+    monkeypatch.setenv("APP_CONFIG_DIR", str(config_dir))
+
+    return config_dir
+
+@pytest.fixture
+def load_test_config(tmp_path):
+    """
+    Fixture for integration-style tests.
+    Ensures config_dir exists and defaults profile to 'dev'.
+    """
+    def _load_test_config(profile=None, config_dir=None):
+        if profile is None:
+            profile = os.getenv("APP_PROFILE", "dev")
+        if config_dir is None:
+            config_dir = tmp_path / "config"
+            config_dir.mkdir(exist_ok=True)
+            # Minimal valid config to satisfy loader
+            (config_dir / "application.yml").write_text("app:\n  name: testapp\n")
+        return load_config(profile=profile, config_dir=config_dir)
+    return _load_test_config
+
+
+@pytest.fixture
+def load_raw_config():
+    """
+    Fixture for negative tests.
+    Does NOT create missing config directories or files.
+    """
+    def _load_raw_config(profile=None, config_dir=None):
+        return load_config(profile=profile, config_dir=config_dir)
+    return _load_raw_config
 
 @pytest.fixture(scope="session", autouse=True)
 def configure_test_logging():
