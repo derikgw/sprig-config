@@ -15,7 +15,7 @@ CONFIG_DIR = Path(__file__).resolve().parents[1] / "config"
 
 @pytest.mark.crypto
 @pytest.mark.parametrize("profile", ["dev", "prod", "test"])
-def test_profiles_load_correctly(profile, monkeypatch):
+def test_profiles_load_correctly(profile, monkeypatch, load_test_config):
     # Profile now comes only from the environment (not from config files)
     monkeypatch.setenv("APP_PROFILE", profile)
 
@@ -26,7 +26,7 @@ def test_profiles_load_correctly(profile, monkeypatch):
             pytest.skip(f"No {profile_file.name} found for integration test")
 
     try:
-        config = load_config(config_dir=CONFIG_DIR)
+        config = load_test_config()
     except ConfigLoadError as e:
         # Prod may be intentionally strict; skip rather than fail the suite
         if profile == "prod":

@@ -11,7 +11,7 @@ load_dotenv()
 
 
 @pytest.mark.integration(reason="Requires APP_SECRET_KEY from env/.env")
-def test_enc_values_are_lazy_secrets(tmp_path, monkeypatch):
+def test_enc_values_are_lazy_secrets(monkeypatch, load_test_config, base_config_dir):
     """
     Ensure ENC() values load as LazySecret and decrypt only on access.
     Profile comes from APP_PROFILE (injected), not from the file.
@@ -26,8 +26,7 @@ def test_enc_values_are_lazy_secrets(tmp_path, monkeypatch):
     enc_username = fernet.encrypt(b"devUser").decode()
     enc_password = fernet.encrypt(b"superSecretPass").decode()
 
-    config_dir = tmp_path / "config"
-    config_dir.mkdir()
+    config_dir = base_config_dir
     (config_dir / "application.yml").write_text(
         f"""app:
   secrets:
@@ -36,7 +35,7 @@ def test_enc_values_are_lazy_secrets(tmp_path, monkeypatch):
 """
     )
 
-    config = load_config(config_dir=config_dir)
+    config = load_test_config(config_dir=config_dir)
 
     # Verify they are LazySecret objects, not decrypted yet
     assert isinstance(config["app"]["secrets"]["username"], LazySecret)
@@ -48,7 +47,7 @@ def test_enc_values_are_lazy_secrets(tmp_path, monkeypatch):
 
 
 @pytest.mark.integration(reason="Requires APP_SECRET_KEY from env/.env")
-def test_mixed_plain_and_enc_values(tmp_path, monkeypatch):
+def test_mixed_plain_and_enc_values(tmp_path, monkeypatch, load_test_config):
     """
     Plain values remain plain, ENC() values are LazySecret.
     Profile comes from APP_PROFILE (injected), not from the file.
@@ -70,7 +69,7 @@ def test_mixed_plain_and_enc_values(tmp_path, monkeypatch):
 """
     )
 
-    config = load_config(config_dir=config_dir)
+    config = load_test_config(config_dir=config_dir)
 
     # Plain value is not LazySecret
     assert config["app"]["secrets"]["username"] == "plainUser"
@@ -81,12 +80,12 @@ def test_mixed_plain_and_enc_values(tmp_path, monkeypatch):
 
 
 @pytest.mark.crypto(reason="Validates real config with profiles and lazy secrets")
-def test_real_config_profiles_and_lazy_secrets(monkeypatch):
+def test_real_config_profiles_and_lazy_secrets(monkeypatch, load_test_config):
     # Optional: make the profile explicit for determinism
     monkeypatch.setenv("APP_PROFILE", "dev")
 
     config_dir = Path(__file__).resolve().parents[1] / "config"
-    config = load_config(config_dir=config_dir)
+    config = load_test_config()
 
     # Secrets are LazySecret objects (top-level in real config)
     secrets = config.get("secrets", {})
