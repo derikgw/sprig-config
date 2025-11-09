@@ -96,19 +96,23 @@ bandit:
 # -----------------------
 # 4️⃣ Deploy to GitLab PyPI
 # -----------------------
+# -----------------------
+# 4️⃣ Deploy to GitLab PyPI
+# -----------------------
 deploy_pypi:
   stage: deploy
-  extends: .default_setup        # ✅ Inherit Poetry setup
+  extends: .default_setup
   only:
     - main
   when: manual
   variables:
     POETRY_HTTP_BASIC_GITLAB_PYPI_USERNAME: "__token__"
-    POETRY_HTTP_BASIC_GITLAB_PYPI_PASSWORD: "${CI_JOB_TOKEN}"
+    POETRY_HTTP_BASIC_GITLAB_PYPI_PASSWORD: "${GITLAB_PYPI_TOKEN}"
   script:
     - echo "🔹 Building package for PyPI..."
+    - poetry config repositories.gitlab-pypi https://gitlab.com/api/v4/projects/72230105/packages/pypi
     - poetry build
-    - echo "🔹 Publishing to GitLab PyPI registry..."
-    - poetry publish -r gitlab-pypi
+    - echo "🚀 Publishing sprig-config to GitLab PyPI..."
+    - poetry publish --build --repository gitlab-pypi
   environment:
     name: production
