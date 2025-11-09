@@ -82,25 +82,39 @@ def _resolve_key(explicit_key: Optional[str] = None) -> str:
       2. Global key set via set_global_key()
       3. Dynamic provider registered via set_key_provider()
       4. Environment variable APP_SECRET_KEY
+
+    Guards against recursive key resolution during nested config loads.
     """
-    if explicit_key:
-        return explicit_key
+    # --- recursion guard -----------------------------------------------------
+    if getattr(_resolve_key, "_resolving", False):
+        raise ConfigLoadError("Recursive key resolution detected")
+    _resolve_key._resolving = True
+    try:
+        # 1. Explicit key
+        if explicit_key:
+            return explicit_key
 
-    if _GLOBAL_KEY:
-        return _GLOBAL_KEY
+        # 2. Global key
+        if _GLOBAL_KEY:
+            return _GLOBAL_KEY
 
-    if callable(_KEY_PROVIDER):
-        key = _KEY_PROVIDER()
-        if key:
-            set_global_key(key)
-            return key
+        # 3. Provider
+        if callable(_KEY_PROVIDER):
+            key = _KEY_PROVIDER()
+            if key:
+                set_global_key(key)
+                return key
 
-    env_key = os.getenv("APP_SECRET_KEY")
-    if env_key:
-        set_global_key(env_key)
-        return env_key
+        # 4. Environment
+        env_key = os.getenv("APP_SECRET_KEY")
+        if env_key:
+            set_global_key(env_key)
+            return env_key
 
-    raise ConfigLoadError("No key provided to LazySecret.")
+        raise ConfigLoadError("No key provided to LazySecret.")
+    finally:
+        _resolve_key._resolving = False
+
 
 
 # ---------------------------------------------------------------------------
