@@ -109,12 +109,9 @@ deploy_pypi:
     POETRY_HTTP_BASIC_GITLAB_PYPI_USERNAME: "__token__"
     POETRY_HTTP_BASIC_GITLAB_PYPI_PASSWORD: "${GITLAB_PYPI_TOKEN}"
   script:
-    - echo "🔹 Cleaning old builds..."
-    - rm -rf dist/
     - echo "🔹 Building package for PyPI..."
-    - poetry config repositories.gitlab-pypi https://gitlab.com/api/v4/projects/72230105/packages/pypi
-    - poetry build --no-interaction
-    - echo "🚀 Publishing sprig-config to GitLab PyPI..."
-    - poetry publish --no-interaction --build --repository gitlab-pypi
+    - poetry build
+    - echo "🔹 Publishing to GitLab PyPI registry..."
+    - poetry publish --no-interaction -r gitlab-pypi
   environment:
     name: production
