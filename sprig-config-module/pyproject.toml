@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "sprig-config"
-version = "0.1.4-RC5"
+version = "0.1.4-RC6"
 description = "Spring-like deep merge configuration loader for Python"
 authors = ["Derik G. Wilson"]
 readme = "README.md"
