@@ -34,6 +34,13 @@ variables:
     - pip install --no-cache-dir "poetry==$POETRY_VERSION"
     - poetry install --no-ansi
 
+workflow:
+  rules:
+    - if: '$CI_COMMIT_TAG'        # always run pipelines for tags
+      when: always
+    - if: '$CI_COMMIT_BRANCH'     # and for branches
+      when: always
+
 # -----------------------
 # 1️⃣ Lint and style checks
 # -----------------------
@@ -94,24 +101,59 @@ bandit:
       sast: sprig-config-module/gl-bandit-report.json
 
 # -----------------------
-# 4️⃣ Deploy to GitLab PyPI
+# 4 Dry run
 # -----------------------
+dry_run_pypi:
+  stage: deploy
+  extends: .default_setup
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^[Vv]/'
+      when: manual
+    - when: never
+  script:
+    - echo "🔍 Verifying version match before dry-run..."
+    - export PYPROJECT_VERSION=$(poetry version -s)
+    - if [ "v$PYPROJECT_VERSION" != "${CI_COMMIT_TAG,,}" ]; then
+        echo "❌ Version mismatch! Expected v$PYPROJECT_VERSION, got ${CI_COMMIT_TAG}";
+        exit 1;
+      fi
+    - echo "✅ Building package for dry run..."
+    - poetry build
+    - echo "🧪 Simulating publish (no upload)..."
+    - poetry publish --dry-run -r gitlab-pypi
+  artifacts:
+    when: always
+    paths:
+      - sprig-config-module/dist/
+    expire_in: 3 days
+  environment:
+    name: staging
+
+
 # -----------------------
-# 4️⃣ Deploy to GitLab PyPI
+# 5 Deploy to GitLab PyPI
 # -----------------------
 deploy_pypi:
   stage: deploy
   extends: .default_setup
-  only:
-    - main
-  when: manual
-  variables:
-    POETRY_HTTP_BASIC_GITLAB_PYPI_USERNAME: "__token__"
-    POETRY_HTTP_BASIC_GITLAB_PYPI_PASSWORD: "${GITLAB_PYPI_TOKEN}"
+  needs: ["dry_run_pypi"]
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^[Vv]/'
+      when: manual
+    - when: never
   script:
-    - echo "🔹 Building package for PyPI..."
-    - poetry build
-    - echo "🔹 Publishing to GitLab PyPI registry..."
+    - echo "🔍 Confirming version consistency before deploy..."
+    - export PYPROJECT_VERSION=$(poetry version -s)
+    - if [ "v$PYPROJECT_VERSION" != "${CI_COMMIT_TAG,,}" ]; then
+        echo "❌ Version mismatch! Expected v$PYPROJECT_VERSION, got ${CI_COMMIT_TAG}";
+        exit 1;
+      fi
+    - echo "🚀 Publishing tested artifacts to GitLab PyPI..."
     - poetry publish --no-interaction -r gitlab-pypi
+  dependencies:
+    - dry_run_pypi
+  artifacts:
+    expire_in: 7 days
   environment:
     name: production
+
