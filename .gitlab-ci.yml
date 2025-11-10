@@ -101,7 +101,7 @@ bandit:
       sast: sprig-config-module/gl-bandit-report.json
 
 # -----------------------
-# 4 Dry run
+# 4️⃣ Dry Run
 # -----------------------
 dry_run_pypi:
   stage: deploy
@@ -111,16 +111,22 @@ dry_run_pypi:
       when: manual
     - when: never
   script:
-    - echo "🔍 Verifying version match before dry-run..."
-    - export PYPROJECT_VERSION=$(poetry version -s)
-    - if [ "v$PYPROJECT_VERSION" != "${CI_COMMIT_TAG,,}" ]; then
-        echo "❌ Version mismatch! Expected v$PYPROJECT_VERSION, got ${CI_COMMIT_TAG}";
-        exit 1;
+    - |
+      echo "🔍 Verifying version match before dry-run..."
+      export PYPROJECT_VERSION=$(poetry version -s)
+      echo "📦 pyproject.toml version: $PYPROJECT_VERSION"
+      echo "🏷️ Git tag: ${CI_COMMIT_TAG}"
+
+      # Normalize case and ignore leading "v" in tag
+      if [ "${PYPROJECT_VERSION,,}" != "${CI_COMMIT_TAG,,v}" ]; then
+        echo "❌ Version mismatch! Expected v$PYPROJECT_VERSION, got ${CI_COMMIT_TAG}"
+        exit 1
       fi
-    - echo "✅ Building package for dry run..."
-    - poetry build
-    - echo "🧪 Simulating publish (no upload)..."
-    - poetry publish --dry-run -r gitlab-pypi
+
+      echo "✅ Version match confirmed, building package..."
+      poetry build
+      echo "🧪 Simulating publish (no upload)..."
+      poetry publish --dry-run -r gitlab-pypi
   artifacts:
     when: always
     paths:
@@ -129,9 +135,8 @@ dry_run_pypi:
   environment:
     name: staging
 
-
 # -----------------------
-# 5 Deploy to GitLab PyPI
+# 5️⃣ Deploy to GitLab PyPI
 # -----------------------
 deploy_pypi:
   stage: deploy
@@ -142,18 +147,23 @@ deploy_pypi:
       when: manual
     - when: never
   script:
-    - echo "🔍 Confirming version consistency before deploy..."
-    - export PYPROJECT_VERSION=$(poetry version -s)
-    - if [ "v$PYPROJECT_VERSION" != "${CI_COMMIT_TAG,,}" ]; then
-        echo "❌ Version mismatch! Expected v$PYPROJECT_VERSION, got ${CI_COMMIT_TAG}";
-        exit 1;
+    - |
+      echo "🔍 Confirming version consistency before deploy..."
+      export PYPROJECT_VERSION=$(poetry version -s)
+      echo "📦 pyproject.toml version: $PYPROJECT_VERSION"
+      echo "🏷️ Git tag: ${CI_COMMIT_TAG}"
+
+      # Normalize case and ignore leading "v" in tag
+      if [ "${PYPROJECT_VERSION,,}" != "${CI_COMMIT_TAG,,v}" ]; then
+        echo "❌ Version mismatch! Expected v$PYPROJECT_VERSION, got ${CI_COMMIT_TAG}"
+        exit 1
       fi
-    - echo "🚀 Publishing tested artifacts to GitLab PyPI..."
-    - poetry publish --no-interaction -r gitlab-pypi
+
+      echo "🚀 Publishing tested artifacts to GitLab PyPI..."
+      poetry publish --no-interaction -r gitlab-pypi
   dependencies:
     - dry_run_pypi
   artifacts:
     expire_in: 7 days
   environment:
     name: production
-
