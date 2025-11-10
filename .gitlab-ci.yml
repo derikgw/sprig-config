@@ -23,6 +23,8 @@ variables:
   SECRET_DETECTION_ENABLED: "true"
   SAST_STAGE: security
   SECRET_DETECTION_STAGE: security
+  POETRY_HTTP_BASIC_GITLAB_PYPI_USERNAME: "__token__"
+  POETRY_HTTP_BASIC_GITLAB_PYPI_PASSWORD: "${GITLAB_PYPI_TOKEN}"
 
 # -----------------------
 # Base template: setup
@@ -61,7 +63,8 @@ pytest:
   stage: test
   extends: .default_setup
   variables:
-    APP_SECRET_KEY: "Y1PvJOeB_Dhak0oNJecfKRaKb4VcvmTwlFUo8-gVr7Q="  # Key for test only
+    # Key for test only
+    APP_SECRET_KEY: "Y1PvJOeB_Dhak0oNJecfKRaKb4VcvmTwlFUo8-gVr7Q="
   script:
     - poetry run pytest --maxfail=1 --disable-warnings -q --cov=src --cov-report=xml
   artifacts:
@@ -116,10 +119,9 @@ dry_run_pypi:
       echo "📦 pyproject.toml version: $PYPROJECT_VERSION"
       echo "🏷️ Git tag: ${CI_COMMIT_TAG}"
 
-      # Normalize case and strip leading "v"/"V" for comparison
-      TAG_VERSION=$(echo "${CI_COMMIT_TAG}" | sed -E 's/^[Vv]//')
-      if [ "${PYPROJECT_VERSION,,}" != "${TAG_VERSION,,}" ]; then
-        echo "❌ Version mismatch! Expected tag: v${PYPROJECT_VERSION}, got: ${CI_COMMIT_TAG}"
+      # Normalize case and ignore leading "v" in tag
+      if [ "${PYPROJECT_VERSION,,}" != "${CI_COMMIT_TAG,,v}" ]; then
+        echo "❌ Version mismatch! Expected v$PYPROJECT_VERSION, got ${CI_COMMIT_TAG}"
         exit 1
       fi
 
@@ -153,10 +155,9 @@ deploy_pypi:
       echo "📦 pyproject.toml version: $PYPROJECT_VERSION"
       echo "🏷️ Git tag: ${CI_COMMIT_TAG}"
 
-      # Normalize case and strip leading "v"/"V" for comparison
-      TAG_VERSION=$(echo "${CI_COMMIT_TAG}" | sed -E 's/^[Vv]//')
-      if [ "${PYPROJECT_VERSION,,}" != "${TAG_VERSION,,}" ]; then
-        echo "❌ Version mismatch! Expected tag: v${PYPROJECT_VERSION}, got: ${CI_COMMIT_TAG}"
+      # Normalize case and ignore leading "v" in tag
+      if [ "${PYPROJECT_VERSION,,}" != "${CI_COMMIT_TAG,,v}" ]; then
+        echo "❌ Version mismatch! Expected v$PYPROJECT_VERSION, got ${CI_COMMIT_TAG}"
         exit 1
       fi
 
