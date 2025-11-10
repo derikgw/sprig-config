@@ -26,9 +26,6 @@ variables:
   POETRY_HTTP_BASIC_GITLAB_PYPI_USERNAME: "__token__"
   POETRY_HTTP_BASIC_GITLAB_PYPI_PASSWORD: "${GITLAB_PYPI_TOKEN}"
 
-# -----------------------
-# Base template: setup
-# -----------------------
 .default_setup:
   image: python:3.13-slim
   before_script:
@@ -38,14 +35,11 @@ variables:
 
 workflow:
   rules:
-    - if: '$CI_COMMIT_TAG'        # always run pipelines for tags
+    - if: '$CI_COMMIT_TAG'
       when: always
-    - if: '$CI_COMMIT_BRANCH'     # and for branches
+    - if: '$CI_COMMIT_BRANCH'
       when: always
 
-# -----------------------
-# 1️⃣ Lint and style checks
-# -----------------------
 lint:
   stage: lint
   extends: .default_setup
@@ -56,14 +50,10 @@ lint:
     paths:
       - sprig-config-module/ruff.log
 
-# -----------------------
-# 2️⃣ Unit tests + coverage
-# -----------------------
 pytest:
   stage: test
   extends: .default_setup
   variables:
-    # Key for test only
     APP_SECRET_KEY: "Y1PvJOeB_Dhak0oNJecfKRaKb4VcvmTwlFUo8-gVr7Q="
   script:
     - poetry run pytest --maxfail=1 --disable-warnings -q --cov=src --cov-report=xml
@@ -78,9 +68,6 @@ pytest:
       - sprig-config-module/reports/
       - sprig-config-module/coverage.xml
 
-# -----------------------
-# 3️⃣ Security Scanning
-# -----------------------
 include:
   - template: Security/SAST.gitlab-ci.yml
   - template: Security/Secret-Detection.gitlab-ci.yml
@@ -102,9 +89,6 @@ bandit:
     reports:
       sast: sprig-config-module/gl-bandit-report.json
 
-# -----------------------
-# 4️⃣ Dry Run
-# -----------------------
 dry_run_pypi:
   stage: deploy
   extends: .default_setup
@@ -119,9 +103,11 @@ dry_run_pypi:
       echo "📦 pyproject.toml version: $PYPROJECT_VERSION"
       echo "🏷️ Git tag: ${CI_COMMIT_TAG}"
 
-      # Normalize case and ignore leading "v" in tag
-      if [ "${PYPROJECT_VERSION,,}" != "${CI_COMMIT_TAG,,v}" ]; then
-        echo "❌ Version mismatch! Expected v$PYPROJECT_VERSION, got ${CI_COMMIT_TAG}"
+      # Fix: normalize both sides fully and ignore leading 'v' or 'V'
+      NORMALIZED_TAG=$(echo "${CI_COMMIT_TAG}" | sed -E 's/^[Vv]//' | tr '[:upper:]' '[:lower:]')
+      NORMALIZED_VER=$(echo "${PYPROJECT_VERSION}" | tr '[:upper:]' '[:lower:]')
+      if [ "$NORMALIZED_TAG" != "$NORMALIZED_VER" ]; then
+        echo "❌ Version mismatch! Expected V$PYPROJECT_VERSION, got ${CI_COMMIT_TAG}"
         exit 1
       fi
 
@@ -137,9 +123,6 @@ dry_run_pypi:
   environment:
     name: staging
 
-# -----------------------
-# 5️⃣ Deploy to GitLab PyPI
-# -----------------------
 deploy_pypi:
   stage: deploy
   extends: .default_setup
@@ -155,9 +138,10 @@ deploy_pypi:
       echo "📦 pyproject.toml version: $PYPROJECT_VERSION"
       echo "🏷️ Git tag: ${CI_COMMIT_TAG}"
 
-      # Normalize case and ignore leading "v" in tag
-      if [ "${PYPROJECT_VERSION,,}" != "${CI_COMMIT_TAG,,v}" ]; then
-        echo "❌ Version mismatch! Expected v$PYPROJECT_VERSION, got ${CI_COMMIT_TAG}"
+      NORMALIZED_TAG=$(echo "${CI_COMMIT_TAG}" | sed -E 's/^[Vv]//' | tr '[:upper:]' '[:lower:]')
+      NORMALIZED_VER=$(echo "${PYPROJECT_VERSION}" | tr '[:upper:]' '[:lower:]')
+      if [ "$NORMALIZED_TAG" != "$NORMALIZED_VER" ]; then
+        echo "❌ Version mismatch! Expected V$PYPROJECT_VERSION, got ${CI_COMMIT_TAG}"
         exit 1
       fi
 
