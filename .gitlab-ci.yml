@@ -54,7 +54,7 @@ pytest:
   stage: test
   extends: .default_setup
   variables:
-    APP_SECRET_KEY: "Y1PvJOeB_Dhak0oNJecfKRaKb4VcvmTwlFUo8-gVr7Q="
+    APP_SECRET_KEY: "Y1PvJOeB_Dhak0oNJecfKRaKb4VcvmTwlFUo8-gVr7Q="  # Key for test only
   script:
     - poetry run pytest --maxfail=1 --disable-warnings -q --cov=src --cov-report=xml
   artifacts:
@@ -103,11 +103,10 @@ dry_run_pypi:
       echo "📦 pyproject.toml version: $PYPROJECT_VERSION"
       echo "🏷️ Git tag: ${CI_COMMIT_TAG}"
 
-      # Fix: normalize both sides fully and ignore leading 'v' or 'V'
-      NORMALIZED_TAG=$(echo "${CI_COMMIT_TAG}" | sed -E 's/^[Vv]//' | tr '[:upper:]' '[:lower:]')
-      NORMALIZED_VER=$(echo "${PYPROJECT_VERSION}" | tr '[:upper:]' '[:lower:]')
-      if [ "$NORMALIZED_TAG" != "$NORMALIZED_VER" ]; then
-        echo "❌ Version mismatch! Expected V$PYPROJECT_VERSION, got ${CI_COMMIT_TAG}"
+      # Normalize case and strip leading "v"/"V" for comparison
+      TAG_VERSION=$(echo "${CI_COMMIT_TAG}" | sed -E 's/^[Vv]//')
+      if [ "${PYPROJECT_VERSION,,}" != "${TAG_VERSION,,}" ]; then
+        echo "❌ Version mismatch! Expected tag: v${PYPROJECT_VERSION}, got: ${CI_COMMIT_TAG}"
         exit 1
       fi
 
@@ -138,10 +137,10 @@ deploy_pypi:
       echo "📦 pyproject.toml version: $PYPROJECT_VERSION"
       echo "🏷️ Git tag: ${CI_COMMIT_TAG}"
 
-      NORMALIZED_TAG=$(echo "${CI_COMMIT_TAG}" | sed -E 's/^[Vv]//' | tr '[:upper:]' '[:lower:]')
-      NORMALIZED_VER=$(echo "${PYPROJECT_VERSION}" | tr '[:upper:]' '[:lower:]')
-      if [ "$NORMALIZED_TAG" != "$NORMALIZED_VER" ]; then
-        echo "❌ Version mismatch! Expected V$PYPROJECT_VERSION, got ${CI_COMMIT_TAG}"
+      # Normalize case and strip leading "v"/"V" for comparison
+      TAG_VERSION=$(echo "${CI_COMMIT_TAG}" | sed -E 's/^[Vv]//')
+      if [ "${PYPROJECT_VERSION,,}" != "${TAG_VERSION,,}" ]; then
+        echo "❌ Version mismatch! Expected tag: v${PYPROJECT_VERSION}, got: ${CI_COMMIT_TAG}"
         exit 1
       fi
 
