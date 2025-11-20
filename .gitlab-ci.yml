@@ -78,17 +78,6 @@ sast:
 secret_detection:
   stage: security
 
-bandit:
-  stage: security
-  extends: .default_setup
-  script:
-    - poetry run bandit -r src -f json -o gl-bandit-report.json || true
-  allow_failure: true
-  artifacts:
-    when: always
-    reports:
-      sast: sprig-config-module/gl-bandit-report.json
-
 dry_run_pypi:
   stage: deploy
   extends: .default_setup

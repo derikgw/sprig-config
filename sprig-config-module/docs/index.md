@@ -1,0 +1,2 @@
+# SprigConfig Documentation
+Welcome.

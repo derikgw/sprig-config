@@ -1,0 +1,7 @@
+etl:
+  jobs:
+    root: "/jobs/default"
+    default_shell: "/bin/bash"
+    repositories:
+      inmemory:
+        class: InMemoryJobRepo

@@ -1,7 +1,0 @@
-﻿server:
-  port: 9090
-features:
-  auth:
-    methods:
-      - password
-      - oauth

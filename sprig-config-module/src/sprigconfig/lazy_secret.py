@@ -10,7 +10,7 @@ need for external modules to modify private state.
 from typing import Optional, Callable
 import os
 from cryptography.fernet import Fernet, InvalidToken
-from sprigconfig.exceptions import ConfigLoadError
+from .exceptions import ConfigLoadError
 
 # ---------------------------------------------------------------------------
 # Global key management (new public API)
