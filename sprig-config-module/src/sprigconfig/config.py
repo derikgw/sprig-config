@@ -1,0 +1,175 @@
+# sprigconfig/config.py
+"""
+The Config class wraps deeply nested dictionaries into an immutable-ish
+mapping structure with:
+
+- dict-like API (keys, items, iteration, __contains__)
+- dotted-key access via get("a.b.c")
+- automatic recursive wrapping of nested dicts as Config instances
+- safe .to_dict() conversion (deep copy, LazySecret redacted)
+- .dump() to write YAML safely
+"""
+
+from collections.abc import Mapping
+from pathlib import Path
+import yaml
+
+from .lazy_secret import LazySecret
+from .exceptions import ConfigLoadError
+
+
+class Config(Mapping):
+    """
+    Mapping wrapper around a dict, providing:
+
+    - attribute-style nested access through Config[...] returning Config
+    - dotted-key access: cfg.get("a.b.c")
+    - safe serialization (.to_dict())
+    - secure YAML dump (.dump(path, safe=True/False))
+
+    Immutable-ish:
+        underlying dict is private and should not be mutated directly.
+        Users may mutate Config only through explicit methods if we add
+        them in future versions (not supported currently).
+    """
+
+    def __init__(self, data):
+        if not isinstance(data, dict):
+            raise TypeError("Config must wrap a dict")
+
+        # Deep wrap the root dict
+        self._data = self._wrap(data)
+
+    # ------------------------------------------------------------------
+    # INTERNAL WRAPPING
+    # ------------------------------------------------------------------
+    def _wrap(self, obj):
+        """Recursively wrap dictionaries as Config."""
+        if isinstance(obj, Config):
+            return obj
+        if isinstance(obj, dict):
+            return {k: self._wrap(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [self._wrap(v) for v in obj]
+        return obj
+
+    # ------------------------------------------------------------------
+    # MAPPING INTERFACE
+    # ------------------------------------------------------------------
+    def __getitem__(self, key):
+        value = self._data[key]
+        # If nested dict, return a Config wrapper
+        if isinstance(value, dict):
+            return Config(value)
+        return value
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __len__(self):
+        return len(self._data)
+
+    def __contains__(self, key):
+        return key in self._data
+
+    # ------------------------------------------------------------------
+    # DOTTED-KEY ACCESS
+    # ------------------------------------------------------------------
+    def get(self, key, default=None):
+        """
+        cfg.get("a.b.c") resolves nested keys.
+        cfg.get("a.b") yields a Config or raw structure.
+        """
+        if "." not in key:
+            return self._resolve_leaf(key, default)
+
+        parts = key.split(".")
+        node = self
+
+        for part in parts:
+            if isinstance(node, Config):
+                if part not in node._data:
+                    return default
+                node = node._data[part]
+            elif isinstance(node, dict):
+                node = node.get(part, default)
+            else:
+                return default
+
+        # Return wrapped Config if appropriate
+        if isinstance(node, dict):
+            return Config(node)
+        return node
+
+    def _resolve_leaf(self, key, default):
+        if key not in self._data:
+            return default
+        value = self._data[key]
+        if isinstance(value, dict):
+            return Config(value)
+        return value
+
+    # ------------------------------------------------------------------
+    # SAFE TO_DICT
+    # ------------------------------------------------------------------
+    def to_dict(self, *, reveal_secrets=False):
+        """
+        Convert to a deep plain dict.
+
+        reveal_secrets=False:
+            LazySecret → "<LazySecret>"
+
+        reveal_secrets=True:
+            LazySecret → actual decrypted value or raise ConfigLoadError
+        """
+        return self._to_plain(self._data, reveal_secrets=reveal_secrets)
+
+    def _to_plain(self, obj, *, reveal_secrets=False):
+        if isinstance(obj, LazySecret):
+            if reveal_secrets:
+                try:
+                    return obj.get()
+                except Exception as e:
+                    raise ConfigLoadError(
+                        f"Failed to decrypt LazySecret during to_dict(): {e}"
+                    )
+            return "<LazySecret>"
+
+        if isinstance(obj, Config):
+            return obj.to_dict(reveal_secrets=reveal_secrets)
+
+        if isinstance(obj, dict):
+            return {k: self._to_plain(v, reveal_secrets=reveal_secrets) for k, v in obj.items()}
+
+        if isinstance(obj, list):
+            return [self._to_plain(v, reveal_secrets=reveal_secrets) for v in obj]
+
+        return obj
+
+    # ------------------------------------------------------------------
+    # DUMP TO YAML
+    # ------------------------------------------------------------------
+    def dump(self, path: Path, *, safe=True):
+        """
+        Dump config to YAML file.
+
+        safe=True:
+            redact LazySecret → "<LazySecret>"
+
+        safe=False:
+            reveal actual decrypted secrets (only if decryptable)
+            raises ConfigLoadError on failure
+        """
+        data = self.to_dict(reveal_secrets=not safe)
+
+        try:
+            with open(path, "w") as f:
+                yaml.safe_dump(data, f, sort_keys=False)
+        except Exception as e:
+            raise ConfigLoadError(f"Failed to write YAML dump to {path}: {e}")
+
+    # ------------------------------------------------------------------
+    # REPRESENTATION
+    # ------------------------------------------------------------------
+    def __repr__(self):
+        return f"Config({self._data!r})"

@@ -1,5 +1,22 @@
-﻿server:
-  port: 8080
+﻿# Base application config
+app:
+  name: SprigTestApp
+  profile: base
 
 logging:
   level: INFO
+  format: "%(message)s"
+
+etl:
+  jobs:
+    root: "/jobs/default"
+    default_shell: "/bin/bash"
+    repositories:
+      inmemory:
+        class: InMemoryJobRepo
+        params:
+          x: 1
+
+imports:
+  - imports/job-default.yml
+  - imports/common.yml
