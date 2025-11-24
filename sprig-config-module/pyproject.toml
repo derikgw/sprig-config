@@ -2,9 +2,12 @@
 requires = ["poetry-core>=1.9.0"]
 build-backend = "poetry.core.masonry.api"
 
+[tool.poetry.scripts]
+sprigconfig = "sprigconfig.cli:main"
+
 [tool.poetry]
 name = "sprig-config"
-version = "0.2.0-RC1"
+version = "0.2.0-RC2"
 description = "Spring-like deep merge configuration loader for Python"
 authors = ["Derik G. Wilson"]
 readme = "README.md"
