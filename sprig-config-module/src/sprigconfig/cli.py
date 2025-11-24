@@ -11,21 +11,26 @@ from sprigconfig.lazy_secret import LazySecret
 
 
 def _render_pretty_yaml(data):
-    """Render YAML using block-style formatting."""
+    """Render clean, reusable, human-friendly YAML."""
     import yaml
-    return yaml.dump(
+    return yaml.safe_dump(
         data,
         sort_keys=False,
         default_flow_style=False,
         allow_unicode=True,
+        indent=2,
     )
 
 
 def _extract_data_for_dump(config, reveal_secrets: bool):
     """
-    Convert Config object to a dumpable structure.
-    If reveal_secrets=True, LazySecret values are decrypted (unsafe).
+    Convert Config → plain dict ready for YAML/JSON output.
+    Uses Config.to_dict() to avoid !!python/object wrappers.
     """
+
+    # Start with a clean dict produced by the library itself
+    raw = config.to_dict(reveal_secrets=reveal_secrets)
+
     def walk(node):
         if isinstance(node, LazySecret):
             if reveal_secrets:
@@ -37,14 +42,17 @@ def _extract_data_for_dump(config, reveal_secrets: bool):
             return [walk(v) for v in node]
         return node
 
-    return walk(dict(config))  # Config implements dict-like behavior
+    return walk(raw)
 
 
-def run_dump(config_dir: Path, profile: str, reveal_secrets: bool,
-             output_file: Path | None, fmt: str):
-    """
-    Perform the actual dump process.
-    """
+def run_dump(
+    config_dir: Path,
+    profile: str,
+    reveal_secrets: bool,
+    output_file: Path | None,
+    fmt: str,
+):
+    """Perform config load + pretty output."""
     try:
         loader = ConfigLoader(config_dir=config_dir, profile=profile)
         config = loader.load()
@@ -52,7 +60,7 @@ def run_dump(config_dir: Path, profile: str, reveal_secrets: bool,
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(2)
 
-    # Prepare output structure
+    # Convert to something safe to print
     output = _extract_data_for_dump(config, reveal_secrets=reveal_secrets)
 
     if fmt == "json":
@@ -60,6 +68,7 @@ def run_dump(config_dir: Path, profile: str, reveal_secrets: bool,
     else:
         rendered = _render_pretty_yaml(output)
 
+    # Write or print
     if output_file:
         output_file.write_text(rendered, encoding="utf-8")
         print(f"Config written to {output_file}")
@@ -119,7 +128,7 @@ def main():
 
     dump.add_argument(
         "--output-format",
-        choices=["yaml"],
+        choices=["yaml", "json"],
         default="yaml",
         help="Output format (default: yaml)",
     )
@@ -134,6 +143,7 @@ def main():
             output_file=args.output,
             fmt=args.output_format,
         )
+
 
 if __name__ == "__main__":
     main()
