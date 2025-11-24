@@ -1,22 +1,17 @@
-# tests/test_integration.py
 """
-Full-system integration tests for the new SprigConfig architecture.
+Full-system integration tests for SprigConfig RC3.
 
-These tests do not test small units. They validate that:
+Validates:
 
-    - ConfigLoader, Config, deep merge, imports, profiles,
-      and LazySecret behavior work cohesively.
-
-    - load_config() (legacy API) cooperates with new classes.
-
-    - ConfigSingleton operates independently and does not interfere
-      with normal loading.
-
-    - Environment-based defaults (APP_CONFIG_DIR) work.
-
-    - Debug-dump integration works through capture_config() fixture.
-
-This is the final TDD layer — all top-level behavior must pass here.
+- Full merge across base + profile + imports + nested imports
+- load_config() backward compatibility
+- Correct metadata injection under sprigconfig._meta
+- Correct handling of secrets (LazySecret)
+- Correct environment expansion
+- Correct ConfigSingleton behavior
+- Correct dotted-key access
+- Correct default behavior using APP_CONFIG_DIR
+- Circular import detection
 """
 
 import os
@@ -35,72 +30,59 @@ from sprigconfig.lazy_secret import LazySecret
 
 
 # ----------------------------------------------------------------------
-# FIXTURES
+# FIXTURE
 # ----------------------------------------------------------------------
 
 @pytest.fixture
 def config_dir(use_real_config_dir):
-    """Use the actual tests/config directory."""
     return use_real_config_dir
 
 
 # ----------------------------------------------------------------------
-# LEGACY LOAD_CONFIG COMPAT
+# LEGACY load_config STILL WORKS
 # ----------------------------------------------------------------------
 
 def test_load_config_legacy_api_still_works(config_dir):
-    """
-    load_config() must still work and return a Config instance,
-    providing backward compatibility with existing ETL-service-web usage.
-    """
     cfg = load_config(profile="dev", config_dir=config_dir)
     assert isinstance(cfg, Config)
-    assert cfg.get("app.profile") == "dev"
+
+    # RC3: runtime profile stored in metadata
+    assert cfg.get("sprigconfig._meta.profile") == "dev"
 
 
 # ----------------------------------------------------------------------
-# FULL MERGE: BASE + PROFILE + IMPORTS + NESTED IMPORTS
+# FULL MERGE: DEV PROFILE
 # ----------------------------------------------------------------------
 
 def test_full_merge_dev_profile(config_dir, maybe_dump, capture_config):
-    """
-    application.yml
-    application-dev.yml
-    imports/job-default.yml
-    imports/common.yml
-    combined must produce correct final values.
-    """
     cfg = capture_config(lambda: ConfigLoader(config_dir, profile="dev").load())
     maybe_dump(cfg)
 
-    # Base + profile
+    # Application values
     assert cfg.get("app.name") == "SprigTestApp"
-    assert cfg.get("app.profile") == "dev"
     assert cfg.get("app.debug_mode") is True
 
-    # Root imports
+    # Runtime profile
+    assert cfg.get("sprigconfig._meta.profile") == "dev"
+
+    # Imports
     assert cfg.get("etl.jobs.root") == "/jobs/default"
     assert cfg.get("etl.jobs.repositories.inmemory.class") == "InMemoryJobRepo"
     assert cfg.get("common.feature_flag") is True
 
 
+# ----------------------------------------------------------------------
+# FULL MERGE: NESTED
+# ----------------------------------------------------------------------
+
 def test_full_merge_nested_profile(config_dir):
-    """
-    profile=nested → imports/nested.yml + imports/misc.yml
-    """
     cfg = ConfigLoader(config_dir, profile="nested").load()
 
-    # From nested.yml
     assert cfg.get("etl.jobs.etl.jobs.foo") == "bar"
-
-    # From misc.yml
     assert cfg.get("etl.jobs.misc.value") == 123
 
 
 def test_full_merge_chain_profile(config_dir):
-    """
-    profile=chain → chains/chain1 → chain2 → chain3
-    """
     cfg = ConfigLoader(config_dir, profile="chain").load()
 
     assert cfg.get("chain.level1") == "L1"
@@ -118,22 +100,15 @@ def test_integration_circular_import(config_dir):
 
 
 # ----------------------------------------------------------------------
-# DOTTED KEYS ACROSS FULL MERGE
+# DOTTED KEY ACCESS
 # ----------------------------------------------------------------------
 
 def test_integration_dotted_key_access(config_dir):
-    """
-    Dotted-key access should always work on the fully merged tree.
-    """
     cfg = ConfigLoader(config_dir, profile="dev").load()
 
-    cls = cfg.get("etl.jobs.repositories.inmemory.class")
-    flag = cfg.get("common.feature_flag")
-    profile = cfg.get("app.profile")
-
-    assert cls == "InMemoryJobRepo"
-    assert flag is True
-    assert profile == "dev"
+    assert cfg.get("etl.jobs.repositories.inmemory.class") == "InMemoryJobRepo"
+    assert cfg.get("common.feature_flag") is True
+    assert cfg.get("sprigconfig._meta.profile") == "dev"
 
 
 # ----------------------------------------------------------------------
@@ -150,7 +125,7 @@ def test_integration_env_var_expansion(monkeypatch, config_dir):
 
 
 # ----------------------------------------------------------------------
-# SECRET HANDLING INTEGRATION
+# SECRET HANDLING
 # ----------------------------------------------------------------------
 
 def test_integration_secrets_wrapped(config_dir):
@@ -160,53 +135,37 @@ def test_integration_secrets_wrapped(config_dir):
 
 
 def test_integration_secret_decryption(monkeypatch, config_dir):
-    """
-    Integration-level test:
-    - Replace secret file contents with real encrypted value.
-    - Provide APP_SECRET_KEY.
-    - Validate LazySecret decrypts through Config.
-    """
     from cryptography.fernet import Fernet
 
-    # Generate a real encryption key
     key = Fernet.generate_key().decode()
     monkeypatch.setenv("APP_SECRET_KEY", key)
 
     f = Fernet(key.encode())
     encrypted = f.encrypt(b"hello").decode()
 
-    # Overwrite secret file
-    secrets_file = Path(config_dir) / "application-secrets.yml"
-    secrets_file.write_text(
-        f"secrets:\n  api_key: ENC({encrypted})\n"
-    )
+    secrets_yml = Path(config_dir) / "application-secrets.yml"
+    secrets_yml.write_text(f"secrets:\n  api_key: ENC({encrypted})\n")
 
     cfg = ConfigLoader(config_dir, profile="secrets").load()
     assert cfg.get("secrets.api_key").get() == "hello"
 
 
 # ----------------------------------------------------------------------
-# APP_CONFIG_DIR DEFAULT BEHAVIOR
+# APP_CONFIG_DIR DEFAULT
 # ----------------------------------------------------------------------
 
 def test_app_config_dir_env_var(monkeypatch, config_dir):
-    """
-    If config_dir isn’t passed, load_config() must use APP_CONFIG_DIR.
-    """
     monkeypatch.setenv("APP_CONFIG_DIR", str(config_dir))
-
     cfg = load_config(profile="dev", config_dir=None)
-    assert cfg.get("app.profile") == "dev"
+
+    assert cfg.get("sprigconfig._meta.profile") == "dev"
 
 
 # ----------------------------------------------------------------------
-# SINGLETON INTEGRATION
+# SINGLETON
 # ----------------------------------------------------------------------
 
 def test_integration_singleton_independent_of_loader(config_dir):
-    """
-    Singleton and ConfigLoader must return SEPARATE instances.
-    """
     cfg1 = ConfigSingleton.get(profile="dev", config_dir=config_dir)
     cfg2 = ConfigLoader(config_dir, profile="dev").load()
 
@@ -221,21 +180,15 @@ def test_integration_singleton_dotted_keys(config_dir):
 
 
 # ----------------------------------------------------------------------
-# DEBUG-DUMP INTEGRATION (via capture_config fixture)
+# DEBUG DUMP
 # ----------------------------------------------------------------------
 
 @pytest.mark.usefixtures("capture_config")
 def test_integration_debug_dump(request, config_dir):
-    """
-    Full-stack test ensuring debug-dump writes a YAML file when enabled.
-    """
     dump_path = request.config.getoption("--debug-dump")
     if not dump_path:
         pytest.skip("debug dump not enabled")
 
-    # Trigger dump
     cfg = ConfigLoader(config_dir, profile="dev").load()
     assert isinstance(cfg, Config)
-
-    # After test, capture_config fixture should have written the file
     assert Path(dump_path).exists()
