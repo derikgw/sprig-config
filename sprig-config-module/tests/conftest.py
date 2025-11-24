@@ -7,6 +7,8 @@ from pathlib import Path
 import pytest
 import json
 import yaml
+import shutil
+
 
 # =====================================================================
 # FUTURE ARCHITECTURE IMPORTS
@@ -69,6 +71,25 @@ def use_real_config_dir(monkeypatch):
     monkeypatch.setenv("APP_CONFIG_DIR", str(config_dir))
     return config_dir
 
+@pytest.fixture
+def full_config_dir(tmp_path_factory):
+    """
+    Provides a full copy of tests/config inside a temp directory.
+
+    Used by tests that require realistic, multi-file config trees
+    (e.g., merge-trace, nested imports, profile overlays).
+    """
+    # Source: the real config directory in the repo
+    src_dir = Path(__file__).parent / "config"
+    assert src_dir.exists(), f"Expected test config dir missing: {src_dir}"
+
+    # Destination: isolated copy for the test
+    dst_dir = tmp_path_factory.mktemp("config_full")
+
+    # Copy directory tree recursively
+    shutil.copytree(src_dir, dst_dir, dirs_exist_ok=True)
+
+    return dst_dir
 
 @pytest.fixture
 def base_config_dir(tmp_path_factory, monkeypatch):

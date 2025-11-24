@@ -1,0 +1,3 @@
+sprigconfig:
+  _meta:
+    profile: should_not_be_overwritten

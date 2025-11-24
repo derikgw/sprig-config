@@ -149,24 +149,59 @@ class Config(Mapping):
     # ------------------------------------------------------------------
     # DUMP TO YAML
     # ------------------------------------------------------------------
-    def dump(self, path: Path, *, safe=True):
+    def dump(
+        self,
+        path: Path | None = None,
+        *,
+        safe: bool = True,
+        pretty: bool = True,
+        sprigconfig_first: bool = False,
+    ) -> str:
         """
-        Dump config to YAML file.
+        Dump config to YAML and optionally return it as a string.
 
-        safe=True:
-            redact LazySecret → "<LazySecret>"
+        Args:
+            path: Optional filesystem path. If provided, YAML is written there.
+                  If None, the YAML string is returned instead.
+            safe: If True, LazySecret values are redacted. If False, secrets
+                  are decrypted (if decryptable) or raise ConfigLoadError.
+            pretty: If True, output human-friendly block-style YAML.
+            sprigconfig_first: If True, reorder 'sprigconfig:' to appear first
+                               in the YAML output (does not modify the internal
+                               config structure).
 
-        safe=False:
-            reveal actual decrypted secrets (only if decryptable)
-            raises ConfigLoadError on failure
+        Returns:
+            The YAML string (always returned, even if written to a file).
         """
+        # Convert config to plain dict (revealing secrets if safe=False)
         data = self.to_dict(reveal_secrets=not safe)
 
-        try:
-            with open(path, "w") as f:
-                yaml.safe_dump(data, f, sort_keys=False)
-        except Exception as e:
-            raise ConfigLoadError(f"Failed to write YAML dump to {path}: {e}")
+        # Optional reordering for nicer dumps
+        if sprigconfig_first and "sprigconfig" in data:
+            reordered = {"sprigconfig": data["sprigconfig"]}
+            for key, value in data.items():
+                if key != "sprigconfig":
+                    reordered[key] = value
+            data = reordered
+
+        # Pretty YAML output
+        yaml_dump = yaml.safe_dump(
+            data,
+            sort_keys=False,
+            default_flow_style=not pretty,
+            indent=2,
+            allow_unicode=True,
+        )
+
+        # Write to filesystem if requested
+        if path is not None:
+            try:
+                with open(path, "w") as f:
+                    f.write(yaml_dump)
+            except Exception as e:
+                raise ConfigLoadError(f"Failed to write YAML dump to {path}: {e}")
+
+        return yaml_dump
 
     # ------------------------------------------------------------------
     # REPRESENTATION
