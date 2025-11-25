@@ -4,7 +4,7 @@ The Config class wraps deeply nested dictionaries into an immutable-ish
 mapping structure with:
 
 - dict-like API (keys, items, iteration, __contains__)
-- dotted-key access via get("a.b.c")
+- dotted-key access via ["a.b.c"] and get("a.b.c")
 - automatic recursive wrapping of nested dicts as Config instances
 - safe .to_dict() conversion (deep copy, LazySecret redacted)
 - .dump() to write YAML safely
@@ -23,7 +23,7 @@ class Config(Mapping):
     Mapping wrapper around a dict, providing:
 
     - attribute-style nested access through Config[...] returning Config
-    - dotted-key access: cfg.get("a.b.c")
+    - dotted-key access: cfg["a.b.c"] and cfg.get("a.b.c")
     - safe serialization (.to_dict())
     - secure YAML dump (.dump(path, safe=True/False))
 
@@ -54,11 +54,31 @@ class Config(Mapping):
         return obj
 
     # ------------------------------------------------------------------
-    # MAPPING INTERFACE
+    # MAPPING INTERFACE WITH DOTTED-KEY LOOKUP
     # ------------------------------------------------------------------
     def __getitem__(self, key):
+        """
+        Support:
+            cfg["a.b.c"]
+            cfg["a"]["b"]["c"]
+        Strict: raises KeyError if any part is missing.
+        """
+        if isinstance(key, str) and "." in key:
+            parts = key.split(".")
+            node = self._data
+
+            for part in parts:
+                if not isinstance(node, dict) or part not in node:
+                    raise KeyError(key)
+                node = node[part]
+
+            # Wrap nested dicts as Config
+            if isinstance(node, dict):
+                return Config(node)
+            return node
+
+        # Non-dotted access
         value = self._data[key]
-        # If nested dict, return a Config wrapper
         if isinstance(value, dict):
             return Config(value)
         return value
@@ -70,33 +90,36 @@ class Config(Mapping):
         return len(self._data)
 
     def __contains__(self, key):
-        return key in self._data
+        """
+        Both literal keys and dotted keys return True if resolvable.
+        """
+        try:
+            self[key]
+            return True
+        except KeyError:
+            return False
 
     # ------------------------------------------------------------------
-    # DOTTED-KEY ACCESS
+    # DOTTED-KEY ACCESS VIA get()
     # ------------------------------------------------------------------
     def get(self, key, default=None):
         """
-        cfg.get("a.b.c") resolves nested keys.
-        cfg.get("a.b") yields a Config or raw structure.
+        cfg.get("a.b.c") resolves nested keys and returns default if missing.
         """
         if "." not in key:
             return self._resolve_leaf(key, default)
 
         parts = key.split(".")
-        node = self
+        node = self._data
 
         for part in parts:
-            if isinstance(node, Config):
-                if part not in node._data:
+            if isinstance(node, dict):
+                if part not in node:
                     return default
-                node = node._data[part]
-            elif isinstance(node, dict):
-                node = node.get(part, default)
+                node = node[part]
             else:
                 return default
 
-        # Return wrapped Config if appropriate
         if isinstance(node, dict):
             return Config(node)
         return node
@@ -173,10 +196,8 @@ class Config(Mapping):
         Returns:
             The YAML string (always returned, even if written to a file).
         """
-        # Convert config to plain dict (revealing secrets if safe=False)
         data = self.to_dict(reveal_secrets=not safe)
 
-        # Optional reordering for nicer dumps
         if sprigconfig_first and "sprigconfig" in data:
             reordered = {"sprigconfig": data["sprigconfig"]}
             for key, value in data.items():
@@ -184,7 +205,6 @@ class Config(Mapping):
                     reordered[key] = value
             data = reordered
 
-        # Pretty YAML output
         yaml_dump = yaml.safe_dump(
             data,
             sort_keys=False,
@@ -193,7 +213,6 @@ class Config(Mapping):
             allow_unicode=True,
         )
 
-        # Write to filesystem if requested
         if path is not None:
             try:
                 with open(path, "w") as f:
