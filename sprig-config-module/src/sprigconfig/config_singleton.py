@@ -1,18 +1,6 @@
 # sprigconfig/config_singleton.py
-"""
-Thread-safe global configuration singleton.
 
-Provides:
-
-    ConfigSingleton.get(profile, config_dir)
-    ConfigSingleton.reload(profile, config_dir)
-    ConfigSingleton._clear_all()   (used by test fixtures)
-
-Each unique (profile, config_dir) pair maps to a single cached Config instance.
-
-ConfigLoader produces the actual Config object.
-"""
-
+from __future__ import annotations
 from pathlib import Path
 import threading
 
@@ -23,76 +11,96 @@ from .exceptions import ConfigLoadError
 
 class ConfigSingleton:
     """
-    Global singleton manager for SprigConfig.
+    Java-style singleton for SprigConfig.
 
-    Cache key: (absolute config_dir, profile)
-
-    Thread-safe using a global lock.
+    Rules:
+      • initialize(profile, config_dir) MUST be called exactly once at app startup.
+      • get() returns the single global Config instance.
+      • Subsequent calls to initialize() with ANY arguments raise errors.
+      • No component may call initialize() implicitly.
     """
 
-    # Maps: (dir, profile) -> Config instance
-    _cache = {}
+    _instance: Config | None = None
+    _profile: str | None = None
+    _config_dir: Path | None = None
 
-    # Thread lock for thread-safe operations
     _lock = threading.Lock()
 
-    # ------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     # PUBLIC API
-    # ------------------------------------------------------------------
+    # ----------------------------------------------------------------------
 
     @classmethod
-    def get(cls, *, profile: str, config_dir: Path):
+    def initialize(cls, *, profile: str, config_dir: str | Path) -> Config:
         """
-        Return cached Config for (config_dir, profile).
-        If missing, load using ConfigLoader and cache it.
+        One-time initialization. Must be called explicitly by application bootstrap.
+
+        After initialization:
+           • profile and config_dir cannot change
+           • calling initialize() again is an error
         """
-        key = cls._make_key(profile, config_dir)
+        config_dir = Path(config_dir).resolve()
 
         with cls._lock:
-            if key not in cls._cache:
-                loader = ConfigLoader(config_dir=config_dir, profile=profile)
-                cfg = loader.load()
-                if not isinstance(cfg, Config):
-                    raise ConfigLoadError("ConfigLoader.load() must return Config")
+            if cls._instance is not None:
+                raise ConfigLoadError(
+                    "ConfigSingleton already initialized. "
+                    "Calling initialize() twice is not allowed."
+                )
 
-                cls._cache[key] = cfg
+            loader = ConfigLoader(config_dir=config_dir, profile=profile)
+            cfg = loader.load()
 
-            return cls._cache[key]
+            if not isinstance(cfg, Config):
+                raise ConfigLoadError("ConfigLoader.load() did not return Config instance")
+
+            cls._instance = cfg
+            cls._profile = profile
+            cls._config_dir = config_dir
+            return cfg
 
     @classmethod
-    def reload(cls, *, profile: str, config_dir: Path):
+    def get(cls) -> Config:
         """
-        Force reload of config for the given profile + directory.
-        Always returns a NEW instance.
+        Return the global config.
+
+        If not initialized, this is a programming error — the application
+        MUST initialize configuration during startup (e.g., create_app()).
         """
-        key = cls._make_key(profile, config_dir)
+        if cls._instance is None:
+            raise ConfigLoadError(
+                "ConfigSingleton.get() called before initialize(). "
+                "You must call ConfigSingleton.initialize(profile, config_dir) first."
+            )
+        return cls._instance
+
+    @classmethod
+    def reload_for_testing(cls, *, profile: str, config_dir: str | Path) -> Config:
+        """
+        Test-only hook: force a full reload and replace the singleton.
+
+        The production app MUST NOT use this.
+        """
+        config_dir = Path(config_dir).resolve()
 
         with cls._lock:
             loader = ConfigLoader(config_dir=config_dir, profile=profile)
             cfg = loader.load()
-            if not isinstance(cfg, Config):
-                raise ConfigLoadError("ConfigLoader.load() must return Config")
 
-            cls._cache[key] = cfg
+            if not isinstance(cfg, Config):
+                raise ConfigLoadError("ConfigLoader.load() did not return Config instance")
+
+            cls._instance = cfg
+            cls._profile = profile
+            cls._config_dir = config_dir
             return cfg
 
     @classmethod
     def _clear_all(cls):
         """
-        Clear the entire singleton cache.
-        Used exclusively by test fixtures.
+        Test fixture helper — completely reset singleton state.
         """
         with cls._lock:
-            cls._cache.clear()
-
-    # ------------------------------------------------------------------
-    # INTERNAL HELPERS
-    # ------------------------------------------------------------------
-
-    @staticmethod
-    def _make_key(profile: str, config_dir: Path):
-        """
-        Normalize profile + directory into a hashable tuple key.
-        """
-        dir_path = Path(config_dir).resolve()
-        return (str(dir_path), profile)
+            cls._instance = None
+            cls._profile = None
+            cls._config_dir = None

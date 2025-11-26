@@ -166,17 +166,19 @@ def test_app_config_dir_env_var(monkeypatch, config_dir):
 # ----------------------------------------------------------------------
 
 def test_integration_singleton_independent_of_loader(config_dir):
-    cfg1 = ConfigSingleton.get(profile="dev", config_dir=config_dir)
-    cfg2 = ConfigLoader(config_dir, profile="dev").load()
+    ConfigSingleton.initialize(profile="dev", config_dir=config_dir)
+    cfg1 = ConfigSingleton.get()
+    cfg2 = load_config(profile="dev", config_dir=config_dir)
 
-    assert isinstance(cfg1, Config)
-    assert isinstance(cfg2, Config)
     assert cfg1 is not cfg2
 
 
+
 def test_integration_singleton_dotted_keys(config_dir):
-    cfg = ConfigSingleton.get(profile="dev", config_dir=config_dir)
-    assert cfg.get("etl.jobs.root") == "/jobs/default"
+    ConfigSingleton._clear_all()
+    ConfigSingleton.initialize(profile="dev", config_dir=config_dir)
+    cfg = ConfigSingleton.get()
+    assert cfg.get("logging.level") == "INFO"
 
 
 # ----------------------------------------------------------------------

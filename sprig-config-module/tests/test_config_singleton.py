@@ -1,19 +1,16 @@
 # tests/test_config_singleton.py
 """
-Tests for the future ConfigSingleton class.
+Tests for the corrected Java-style ConfigSingleton class.
 
-EXPECTED BEHAVIOR:
+NEW EXPECTED BEHAVIOR:
 
-- ConfigSingleton.get(profile, config_dir) returns a Config instance.
-- The same (profile, config_dir) pair always returns the same instance.
-- Different profiles or directories produce different instances.
-- Must be thread-safe: concurrent calls return the same instance.
-- Must allow an explicit reload() to rebuild the Config.
-- Must integrate with Config (dotted-key access, secret safety, etc.).
-- load_config() remains backward compatible, but ConfigSingleton is the
-  new "global config" option.
-
-All of these tests WILL FAIL until ConfigSingleton is implemented.
+- ConfigSingleton.initialize(profile, config_dir) initializes ONCE.
+- ConfigSingleton.get() returns that same instance.
+- Calling initialize() twice is an error.
+- reload_for_testing() replaces the singleton (tests ONLY).
+- _clear_all() resets state between tests.
+- No support for multi-profile or multi-directory registries.
+- load_config() is independent from the singleton.
 """
 
 import threading
@@ -21,17 +18,23 @@ from pathlib import Path
 import pytest
 
 from sprigconfig import (
-    ConfigLoader,
     ConfigSingleton,
     Config,
-    load_config,       # backward-compatible
+    load_config,
     ConfigLoadError,
 )
 
 
 # ----------------------------------------------------------------------
-# FIXTURES
+# FIXTURE: CLEAR BEFORE EACH TEST
 # ----------------------------------------------------------------------
+
+@pytest.fixture(autouse=True)
+def clear_singleton():
+    ConfigSingleton._clear_all()
+    yield
+    ConfigSingleton._clear_all()
+
 
 @pytest.fixture
 def config_dir(use_real_config_dir):
@@ -39,103 +42,101 @@ def config_dir(use_real_config_dir):
     return use_real_config_dir
 
 
-@pytest.fixture
-def singleton():
-    """
-    Helper: clears singleton state before each test.
-    """
-    ConfigSingleton._clear_all()  # WILL FAIL until implemented
-    return ConfigSingleton
-
-
 # ----------------------------------------------------------------------
 # BASIC SINGLETON BEHAVIOR
 # ----------------------------------------------------------------------
 
-def test_singleton_returns_config_instance(singleton, config_dir):
-    cfg = singleton.get(profile="dev", config_dir=config_dir)
+def test_singleton_returns_config_instance(config_dir):
+    cfg = ConfigSingleton.initialize(profile="dev", config_dir=config_dir)
     assert isinstance(cfg, Config)
+    assert ConfigSingleton.get() is cfg
 
 
-def test_singleton_same_instance_for_same_profile_and_dir(singleton, config_dir):
-    cfg1 = singleton.get(profile="dev", config_dir=config_dir)
-    cfg2 = singleton.get(profile="dev", config_dir=config_dir)
+def test_singleton_same_instance_for_same_profile_and_dir(config_dir):
+    cfg1 = ConfigSingleton.initialize(profile="dev", config_dir=config_dir)
+    cfg2 = ConfigSingleton.get()
     assert cfg1 is cfg2
 
 
-def test_singleton_different_profiles_are_unique_instances(singleton, config_dir):
-    cfg1 = singleton.get(profile="dev", config_dir=config_dir)
-    cfg2 = singleton.get(profile="prod", config_dir=config_dir)
-    assert cfg1 is not cfg2
+def test_singleton_initialize_cannot_be_called_twice(config_dir):
+    ConfigSingleton.initialize(profile="dev", config_dir=config_dir)
+    with pytest.raises(ConfigLoadError):
+        ConfigSingleton.initialize(profile="dev", config_dir=config_dir)
 
 
-def test_singleton_different_config_dirs_are_unique(singleton, tmp_path, config_dir):
-    cfg1 = singleton.get(profile="dev", config_dir=config_dir)
-    other_dir = tmp_path / "other"
-    other_dir.mkdir()
-    (other_dir / "application.yml").write_text("app:\n  name: otherapp\n")
-    cfg2 = singleton.get(profile="dev", config_dir=other_dir)
-    assert cfg1 is not cfg2
+def test_singleton_cannot_initialize_with_different_profile(config_dir):
+    ConfigSingleton.initialize(profile="dev", config_dir=config_dir)
+    with pytest.raises(ConfigLoadError):
+        ConfigSingleton.initialize(profile="prod", config_dir=config_dir)
+
+
+def test_singleton_cannot_initialize_with_different_config_dir(config_dir, tmp_path):
+    ConfigSingleton.initialize(profile="dev", config_dir=config_dir)
+    with pytest.raises(ConfigLoadError):
+        ConfigSingleton.initialize(profile="dev", config_dir=tmp_path)
 
 
 # ----------------------------------------------------------------------
 # THREAD-SAFETY TEST
 # ----------------------------------------------------------------------
 
-def test_singleton_thread_safety(singleton, config_dir):
+def test_singleton_thread_safety(config_dir):
     """
-    Two threads calling get() simultaneously must receive the same instance.
+    Two threads racing to initialize must result in exactly ONE successful
+    initialization. The other must raise ConfigLoadError. The final singleton
+    must be the successfully created instance.
     """
 
     results = []
+    errors = []
 
     def worker():
-        cfg = singleton.get(profile="dev", config_dir=config_dir)
-        results.append(cfg)
+        try:
+            cfg = ConfigSingleton.initialize(profile="dev", config_dir=config_dir)
+            results.append(cfg)
+        except ConfigLoadError:
+            errors.append("fail")
 
     t1 = threading.Thread(target=worker)
     t2 = threading.Thread(target=worker)
-    t1.start(), t2.start()
-    t1.join(), t2.join()
+    t1.start(); t2.start()
+    t1.join(); t2.join()
 
-    assert results[0] is results[1]
+    # Exactly 1 successful initialization
+    assert len(results) == 1
+    # One of the threads must have failed
+    assert len(errors) == 1
+
+    # And get() should now return the one valid instance
+    assert ConfigSingleton.get() is results[0]
+
 
 
 # ----------------------------------------------------------------------
-# RELOAD BEHAVIOR
+# TEST RELOAD (TEST-ONLY)
 # ----------------------------------------------------------------------
 
-def test_singleton_reload_replaces_instance(singleton, config_dir):
-    """
-    reload(profile, config_dir) must force a fresh load.
-    """
-    cfg1 = singleton.get(profile="dev", config_dir=config_dir)
-    cfg2 = singleton.reload(profile="dev", config_dir=config_dir)
+def test_singleton_reload_replaces_instance(config_dir):
+    cfg1 = ConfigSingleton.initialize(profile="dev", config_dir=config_dir)
+    cfg2 = ConfigSingleton.reload_for_testing(profile="dev", config_dir=config_dir)
 
     assert isinstance(cfg2, Config)
     assert cfg2 is not cfg1
+    assert ConfigSingleton.get() is cfg2
 
 
-def test_reload_only_affects_specified_profile(singleton, config_dir):
-    dev_cfg = singleton.get(profile="dev", config_dir=config_dir)
-    prod_cfg = singleton.get(profile="prod", config_dir=config_dir)
-
-    # Reload only dev
-    new_dev_cfg = singleton.reload(profile="dev", config_dir=config_dir)
-
-    assert new_dev_cfg is not dev_cfg
-    assert prod_cfg is singleton.get(profile="prod", config_dir=config_dir)
+def test_reload_only_affects_after_reload(config_dir):
+    ConfigSingleton.initialize(profile="dev", config_dir=config_dir)
+    cfg_new = ConfigSingleton.reload_for_testing(profile="dev", config_dir=config_dir)
+    assert ConfigSingleton.get() is cfg_new
 
 
 # ----------------------------------------------------------------------
-# DOTTED-KEY ACCESS PROXY
+# DOTTED-KEY ACCESS
 # ----------------------------------------------------------------------
 
-def test_singleton_provides_dotted_key_access(singleton, config_dir):
-    """
-    ConfigSingleton.get(...) returns Config, so dotted-key access must work.
-    """
-    cfg = singleton.get(profile="dev", config_dir=config_dir)
+def test_singleton_provides_dotted_key_access(config_dir):
+    cfg = ConfigSingleton.initialize(profile="dev", config_dir=config_dir)
     assert cfg.get("logging.level") == "INFO"
 
 
@@ -143,22 +144,18 @@ def test_singleton_provides_dotted_key_access(singleton, config_dir):
 # SECRET HANDLING THROUGH SINGLETON
 # ----------------------------------------------------------------------
 
-def test_singleton_preserves_lazysecret_objects(singleton, config_dir):
-    cfg = singleton.get(profile="secrets", config_dir=config_dir)
+def test_singleton_preserves_lazysecret_objects(config_dir):
+    cfg = ConfigSingleton.initialize(profile="secrets", config_dir=config_dir)
     secret = cfg.get("secrets.api_key")
     assert hasattr(secret, "is_secret") or isinstance(secret, object)
 
 
 # ----------------------------------------------------------------------
-# BACKWARD COMPAT: load_config() and singleton coexist
+# BACKWARD COMPAT: load_config() remains separate
 # ----------------------------------------------------------------------
 
-def test_load_config_independent_of_singleton(singleton, config_dir):
-    """
-    load_config() must NOT use the same instance as ConfigSingleton.get().
-    They are separate code paths.
-    """
-    cfg1 = singleton.get(profile="dev", config_dir=config_dir)
+def test_load_config_independent_of_singleton(config_dir):
+    cfg1 = ConfigSingleton.initialize(profile="dev", config_dir=config_dir)
     cfg2 = load_config(profile="dev", config_dir=config_dir)
 
     assert isinstance(cfg1, Config)
@@ -167,16 +164,11 @@ def test_load_config_independent_of_singleton(singleton, config_dir):
 
 
 # ----------------------------------------------------------------------
-# CLEAR ALL / RESET
+# CLEAR ALL
 # ----------------------------------------------------------------------
 
-def test_singleton_clear_all_resets_state(singleton, config_dir):
-    """
-    _clear_all() should clear the entire internal cache.
-    """
-    cfg1 = singleton.get(profile="dev", config_dir=config_dir)
-
-    singleton._clear_all()
-    cfg2 = singleton.get(profile="dev", config_dir=config_dir)
-
-    assert cfg1 is not cfg2
+def test_singleton_clear_all_resets_state(config_dir):
+    cfg1 = ConfigSingleton.initialize(profile="dev", config_dir=config_dir)
+    ConfigSingleton._clear_all()
+    with pytest.raises(ConfigLoadError):
+        ConfigSingleton.get()
