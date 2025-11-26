@@ -32,13 +32,10 @@ class ConfigSingleton:
 
     @classmethod
     def initialize(cls, *, profile: str, config_dir: str | Path) -> Config:
-        """
-        One-time initialization. Must be called explicitly by application bootstrap.
+        # Strict input validation (NEW in RC8)
+        if profile is None or str(profile).strip() == "":
+            raise ConfigLoadError("Profile must be provided")
 
-        After initialization:
-           • profile and config_dir cannot change
-           • calling initialize() again is an error
-        """
         config_dir = Path(config_dir).resolve()
 
         with cls._lock:
