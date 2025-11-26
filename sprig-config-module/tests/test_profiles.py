@@ -20,7 +20,7 @@ import pytest
 from sprigconfig import (
     ConfigLoader,
     Config,
-    ConfigLoadError,
+    ConfigLoadError, ConfigSingleton,
 )
 
 
@@ -98,6 +98,13 @@ def test_missing_profile_does_not_raise(config_dir):
     # runtime profile is tracked in metadata
     assert cfg.get("sprigconfig._meta.profile") == "does_not_exist"
 
+def test_no_profile_provided_raises(config_dir):
+    ConfigSingleton._clear_all()
+
+    with pytest.raises(ConfigLoadError) as exc:
+        ConfigSingleton.initialize(profile=None, config_dir=config_dir)
+
+    assert "Profile must be provided" in str(exc.value)
 
 # ----------------------------------------------------------------------
 # PROFILE-SPECIFIC IMPORTS
