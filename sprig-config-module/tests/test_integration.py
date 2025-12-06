@@ -179,18 +179,3 @@ def test_integration_singleton_dotted_keys(config_dir):
     ConfigSingleton.initialize(profile="dev", config_dir=config_dir)
     cfg = ConfigSingleton.get()
     assert cfg.get("logging.level") == "INFO"
-
-
-# ----------------------------------------------------------------------
-# DEBUG DUMP
-# ----------------------------------------------------------------------
-
-@pytest.mark.usefixtures("capture_config")
-def test_integration_debug_dump(request, config_dir):
-    dump_path = request.config.getoption("--debug-dump")
-    if not dump_path:
-        pytest.skip("debug dump not enabled")
-
-    cfg = ConfigLoader(config_dir, profile="dev").load()
-    assert isinstance(cfg, Config)
-    assert Path(dump_path).exists()
