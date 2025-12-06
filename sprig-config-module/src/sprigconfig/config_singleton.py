@@ -72,27 +72,6 @@ class ConfigSingleton:
         return cls._instance
 
     @classmethod
-    def reload_for_testing(cls, *, profile: str, config_dir: str | Path) -> Config:
-        """
-        Test-only hook: force a full reload and replace the singleton.
-
-        The production app MUST NOT use this.
-        """
-        config_dir = Path(config_dir).resolve()
-
-        with cls._lock:
-            loader = ConfigLoader(config_dir=config_dir, profile=profile)
-            cfg = loader.load()
-
-            if not isinstance(cfg, Config):
-                raise ConfigLoadError("ConfigLoader.load() did not return Config instance")
-
-            cls._instance = cfg
-            cls._profile = profile
-            cls._config_dir = config_dir
-            return cfg
-
-    @classmethod
     def _clear_all(cls):
         """
         Test fixture helper — completely reset singleton state.

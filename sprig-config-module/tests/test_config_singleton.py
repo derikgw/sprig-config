@@ -24,6 +24,7 @@ from sprigconfig import (
     ConfigLoadError,
 )
 
+from tests.utils.config_test_utils import reload_for_testing
 
 # ----------------------------------------------------------------------
 # FIXTURE: CLEAR BEFORE EACH TEST
@@ -118,7 +119,7 @@ def test_singleton_thread_safety(config_dir):
 
 def test_singleton_reload_replaces_instance(config_dir):
     cfg1 = ConfigSingleton.initialize(profile="dev", config_dir=config_dir)
-    cfg2 = ConfigSingleton.reload_for_testing(profile="dev", config_dir=config_dir)
+    cfg2 = reload_for_testing(profile="dev", config_dir=config_dir)
 
     assert isinstance(cfg2, Config)
     assert cfg2 is not cfg1
@@ -127,7 +128,7 @@ def test_singleton_reload_replaces_instance(config_dir):
 
 def test_reload_only_affects_after_reload(config_dir):
     ConfigSingleton.initialize(profile="dev", config_dir=config_dir)
-    cfg_new = ConfigSingleton.reload_for_testing(profile="dev", config_dir=config_dir)
+    cfg_new = reload_for_testing(profile="dev", config_dir=config_dir)
     assert ConfigSingleton.get() is cfg_new
 
 
