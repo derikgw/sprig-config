@@ -1,19 +1,117 @@
+
 # 🌱 SprigConfig
 
-SprigConfig is a tiny, opinionated configuration loader for Python apps. It merges layered YAML files, expands `${ENV_VARS}`, supports `imports`, lazy‑decrypts secrets written as `ENC(...)`, and **injects the active profile from the runtime** (env/param), not from files.
+SprigConfig is a lightweight, opinionated configuration system for Python
+applications. It provides layered YAML loading, profile overlays, environment
+variable expansion, recursive imports, safe secret handling, and detailed metadata
+tracking designed for clarity, reproducibility, and debuggability.
 
-**Key features**
-- Profile **injection**: `app.profile` is injected from `APP_PROFILE` (or `load_config(profile=...)`). Any `app.profile` in files is ignored, with a warning.
-- Deep merge with helpful “partially overridden” warnings.
-- `imports` chaining for modular configs.
-- `${VAR:default}` environment expansion.
-- `ENC(...)` secrets → `LazySecret` (decrypted on access) via `APP_SECRET_KEY`.
-- Production guardrails for `logging.level`.
-- BOM‑safe YAML reads (`utf-8-sig`) to avoid weird `ï»¿` keys on Windows.
+This updated README reflects the current, expanded architecture of SprigConfig —
+including its test infrastructure, `.env` handling model, and secret‑management APIs.
 
 ---
 
-## 📦 Install
+# ⭐ Key Features
+
+### ✔️ Profile Injection (Runtime-Driven)
+Profiles are *never* taken from files. The active profile comes from:
+
+1. `load_config(profile=...)`  
+2. `APP_PROFILE`  
+3. `pytest` → `"test"`  
+4. Otherwise → `"dev"`
+
+Injected into final config as:
+
+```yaml
+app:
+  profile: <active>
+```
+
+If a YAML file contains `app.profile`, it is ignored with a warning.
+
+---
+
+### ✔️ Layered YAML Merging (Deep Merge)
+SprigConfig merges:
+
+1. `application.yml`
+2. `application-<profile>.yml`
+3. `imports: [file1.yml, file2.yml, …]`
+
+Features include:
+
+- Recursive dictionary merging  
+- Override collision warnings  
+- Partial merge clarity  
+- Preservation of source metadata
+
+---
+
+### ✔️ Environment Variable Expansion
+Patterns:
+
+```
+${VAR}
+${VAR:default}
+```
+
+Expanded at load time. Missing variables fall back to defaults.
+
+---
+
+### ✔️ Secure Secret Handling
+Values formatted as:
+
+```
+ENC(<ciphertext>)
+```
+
+are mapped to `LazySecret` objects.
+
+- Decryption is lazy (on `.get()`)  
+- Uses global Fernet key via `APP_SECRET_KEY`  
+- Supports global key providers  
+- Secrets redacted during dumps unless explicitly allowed  
+
+---
+
+### ✔️ Import Chains
+Inside any YAML file:
+
+```yaml
+imports:
+  - features.yml
+  - security.yml
+```
+
+SprigConfig resolves imports relative to `APP_CONFIG_DIR` or the config root
+and detects circular imports.
+
+---
+
+### ✔️ Metadata Injection
+Every loaded config includes:
+
+```
+sprigconfig._meta:
+  profile: <active>
+  sources: [list of resolved files]
+  import_trace: <graph of import relationships>
+```
+
+This helps debugging and auditing.
+
+---
+
+### ✔️ BOM-Safe YAML Reads
+UTF‑8 with BOM (`utf-8-sig`) is automatically sanitized so Windows-created
+files don’t introduce odd keys like `ï»¿server`.
+
+---
+
+# 📦 Installation
+
 ```bash
 pip install sprigconfig
 # or
@@ -22,7 +120,40 @@ poetry add sprigconfig
 
 ---
 
-## 📂 Config Layout
+# 📁 Project Structure
+
+```
+sprigconfig/
+    config_loader.py
+    config.py
+    lazy_secret.py
+    deepmerge.py
+    exceptions.py
+    ...
+
+docs/
+    README_AI_Info.md
+    (future docs go here)
+
+tests/
+    conftest.py
+    conftest.md
+    test_*.py
+    test_*.md
+    config/
+```
+
+### Documentation Strategy
+- **docs/** → Project-wide documentation (AI disclosure, architecture notes)
+- **tests/** → Each test module has matching `.md` explaining its purpose
+- **conftest.md** → Documentation for the test framework itself  
+
+This ensures the entire system is self-explaining.
+
+---
+
+# 📂 Configuration Layout Example
+
 ```
 config/
   application.yml
@@ -33,7 +164,8 @@ config/
   override.yml
 ```
 
-### Minimal `application.yml` (no profile here)
+### `application.yml`
+
 ```yaml
 server:
   port: 8080
@@ -41,7 +173,8 @@ logging:
   level: INFO
 ```
 
-### Example `application-dev.yml`
+### `application-dev.yml`
+
 ```yaml
 server:
   port: 9090
@@ -50,17 +183,8 @@ imports:
   - override.yml
 ```
 
-### Example `features.yml`
-```yaml
-features:
-  cache:
-    ttl: 300
-  auth:
-    enabled: true
-    methods: ["password"]
-```
+### `override.yml`
 
-### Example `override.yml`
 ```yaml
 server:
   port: 9999
@@ -71,138 +195,132 @@ features:
 
 ---
 
-## ⚙️ Runtime Selection & Injection
+# ⚙️ Runtime Selection & Profile Behavior
 
-The active profile is determined by:
-1) `load_config(profile="...")` argument, else
-2) `APP_PROFILE` env var, else
-3) if running under `pytest` → `"test"`, otherwise `"dev"`
+SprigConfig determines profile → merges → injects profile → processes imports.
 
-After merging, the loader injects:
-```yaml
-app:
-  profile: <active>
-```
-
-If a file contains `app.profile`, you’ll see a warning like:
-```
-Ignoring app.profile from files (...); using active profile dev. Consider removing app.profile from files to avoid confusion.
-```
-
----
-
-## 🐍 Use in Python
 ```python
-import os
 from sprigconfig import load_config
 
-os.environ["APP_PROFILE"] = "dev"  # or use profile=... in load_config()
-cfg = load_config()                # merges base -> profile -> imports
-print(cfg["app"]["profile"])       # "dev" (injected)
-print(cfg["server"]["port"])       # 9999 (from override.yml)
+cfg = load_config(profile="dev")
+print(cfg["server"]["port"])  # 9999
+print(cfg["app"]["profile"])  # dev
 ```
-
-**Config directory**
-- Default: `./config` (CWD)
-- Override with `APP_CONFIG_DIR=/path/to/config` or `load_config(config_dir=Path(...))`
 
 ---
 
-## 🔐 Secrets with `ENC(...)`
+# 🔐 Secret Handling with `LazySecret`
 
-You can put encrypted values *anywhere*:
 ```yaml
 secrets:
-  username: ENC(gAAAAABn...)
-  password: ENC(gAAAAABn...)
+  db_user: ENC(gAAAAA...)
+  db_pass: ENC(gAAAAA...)
 ```
 
-They are loaded as `LazySecret` objects and decrypted **on first access** using `APP_SECRET_KEY` (a Fernet key).
-
-**Decrypt at runtime**
 ```python
-from sprigconfig.lazy_secret import LazySecret
-
-val = cfg["secrets"]["password"]
+val = cfg["secrets"]["db_pass"]
 assert isinstance(val, LazySecret)
 print(val.get())  # plaintext
 ```
 
-**Encrypting values (quick script)**
+LazySecrets are:
+
+- Safe by default  
+- Not decrypted unless `.get()` is called  
+- Redacted in dumps  
+
+---
+
+# 📜 `.env` Resolution Model
+
+SprigConfig supports configuration directory override via:
+
+1. `load_config(config_dir=...)`
+2. `APP_CONFIG_DIR`
+3. `.env` in the project root
+4. Test overrides (`--env-path`)
+5. Default: `./config`
+
+### `.env` example:
+
+```
+APP_CONFIG_DIR=/opt/myapp/config
+APP_SECRET_KEY=AbCdEf123...
+```
+
+---
+
+# 🧪 Test Suite Overview
+
+SprigConfig has a **documented, extensible test architecture**.
+
+### Test categories:
+- Config mechanics  
+- Metadata & import tracing  
+- Deep merge  
+- Profile overlay behavior  
+- LazySecret & crypto handling  
+- CLI serialization tests  
+- Integration tests with full directory copies  
+
+### Documentation-per-test:
+Every test module includes a paired `.md` file explaining its purpose and architecture.
+
+---
+
+# 🧰 Test CLI Flags (from `conftest.py`)
+
+| Flag | Purpose |
+|------|---------|
+| `--env-path` | Use a custom `.env` file during tests |
+| `--dump-config` | Print merged config for debugging |
+| `--dump-config-format yaml|json` | Output format |
+| `--dump-config-secrets` | Resolve LazySecrets |
+| `--dump-config-no-redact` | Show plaintext secrets |
+| `--debug-dump=file.yml` | Write merged config snapshot |
+| `RUN_CRYPTO=true` | Enable crypto-heavy tests |
+
+These make the test suite extremely reproducible and transparent.
+
+---
+
+# 🛡️ Production Guardrails
+
+When profile = `prod`:
+
+- Missing `logging.level` → default to `INFO`  
+- `logging.level: DEBUG` blocked unless  
+  ```
+  allow_debug_in_prod: true
+  ```
+- Missing `application-prod.yml` → error  
+- Missing `application-test.yml` (when test) → error  
+
+---
+
+# 🔗 Programmatic Access
+
 ```python
-# encrypt_value.py
-import os, sys
-from cryptography.fernet import Fernet
+from pathlib import Path
+from sprigconfig import ConfigLoader
 
-key = os.environ.get("APP_SECRET_KEY")
-if not key:
-    print("APP_SECRET_KEY missing", file=sys.stderr); sys.exit(1)
-if isinstance(key, str):
-    key = key.encode()
+loader = ConfigLoader(config_dir=Path("config"), profile="dev")
+cfg = loader.load()
 
-f = Fernet(key)
-ct = f.encrypt(sys.argv[1].encode()).decode()
-print(ct)
-```
-Usage:
-```bash
-export APP_SECRET_KEY='<your-fernet-key>'
-python encrypt_value.py 'superSecret'
-# => paste into YAML as ENC(<output>)
-```
-
-See **“Secrets & ENC Best Practices”** for rotation, storage, and CI tips (download below).
-
----
-
-## 🛡️ Production Guardrails
-When the active profile is `prod`:
-- If `logging.level` is missing or invalid → default to `INFO` with a warning.
-- `logging.level: DEBUG` is **blocked** unless `allow_debug_in_prod: true` is present (in which case we log a warning).
-
-Profiles `prod` and `test` **require** their respective `application-<profile>.yml`; otherwise load fails with a `ConfigLoadError`.
-
----
-
-## 🔗 Imports
-After the profile is merged into base, the loader processes:
-```yaml
-imports:
-  - "features.yml"
-  - "override.yml"
-```
-Missing files only warn; merge proceeds.
-
----
-
-## 🧪 Testing & Debugging
-```bash
-pytest
-pytest -m integration
-```
-If you use the test helper from this repo’s `tests/conftest.py`:
-```bash
-pytest --dump-config -s
-```
-This prints the merged config (with secrets redacted) from select tests.
-
-To programmatically print a merged config yourself:
-```python
-import os, yaml
-from sprigconfig import load_config
-
-os.environ["APP_PROFILE"] = "dev"
-cfg = load_config()
-print(yaml.safe_dump(cfg, sort_keys=False))
+print(cfg.get("server.port"))
+print(cfg.to_dict())
 ```
 
 ---
 
-## 🔧 Migration Note
-- Remove `app.profile` from YAML files going forward. Runtime decides the profile and the loader injects it back into the final config.
-- If you still have it in files, you’ll get a warning at startup.
+# 🧭 Migration Notes
+
+- Remove `app.profile` from YAML files; runtime decides profile  
+- Use imports for modularizing config trees  
+- Secrets should always be stored as encrypted `ENC(...)` values  
 
 ---
 
-## 📜 License
+# 📄 License
+
 MIT
