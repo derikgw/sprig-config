@@ -1,4 +1,0 @@
-# Changelog
-
-## 0.2.0-RC1
-- Initial release.
