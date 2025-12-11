@@ -4,10 +4,15 @@ import logging
 import sys
 from datetime import datetime
 from pathlib import Path
+from dotenv import dotenv_values, load_dotenv
 import pytest
 import json
 import yaml
 import shutil
+
+pytest_plugins = [
+    "pytester",
+]
 
 
 # =====================================================================
@@ -63,11 +68,25 @@ CONFIG_DIR = Path(__file__).resolve().parent / "config"
 @pytest.fixture
 def use_real_config_dir(monkeypatch):
     """
-    Set APP_CONFIG_DIR to tests/config.
-    This fixture mimics ETL-service-web behavior, where the config
-    directory is provided via environment variable.
+    Resolve APP_CONFIG_DIR from `.env` if present; otherwise default to
+    tests/config. Then set the environment variable accordingly.
     """
-    config_dir = Path(__file__).parent / "config"
+    project_root = Path(__file__).resolve().parents[2]
+    env_path = project_root / ".env"
+
+    config_dir = None
+
+    # If .env exists, load it and check for APP_CONFIG_DIR
+    if env_path.exists():
+        env_vars = dotenv_values(env_path)
+        app_cfg = env_vars.get("APP_CONFIG_DIR")
+        if app_cfg:
+            config_dir = Path(app_cfg)
+
+    # Fallback to tests/config
+    if config_dir is None:
+        config_dir = Path(__file__).parent / "config"
+
     monkeypatch.setenv("APP_CONFIG_DIR", str(config_dir))
     return config_dir
 
@@ -192,6 +211,12 @@ def configure_test_logging():
 
 def pytest_addoption(parser):
     # Existing dump-config options
+    parser.addoption(
+        "--env-path",
+        action="store",
+        default=None,
+        help="Optional path to a .env file to use for tests.",
+    )
     parser.addoption("--dump-config", action="store_true", help="print merged config")
     parser.addoption("--dump-config-format", choices=["yaml", "json"], default="yaml")
     parser.addoption("--dump-config-secrets", action="store_true",
@@ -315,6 +340,33 @@ def capture_config(request):
         with open(dump_path, "w") as f:
             yaml.safe_dump(plain, f, sort_keys=False)
 
+@pytest.fixture(scope="session", autouse=True)
+def load_env_from_flag(pytestconfig):
+    env_path = pytestconfig.getoption("--env-path")
+    if not env_path:
+        return
+
+    from pathlib import Path
+    env_path = Path(env_path)
+
+    # Validate existence
+    if not env_path.exists():
+        raise SystemExit(f"--env-path invalid: file does not exist: {env_path}")
+
+    # Must be file, not directory
+    if env_path.is_dir():
+        raise SystemExit(f"--env-path invalid: path is a directory: {env_path}")
+
+    # Must be readable
+    if not os.access(env_path, os.R_OK):
+        raise SystemExit(f"--env-path invalid: file is not readable: {env_path}")
+
+    # Load it
+    load_dotenv(env_path, override=True)
+
+    # Validate required variable
+    if not os.getenv("APP_CONFIG_DIR"):
+        raise SystemExit("APP_CONFIG_DIR is required but not set in env file")
 
 # =====================================================================
 # END OF FILE

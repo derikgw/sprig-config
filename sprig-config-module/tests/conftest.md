@@ -1,46 +1,45 @@
+
 # Documentation for `tests/conftest.py`
 
-This document explains the purpose, structure, and behavior of the
-`tests/conftest.py` file in the SprigConfig test suite.
+This document describes the purpose, structure, and behavior of
+`tests/conftest.py` inside the SprigConfig test suite.
 
-The file defines **global pytest fixtures**, **CLI options**, **logging setup**,
-and **serialization helpers** used across all system and integration tests.
+It defines:
 
-It is named:
+- Global pytest fixtures  
+- CLI flags (“adoption flags”)  
+- Test-time config directory overrides  
+- Logging controls  
+- Safe serialization helpers  
+- Debug-dump tooling  
+- Conditional test skipping  
 
-```
-tests/conftest.md
-```
-
-to correspond to the Python file:
-
-```
-tests/conftest.py
-```
-
+This file ensures every test runs in a predictable, controlled, and fully 
+debuggable environment.
 
 ---
 
 # 📌 Overview
 
-`conftest.py` establishes a standard testing environment for SprigConfig by:
+`conftest.py` provides the core testing infrastructure for SprigConfig:
 
-- Setting up config directory fixtures  
-- Providing compatibility loaders  
-- Enabling detailed test logging  
-- Adding pytest CLI options  
-- Supporting safe config serialization  
-- Supporting test-time debug dumps (`--debug-dump`)  
-- Skipping crypto-heavy tests unless explicitly enabled  
+- Environment-driven config loading  
+- Support for `.env`–based configuration  
+- Reusable config-directory fixtures  
+- Backward compatibility loaders  
+- Debug-friendly logging  
+- Dumping merged configs to stdout or files  
+- Skipping crypto tests unless explicitly enabled  
+- Support for dynamic `.env` selection via `--env-path`
 
-This infrastructure ensures consistent behavior across all tests and supports
-both **legacy** and **new** architecture paths.
+These tools make it possible to test SprigConfig under a wide variety of 
+scenarios without modifying real application files.
 
 ---
 
-# 🧱 1. Future Architecture Imports
+# 🧱 1. Public API Enforcement
 
-SprigConfig is evolving toward a stable public API:
+The test suite imports future public SprigConfig API symbols at the top level:
 
 ```python
 from sprigconfig import (
@@ -52,10 +51,11 @@ from sprigconfig import (
 )
 ```
 
-The file imports these symbols at the top-level to enforce that:
+**Why?**
 
-- Tests rely on the *public API*, not internal modules.
-- If the API breaks, tests fail immediately (TDD-driven development).
+- Enforces TDD: if the future architecture changes, tests fail immediately.
+- Prevents tests from depending on private internal modules.
+- Ensures API stability before release.
 
 `LazySecret` is imported separately for secret-handling tests.
 
@@ -63,192 +63,212 @@ The file imports these symbols at the top-level to enforce that:
 
 # 📂 2. Configuration Directory Fixtures
 
-These fixtures supply deterministic configuration directories for integration tests.
+These fixtures control how tests discover and load YAML configuration.
 
 ## `patch_config_dir`
-A simple session-scoped fixture returning:
+Returns:
 
 ```
 tests/config/
 ```
 
-Used when tests only need a stable reference.
+Used when tests need a stable, immutable config directory.
 
 ---
 
 ## `use_real_config_dir`
-Sets:
+Simulates production behavior by setting:
 
 ```
-APP_CONFIG_DIR = tests/config
+APP_CONFIG_DIR
 ```
 
-This simulates real production usage where SprigConfig relies on the environment variable.
+– using priority order:
 
-Most integration tests use this fixture.
+1. `--env-path` (new)
+2. `.env` inside the real project root  
+3. default fallback → `tests/config`
+
+**Why this matters:**  
+SprigConfig relies heavily on environment-supplied config; tests must replicate 
+that mechanism faithfully.
 
 ---
 
 ## `full_config_dir`
-Creates a **full temporary copy** of `tests/config`:
+Creates a temporary **copy** of `tests/config`, retaining all recursive 
+imports, overlays, and merge structures.
 
-- Used for tests that mutate config files  
-- Prevents accidental modification of real test configs  
-- Enables multi-file merge behavior testing  
-
----
-
-## `base_config_dir` (Deprecated)
-Creates a **minimal** temporary config directory, writing only:
-
-```yaml
-logging:
-  level: INFO
-app:
-  name: test-app
-```
-
-Kept only to support old tests.  
-New tests should use `tests/config` + `use_real_config_dir`.
+Used for tests that mutate config files or depend on complex directory layouts.
 
 ---
 
-## `load_test_config`
-Legacy helper that wraps `load_config()`:
-
-```python
-cfg = load_test_config(profile="dev")
-```
-
-Replaced by:
-
-```python
-cfg = ConfigLoader(config_dir, profile).load()
-```
+## `base_config_dir`
+A deprecated minimal config directory generator.  
+Retained only for legacy tests.
 
 ---
 
-## `load_raw_config`
-Thin wrapper around `load_config()`, used for negative tests.
+## `load_test_config` / `load_raw_config`
+Compatibility wrappers around `load_config()`.  
+New tests should use `ConfigLoader` directly.
 
 ---
 
-# 🧾 3. Global Test Logging (session-wide)
+# ⚙️ 3. Global Test Logging
 
-The fixture:
-
-```python
-configure_test_logging
-```
-
-automatically:
-
-- Creates `test_logs/` directory  
-- Sets up a timestamped log file  
-- Captures both console and file debug logs  
-- Ensures clean handler initialization  
-
-Logs look like:
+Enables timestamped test logging in:
 
 ```
-2025-12-06 12:34:56 [INFO] tests.conftest: Test logging configured.
+test_logs/pytest_<timestamp>.log
 ```
 
-Useful for debugging complex merge or import problems.
+Also mirrors logs to stdout.
+
+**Why?**
+
+- Allows post-mortem debugging of failing tests  
+- Captures deep-merge traces, import chains, and secret-resolution steps  
+- Ensures consistency across engineers and CI environments
 
 ---
 
-# ⚙️ 4. Custom Pytest CLI Options
+# 🚀 4. Adoption Flags (pytest CLI Options)
 
-`pytest_addoption` adds several flags:
+SprigConfig uses a series of pytest CLI flags to enable advanced debugging, 
+controlled environment overrides, and optional behaviors.
 
-### **Debug printing:**
+This section explains every flag:
+
+---
+
+## **4.1 `--env-path`**  
+**Purpose:**  
+Override the `.env` file used during tests.
+
+**What it does:**
+
+- Allows tests to load variables (especially `APP_CONFIG_DIR`) from a custom `.env`
+- Prevents modifying the real `.env`
+- Enables CI pipelines or developers to inject controlled environment states
+
+**Why it matters:**
+
+- Ensures reproducible testing regardless of host environment  
+- Allows simulation of “dev”, “staging”, “broken”, etc. environment files  
+- Essential for testing import chains that depend on environment overlays
+
+---
+
+## **4.2 `--dump-config`**  
+**Purpose:** Print the merged config for a test to stdout.
+
+- Disabled by default  
+- Useful in local debugging when you want to visually inspect merge results  
+
+**Why:**  
+Instant visibility into the final merged config without stepping through code.
+
+---
+
+## **4.3 `--dump-config-format yaml|json`**  
+Sets the rendering format for `--dump-config`.
+
+Defaults to YAML.
+
+**Why:**  
+Allows JSON diff tools or YAML-based test reviews depending on preference.
+
+---
+
+## **4.4 `--dump-config-secrets`**  
+**Purpose:**  
+Resolve `LazySecret` values before printing.
+
+**But:** Values remain **redacted** unless `--dump-config-no-redact` is also used.
+
+**Why:**  
+Lets tests verify that secret resolution is functioning without revealing plaintext.
+
+---
+
+## **4.5 `--dump-config-no-redact`**  
+**Purpose:**  
+Print resolved secrets in plaintext.
+
+**WARNING:**  
+Not recommended outside isolated debugging sessions.
+
+**Why:**  
+Sometimes necessary for verifying correctness of encryption/decryption behavior.
+
+---
+
+## **4.6 `--debug-dump=/path/to/file.yml`**  
+**Purpose:**  
+Dump the **final merged config** for a test to a file after the test runs.
+
+- Uses the `capture_config` fixture  
+- Always writes in **safe, redacted** form  
+- Allows deep inspection of merge behaviors, imports, overlays, and defaults  
+
+**Why:**  
+
+- Enables step-by-step debugging of failing merges  
+- Works even when printing to stdout is noisy or disabled  
+- Can be used in CI to archive merged configs for later review
+
+---
+
+## **4.7 `RUN_CRYPTO=true` (environment variable)**  
+Not a CLI flag but part of the adoption API.
+
+**Purpose:**  
+Enable crypto-heavy tests.
+
+If not set:
+
+- Tests marked `@pytest.mark.crypto` are skipped automatically.
+
+**Why:**  
+Secret generation + Fernet operations can be slow.  
+Most unit tests don’t need them.
+
+---
+
+# 🔒 5. Safe Serialization Helpers
+
+`_to_plain()`  
+Converts:
+
+- `Config` → plain dict  
+- `LazySecret` → placeholder or decrypted value  
+- Nested lists, dicts, sets → serializable forms  
+
+`dump_config()`  
+Produces pretty YAML or JSON for display or debugging.
+
+**Why:**  
+Ensures consistent test output and prevents accidental secret exposure.
+
+---
+
+# 🐛 6. Legacy Fixture: `maybe_dump`
+
+Supports:
+
 ```
 --dump-config
---dump-config-format yaml|json
+--dump-config-format
 --dump-config-secrets
 --dump-config-no-redact
 ```
 
-Used by the legacy `maybe_dump` fixture.
+Used mostly for legacy debugging workflows.
 
 ---
 
-### **Write merged config to file:**
-```
---debug-dump /path/to/file.yml
-```
-
-This instructs the new `capture_config` fixture to serialize the final config
-after a test finishes.
-
-Useful during development and debugging.
-
----
-
-# 🚫 5. Conditional Test Skipping
-
-`pytest_collection_modifyitems` enforces:
-
-- Crypto tests run **only when**:
-
-```
-RUN_CRYPTO=true
-```
-
-This avoids unnecessary encryption/decryption overhead in normal test runs.
-
----
-
-# 🔒 6. Safe Serialization Helpers
-
-## `_to_plain(obj)`
-Converts objects into safe, JSON/YAML-friendly structures.
-
-Handles:
-
-- `LazySecret` → placeholder or decrypted value
-- `Config` → `dict`
-- Nested dicts/lists/sets
-
-Used by both dumps and debug logging.
-
----
-
-## `dump_config(cfg, ...)`
-Converts a final config to:
-
-- Clean YAML  
-- Pretty JSON  
-
-While respecting:
-
-- `resolve_secrets`  
-- `redact`  
-
----
-
-# 🐛 7. Legacy Fixture: `maybe_dump`
-
-This fixture prints the merged config to stdout **only when**
-`--dump-config` is provided.
-
-It supports:
-
-- YAML or JSON output  
-- Secret resolution  
-- Secret redaction flags  
-
-Useful for debugging failing tests.
-
----
-
-# 🆕 8. New Fixture: `capture_config`
-
-Purpose:
-
-> Capture the result of a config load and write it to a file if  
-> `--debug-dump /path` is provided.
+# 🆕 7. `capture_config`: Debug Dump Fixture
 
 Usage:
 
@@ -256,45 +276,51 @@ Usage:
 cfg = capture_config(lambda: ConfigLoader(...).load())
 ```
 
-After the test finishes, if `--debug-dump` was passed:
+If `--debug-dump` was passed:
 
-- The merged config is serialized using `_to_plain`
-- Written to a YAML file
-- Secrets protected (redacted)
+- Writes final merged config to disk  
+- Always redacted, safe, YAML-formatted  
 
-This is now the preferred tool for generating **post-merge debug snapshots**.
+**Why:**  
+Great for debugging complicated config merges without manual print statements.
 
 ---
 
 # 🧹 End of File
 
-The file ends with:
+Intentionally ends with:
 
-```python
+```
 # =====================================================================
 # END OF FILE
 # =====================================================================
 ```
 
-indicating no additional fixtures or helpers follow.
+Indicating that no additional fixtures should be appended below.
 
 ---
 
-# ✅ Summary
+# ✅ Summary Table
 
-`tests/conftest.py` provides the backbone of the SprigConfig test environment:
+| Feature / Flag | Purpose |
+|----------------|---------|
+| `--env-path` | Choose custom `.env` for tests |
+| `--dump-config` | Print merged config |
+| `--dump-config-format` | YAML/JSON output |
+| `--dump-config-secrets` | Resolve secrets |
+| `--dump-config-no-redact` | Show plaintext secrets |
+| `--debug-dump` | Write merged config to filesystem |
+| `RUN_CRYPTO` | Enable crypto tests |
+| Config fixtures | Control test config layout |
+| Logging setup | Rich debug logs |
+| `capture_config` | Snapshot merged config |
+| `maybe_dump` | Legacy debug output |
 
-| Feature | Supported |
-|--------|-----------|
-| Public API imports | ✔️ |
-| Config directory utilities | ✔️ |
-| Legacy + modern loaders | ✔️ |
-| Environment-driven config loading | ✔️ |
-| Safe serialization | ✔️ |
-| Debug dump tooling | ✔️ |
-| Test logging | ✔️ |
-| CLI options | ✔️ |
-| Conditional skipping | ✔️ |
+SprigConfig’s test environment is designed to be:
 
-This file ensures every test runs in a predictable, controlled, debuggable environment while supporting both SprigConfig's legacy behavior and its emerging architecture.
+- Deterministic  
+- Debuggable  
+- Safe  
+- CI-friendly  
+- Flexible to future architectural changes  
 

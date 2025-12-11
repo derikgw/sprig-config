@@ -1,3 +1,0 @@
-# Migration Guide
-
-From legacy loader to new ConfigLoader...

@@ -1,9 +1,7 @@
 # Build Artifacts
 dist/
 build/
-**/.env
 *.egg-info/
-**/test_logs/
 /config-dump.yml
 /config_dump.yml
 /test_dump.yml

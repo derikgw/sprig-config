@@ -9,7 +9,7 @@ sprigconfig = "sprigconfig.cli:main"
 name = "sprig-config"
 version = "0.2.0-RC9"
 description = "Spring-like deep merge configuration loader for Python"
-authors = ["Derik G. Wilson"]
+authors = ["Derik G. Wilson <derikwilson6@gmail.com>"]
 readme = "README.md"
 license = "MIT"
 # Tell Poetry where your package lives (src layout)
