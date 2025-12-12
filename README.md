@@ -3,6 +3,8 @@
 This repository contains:
 
 ## `sprig-config-module`
+[![Latest Version](https://gitlab.com/dgw_software/sprig-config/-/badges/release.svg)](https://gitlab.com/dgw_software/sprig-config/-/packages)
+
 The core runtime package that provides Spring Boot‑style configuration loading for Python projects.
 
 - Language: Python 3.9+

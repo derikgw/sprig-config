@@ -1,6 +1,8 @@
 
 # 🌱 SprigConfig
 
+[![Latest Version](https://gitlab.com/dgw_software/sprig-config/-/badges/release.svg)](https://gitlab.com/dgw_software/sprig-config/-/packages)
+
 SprigConfig is a lightweight, opinionated configuration system for Python
 applications. It provides layered YAML loading, profile overlays, environment
 variable expansion, recursive imports, safe secret handling, and detailed metadata

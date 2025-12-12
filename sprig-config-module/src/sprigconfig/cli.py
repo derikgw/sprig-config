@@ -8,11 +8,13 @@ from pathlib import Path
 from sprigconfig.config_loader import ConfigLoader
 from sprigconfig.exceptions import ConfigLoadError
 from sprigconfig.lazy_secret import LazySecret
+from sprigconfig.help import COMMAND_HELP
 
 
 def _render_pretty_yaml(data):
     """Render clean, reusable, human-friendly YAML."""
     import yaml
+
     return yaml.safe_dump(
         data,
         sort_keys=False,
@@ -28,14 +30,11 @@ def _extract_data_for_dump(config, reveal_secrets: bool):
     Uses Config.to_dict() to avoid !!python/object wrappers.
     """
 
-    # Start with a clean dict produced by the library itself
     raw = config.to_dict(reveal_secrets=reveal_secrets)
 
     def walk(node):
         if isinstance(node, LazySecret):
-            if reveal_secrets:
-                return node.get()
-            return "ENC(**REDACTED**)"
+            return node.get() if reveal_secrets else "ENC(**REDACTED**)"
         if isinstance(node, dict):
             return {k: walk(v) for k, v in node.items()}
         if isinstance(node, list):
@@ -60,7 +59,6 @@ def run_dump(
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(2)
 
-    # Convert to something safe to print
     output = _extract_data_for_dump(config, reveal_secrets=reveal_secrets)
 
     if fmt == "json":
@@ -68,7 +66,6 @@ def run_dump(
     else:
         rendered = _render_pretty_yaml(output)
 
-    # Write or print
     if output_file:
         output_file.write_text(rendered, encoding="utf-8")
         print(f"Config written to {output_file}")
@@ -82,21 +79,18 @@ def main():
         description="SprigConfig command-line utilities",
     )
 
-    sub = parser.add_subparsers(dest="command", required=True)
+    sub = parser.add_subparsers(dest="command")
 
-    # ----------------------------------------------------------------------
+    # ------------------------------------------------------------------
     # dump command
-    # ----------------------------------------------------------------------
+    # ------------------------------------------------------------------
     dump = sub.add_parser(
         "dump",
-        help="Dump merged configuration for inspection/debugging",
+        help=COMMAND_HELP["dump"]["summary"],
         description=(
             "Load, merge, and pretty-print the final resolved configuration.\n\n"
             "Examples:\n"
-            "  sprigconfig dump --config-dir=config --profile=dev\n"
-            "  sprigconfig dump --config-dir=config --profile=prod --secrets\n"
-            "  sprigconfig dump --config-dir=config --profile=test --output-format=json\n"
-            "  sprigconfig dump --config-dir=config --profile=dev --output out.yml\n"
+            + "\n".join(f"  {ex}" for ex in COMMAND_HELP["dump"]["examples"])
         ),
         formatter_class=argparse.RawTextHelpFormatter,
     )
@@ -132,6 +126,23 @@ def main():
         default="yaml",
         help="Output format (default: yaml)",
     )
+
+    # ------------------------------------------------------------------
+    # Early help handling
+    # ------------------------------------------------------------------
+    if len(sys.argv) == 1:
+        parser.print_help()
+        print("\nAvailable commands:")
+        for name, meta in COMMAND_HELP.items():
+            print(f"  {name:<8} {meta['summary']}")
+        sys.exit(0)
+
+    if len(sys.argv) == 2 and sys.argv[1] == "dump":
+        dump.print_help()
+        print("\nExamples:")
+        for ex in COMMAND_HELP["dump"]["examples"]:
+            print(f"  {ex}")
+        sys.exit(0)
 
     args = parser.parse_args()
 
