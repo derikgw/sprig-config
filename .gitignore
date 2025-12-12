@@ -49,3 +49,4 @@
 **/test_logs/
 **/*.code-workspace
 *.zip
+sprig-config-module/test-dump.yml
