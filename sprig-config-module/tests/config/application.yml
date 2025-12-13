@@ -1,4 +1,4 @@
-﻿# Base application config
+# Base application config
 app:
   name: SprigTestApp
   profile: base

@@ -111,7 +111,7 @@ dry_run_pypi:
   environment:
     name: staging
 
-deploy_pypi:
+publish_gitlab_pypi:
   stage: deploy
   extends: .default_setup
   needs: ["dry_run_pypi"]
@@ -137,7 +137,31 @@ deploy_pypi:
       poetry publish --no-interaction -r gitlab-pypi
   dependencies:
     - dry_run_pypi
-  artifacts:
-    expire_in: 7 days
   environment:
-    name: production
+    name: staging
+
+publish_pypi:
+  stage: deploy
+  extends: .default_setup
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^[Vv]/'
+      when: manual
+    - when: never
+  script:
+    - |
+      echo "🔍 Confirming version consistency before PyPI release..."
+      PYPROJECT_VERSION=$(poetry version -s)
+      TAG_VERSION=$(echo "${CI_COMMIT_TAG}" | sed -E 's/^[Vv]//')
+
+      if [ "${PYPROJECT_VERSION,,}" != "${TAG_VERSION,,}" ]; then
+        echo "❌ Version mismatch!"
+        exit 1
+      fi
+
+      echo "🚀 Publishing to PyPI.org via Trusted Publisher (OIDC)"
+      poetry publish --no-interaction
+  dependencies:
+    - dry_run_pypi
+  environment:
+    name: release
+
