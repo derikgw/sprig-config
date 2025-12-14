@@ -1,20 +1,66 @@
-# SprigConfig Monorepo
+# 🌱 SprigConfig Monorepo
 
-This repository contains:
+This repository is a **monorepo** containing the core SprigConfig runtime
+along with supporting tools and developer utilities.
 
-## `sprig-config-module`
+If you are looking to *use* SprigConfig in your Python project, you almost
+certainly want **`sprig-config-module`**.
+
+---
+
+## 📦 sprig-config-module (Primary Project)
 [![Latest Version](https://gitlab.com/dgw_software/sprig-config/-/badges/release.svg)](https://gitlab.com/dgw_software/sprig-config/-/packages)
 
-The core runtime package that provides Spring Boot‑style configuration loading for Python projects.
+The **core SprigConfig runtime** providing Spring Boot–style configuration
+loading for Python applications.
 
+This is the **authoritative package** published to PyPI and intended for
+production use.
+
+**Highlights**
+- Layered YAML configuration with deep merge semantics
+- Runtime-driven profile selection
+- Recursive imports and provenance tracking
+- Secure lazy secret handling
+- Deterministic, debuggable configuration behavior
+
+**Details**
 - Language: Python 3.9+
-- Dependencies: PyYAML
+- Primary dependency: PyYAML
 - Location: `sprig-config-module/`
 
-## `sprig-tools`
-A helper toolkit for Python project development.
+➡️ See `sprig-config-module/README.md` for full documentation.
 
-- Includes utilities like `sprig-sync` for syncing `pytest.ini` and `pyproject.toml`
+---
+
+## 🧰 sprig-tools (Supporting Utilities)
+
+A collection of **developer-facing helper tools** used to support SprigConfig
+development and related Python projects.
+
+These tools are **not required** to use SprigConfig itself.
+
+**Includes**
+- `sprig-sync` — utilities for keeping `pytest.ini` and `pyproject.toml` in sync
+- Miscellaneous development helpers
+
+**Details**
 - Language: Python 3.9+
-- Dependencies: tomli/tomli_w
+- Dependencies: tomli / tomli_w
 - Location: `sprig-tools/`
+
+---
+
+## 📘 Repository Notes
+
+- GitLab is the **source of truth** for this repository
+- GitHub mirrors may include the full monorepo
+- Documentation for SprigConfig lives primarily under:
+  - `sprig-config-module/`
+  - `sprig-config-module/docs/`
+
+---
+
+## 📄 License
+
+MIT
