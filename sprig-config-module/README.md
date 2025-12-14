@@ -1,4 +1,3 @@
-
 # 🌱 SprigConfig
 
 [![Latest Version](https://gitlab.com/dgw_software/sprig-config/-/badges/release.svg)](https://gitlab.com/dgw_software/sprig-config/-/packages)
@@ -322,6 +321,17 @@ print(cfg.to_dict())
 - Secrets should always be stored as encrypted `ENC(...)` values  
 
 ---
+
+# 📚 Additional Documentation
+
+Developer-focused documentation is available under the `docs/` directory:
+
+- 📘 [Developer Guide](docs/README_Developer_Guide.md)
+- 🧭 [Roadmap](ROADMAP.md)
+- 📝 [Changelog](CHANGELOG.md)
+
+These documents cover contributor workflows, test mechanics, Git usage,
+CI/release processes, and internal design notes.
 
 # 📄 License
 
