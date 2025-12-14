@@ -29,7 +29,7 @@ production use.
 - Primary dependency: PyYAML
 - Location: `sprig-config-module/`
 
-➡️ See the [sprig-config-module/README.md](sprig-config-module/README.md) for full documentation.
+➡️ **Start here (authoritative docs):** [sprig-config-module/README.md](sprig-config-module/README.md)
 
 ---
 
