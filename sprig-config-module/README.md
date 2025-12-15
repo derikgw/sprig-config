@@ -322,6 +322,18 @@ print(cfg.to_dict())
 
 ---
 
+## Versioning
+
+SprigConfig follows [Semantic Versioning](https://semver.org/):
+
+- **MAJOR** versions introduce breaking changes
+- **MINOR** versions add backward-compatible functionality
+- **PATCH** versions contain backward-compatible bug fixes
+
+Pre-release versions (e.g. `-rc1`) indicate a release candidate.
+They are feature-complete but may receive final fixes before a stable release
+and are not recommended for production use unless explicitly intended for testing.
+
 # 📚 Additional Documentation
 
 Developer-focused documentation is available under the `docs/` directory:
