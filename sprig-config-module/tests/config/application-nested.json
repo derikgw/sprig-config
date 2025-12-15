@@ -1,0 +1,10 @@
+{
+  "etl": {
+    "jobs": {
+      "imports": [
+        "imports/nested.yml",
+        "imports/misc.yml"
+      ]
+    }
+  }
+}

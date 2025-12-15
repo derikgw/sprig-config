@@ -1,0 +1,5 @@
+{
+  "imports": [
+    "chains/chain1.yml"
+  ]
+}

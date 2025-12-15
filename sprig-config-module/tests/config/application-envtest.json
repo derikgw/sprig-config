@@ -1,0 +1,6 @@
+{
+  "env": {
+    "expanded": "${TEST_VALUE}",
+    "defaulted": "${MISSING_VALUE:fallback}"
+  }
+}

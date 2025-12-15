@@ -341,32 +341,43 @@ def capture_config(request):
             yaml.safe_dump(plain, f, sort_keys=False)
 
 @pytest.fixture(scope="session", autouse=True)
-def load_env_from_flag(pytestconfig):
-    env_path = pytestconfig.getoption("--env-path")
-    if not env_path:
-        return
+def load_env(resolved_env_path):
+    from dotenv import load_dotenv
 
-    from pathlib import Path
-    env_path = Path(env_path)
+    if resolved_env_path:
+        load_dotenv(resolved_env_path, override=True)
 
-    # Validate existence
-    if not env_path.exists():
-        raise SystemExit(f"--env-path invalid: file does not exist: {env_path}")
-
-    # Must be file, not directory
-    if env_path.is_dir():
-        raise SystemExit(f"--env-path invalid: path is a directory: {env_path}")
-
-    # Must be readable
-    if not os.access(env_path, os.R_OK):
-        raise SystemExit(f"--env-path invalid: file is not readable: {env_path}")
-
-    # Load it
-    load_dotenv(env_path, override=True)
-
-    # Validate required variable
+    # TEST DEFAULT: if not set, fall back to tests/config
     if not os.getenv("APP_CONFIG_DIR"):
-        raise SystemExit("APP_CONFIG_DIR is required but not set in env file")
+        default = Path(__file__).parent / "config"
+        os.environ["APP_CONFIG_DIR"] = str(default)
+
+    # Hard validation stays here
+    if not os.getenv("APP_CONFIG_DIR"):
+        raise SystemExit("APP_CONFIG_DIR is required but not set in env")
+
+@pytest.fixture(scope="session")
+def resolved_env_path(pytestconfig) -> Path | None:
+    from pathlib import Path
+
+    override = pytestconfig.getoption("--env-path")
+    if override:
+        path = Path(override)
+
+        if not path.exists():
+            raise SystemExit(f"--env-path invalid: file does not exist: {path}")
+        if path.is_dir():
+            raise SystemExit(f"--env-path invalid: path is a directory: {path}")
+        if not os.access(path, os.R_OK):
+            raise SystemExit(f"--env-path invalid: file is not readable: {path}")
+
+        return path
+
+    # Default behavior: look for .env in project root
+    default = Path(".env")
+    return default if default.exists() else None
+
+
 
 # =====================================================================
 # END OF FILE
