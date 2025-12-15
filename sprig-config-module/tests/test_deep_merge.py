@@ -38,7 +38,7 @@ def config_dir(use_real_config_dir):
 # BASIC DEEP MERGE
 # ----------------------------------------------------------------------
 
-def test_deep_merge_root_imports(config_dir):
+def test_deep_merge_root_imports(config_dir, capture_config):
     """
     application.yml imports:
         - imports/job-default.yml
@@ -47,7 +47,7 @@ def test_deep_merge_root_imports(config_dir):
     Must merge deeply with priority:
         base < dev < imported in listed order
     """
-    cfg = ConfigLoader(config_dir=config_dir, profile="dev").load()
+    cfg = capture_config(lambda: ConfigLoader(config_dir, profile="dev").load())
 
     # from job-default.yml
     assert cfg.get("etl.jobs.root") == "/jobs/default"

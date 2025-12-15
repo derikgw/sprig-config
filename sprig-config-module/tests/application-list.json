@@ -1,0 +1,11 @@
+{
+  "features": {
+    "enabled": [
+      "one",
+      "two"
+    ]
+  },
+  "imports": [
+    "imports/list-override.yml"
+  ]
+}

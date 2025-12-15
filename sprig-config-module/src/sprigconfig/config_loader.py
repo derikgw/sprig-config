@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional
 
 import yaml
+import json
 
 from .config import Config
 from .lazy_secret import LazySecret
@@ -42,7 +43,13 @@ class ConfigLoader:
       - metadata injection (profile, sources, import_trace)
     """
 
-    def __init__(self, config_dir: Path, profile: str):
+    def __init__(self, config_dir: Path, profile: str, *, ext: str | None = None):
+        self.ext = (
+            ext
+            or os.getenv("SPRIGCONFIG_FORMAT")
+            or "yml"
+        ).lstrip(".")
+
         if config_dir is None:
             env_dir = os.getenv("APP_CONFIG_DIR")
             if not env_dir:
@@ -77,8 +84,8 @@ class ConfigLoader:
         # --------------------------------------------------
         # 1. Load application.yml (root)
         # --------------------------------------------------
-        base_file = self.config_dir / "application.yml"
-        base = self._load_yaml(base_file)
+        base_file = self.config_dir / f"application.{self.ext}"
+        base = self._load_file(base_file)
 
         root_file = str(base_file.resolve())
 
@@ -97,7 +104,7 @@ class ConfigLoader:
         profile_file_resolved = str(profile_file.resolve())
 
         if profile_file.exists():
-            profile_data = self._load_yaml(profile_file)
+            profile_data = self._load_file(profile_file)
 
             # Record profile overlay as imported by root
             self._record_import(
@@ -144,10 +151,17 @@ class ConfigLoader:
         return Config(merged)
 
     # ======================================================================
-    # YAML LOADING
+    # Config File Loading
     # ======================================================================
 
-    def _load_yaml(self, path: Path) -> Dict[str, Any]:
+    def _resolve_file(self, stem: str) -> Path:
+        return self.config_dir / f"{stem}.{self.ext}"
+
+    def _resolve_import(self, import_key: str) -> Path:
+        stem = Path(import_key).with_suffix("").as_posix()
+        return (self.config_dir / f"{stem}.{self.ext}").resolve()
+
+    def _load_file(self, path: Path) -> Dict[str, Any]:
         if not path.exists():
             return {}
 
@@ -157,7 +171,12 @@ class ConfigLoader:
         try:
             text = path.read_text(encoding="utf-8-sig")
             expanded = self._expand_env(text)
-            data = yaml.safe_load(expanded)
+            if self.ext == "yml":
+                data = yaml.safe_load(expanded)
+            elif self.ext == "json":
+                data = json.loads(expanded)
+            else:
+                raise ConfigLoadError(f"Unsupported config format: {self.ext}")
             return data or {}
         except yaml.YAMLError as e:
             raise ConfigLoadError(f"Invalid YAML in {path}: {e}")
@@ -219,7 +238,7 @@ class ConfigLoader:
 
             if isinstance(imports_list, list):
                 for import_key in imports_list:
-                    imp_file = (self.config_dir / import_key).resolve()
+                    imp_file = self._resolve_import(import_key)
                     imp_str = str(imp_file)
 
                     # Cycle detection
@@ -235,7 +254,7 @@ class ConfigLoader:
                         depth=depth + 1,
                     )
 
-                    imported_yaml = self._load_yaml(imp_file)
+                    imported_yaml = self._load_file(imp_file)
 
                     # Recurse using this file as new parent
                     self._apply_imports_recursive(
