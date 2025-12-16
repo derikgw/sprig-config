@@ -2,16 +2,17 @@
 
 ## 🎯 Guiding Principles (Keep These Written Down)
 
-* **Config behavior > file format**
-* **Parsing is a leaf concern**
-* **Backward compatibility is sacred in 1.x**
-* **2.0 only when contracts change**
+- **Config behavior > file format**
+- **Parsing is a leaf concern**
+- **Backward compatibility is sacred in 1.x**
+- **2.0 only when contracts change**
 
-If a change violates one of these, it’s either deferred or becomes 2.0.
+If a change violates one of these principles, it is either deferred or
+explicitly reserved for a 2.0 release.
 
 ---
 
-## ✅ Phase 1 — 1.1.0
+## ✅ Phase 1 — 1.1.0 (Completed)
 
 **Parser Abstraction (Internal, Backward Compatible)**
 
@@ -19,23 +20,23 @@ If a change violates one of these, it’s either deferred or becomes 2.0.
 
 ### Deliverables
 
-* Introduce a `ConfigParser` interface (internal)
-* Move YAML logic behind the interface
-* Add parser registry (extension → parser)
-* Loader delegates parsing instead of parsing directly
-* All existing tests pass unchanged
+- Introduced an internal `ConfigParser` abstraction
+- Moved YAML parsing behind the interface
+- Added a parser registry (extension → parser)
+- Loader delegates parsing instead of parsing directly
+- All existing tests passed unchanged
 
 ### Non-Goals
 
-* No public plugin API
-* No documentation about custom parsers yet
-* No behavior changes
-* No new defaults
+- No public plugin API
+- No documentation for custom parsers
+- No behavior changes
+- No new defaults
 
 ### Risk Level
 
-🟢 Very Low
-This is mostly refactoring with architectural payoff.
+🟢 Very Low  
+This phase was primarily architectural refactoring with long-term payoff.
 
 ### Release Messaging
 
@@ -43,32 +44,35 @@ This is mostly refactoring with architectural payoff.
 
 ---
 
-## ➕ Phase 2 — 1.2.0
+## ➕ Phase 2 — 1.2.0 (Updated)
 
-**First Additional Formats (Still Optional)**
+**Additional Formats (Abstraction Proven)**
 
-> Goal: Prove the abstraction without committing to plugin stability.
+> Goal: Formalize multi-format support and confirm that parsing is truly a leaf concern.
 
 ### Deliverables
 
-* Built-in JSON parser
-* Built-in TOML parser (stdlib only)
-* Explicit errors for unsupported extensions
-* Test coverage proving mixed-format layering works
+- Built-in JSON parser ✅ *(validated during 1.1.x)*
+- Built-in TOML parser (stdlib only)
+- Explicit errors for unsupported file extensions
+- Test coverage proving mixed-format layering works
+- Documentation clarifying supported formats and guarantees
 
 ### Still Backward Compatible
 
-* YAML remains default
-* No required configuration changes
+- YAML remains the default and recommended format
+- No required configuration changes
+- No change in merge, import, or profile resolution semantics
 
 ### Why This Matters
 
-This is where the abstraction becomes *real*, not theoretical.
+This phase confirms that SprigConfig behavior is independent of file format.
+The abstraction is no longer theoretical—it is exercised and proven.
 
 ### Risk Level
 
-🟡 Low
-Edge cases start to appear (types, lists, overrides), but controlled.
+🟡 Low  
+Edge cases (types, lists, overrides) exist, but are bounded and testable.
 
 ---
 
@@ -76,46 +80,44 @@ Edge cases start to appear (types, lists, overrides), but controlled.
 
 **Hardening & Provenance Improvements**
 
-> Goal: Make mixed-format configs debuggable and boring.
+> Goal: Make mixed-format configuration debuggable, explicit, and boring.
 
 ### Deliverables
 
-* `_meta.source_format` (or similar)
-* Improved error messages:
-
-  * parse vs merge vs secret resolution
-* Explicit documentation of merge semantics across formats
-* Possibly:
-
-  * `Config.get_source("path.to.key")`
+- Add `_meta.source_format` (or equivalent provenance field)
+- Improve error clarity:
+  - parse vs merge vs secret resolution
+- Explicit documentation of merge semantics across formats
+- Possibly:
+  - `Config.get_source("path.to.key")`
 
 ### Still Not Yet
 
-* No public plugin stability guarantees
-* No automatic plugin discovery
+- No public plugin stability guarantees
+- No automatic plugin discovery
 
-This is about **operational confidence**, not features.
+This phase focuses on **operational confidence**, not new features.
 
 ---
 
-## 🔓 Phase 4 — 1.4.x (Optional, Depends on Demand)
+## 🔓 Phase 4 — 1.4.x (Optional, Demand-Driven)
 
 **Experimental Plugin Registration (Soft Public API)**
 
-> Goal: Let advanced users extend, without promises.
+> Goal: Allow advanced users to extend parsing without promises of stability.
 
 ### Deliverables
 
-* Public `register_parser()` function
-* Clear “experimental” documentation
-* Explicit statement:
+- Public `register_parser()` function
+- Clear "experimental" documentation
+- Explicit statement:
 
   > “Parser APIs may change before 2.0”
 
 ### Why This Is Optional
 
-If no one asks for it, you don’t ship it.
-You don’t need hypothetical users.
+If there is no demonstrated demand, this phase is skipped.
+SprigConfig does not ship features for hypothetical users.
 
 ---
 
@@ -127,61 +129,58 @@ You don’t need hypothetical users.
 
 ### What Changes in 2.0
 
-* Parser interface is frozen and documented
-* Plugin system is supported
-* Clear guarantees about:
-
-  * parser lifecycle
-  * error behavior
-  * merge expectations
-* Possibly:
-
-  * official XML support (opt-in)
-  * schema hooks (still optional)
+- Parser interface is frozen and fully documented
+- Plugin system is supported and versioned
+- Clear guarantees around:
+  - parser lifecycle
+  - error behavior
+  - merge expectations
+- Possibly:
+  - official XML support (opt-in)
+  - schema hooks (still optional)
 
 ### Why This Is Worth 2.0
 
-Because now you’re saying:
+Because this is where SprigConfig explicitly promises:
 
 > “You can build on this, and we won’t break you lightly.”
 
-That’s a *real* promise.
+That is a real compatibility commitment.
 
 ---
 
 ## 📌 What You Should NOT Put on the Roadmap (Yet)
 
-These are tempting, but dangerous:
+These are tempting—but dangerous:
 
-* Automatic env-based format switching
-* CLI override DSLs
-* Schema validation baked into core
-* Magic interpolation
-* Auto-discovery of plugins
+- Automatic env-based format switching
+- CLI override DSLs
+- Schema validation baked into core
+- Magic interpolation
+- Auto-discovery of plugins
 
-Those belong to *other libraries* — not SprigConfig.
+These belong in other tools, not SprigConfig core.
 
 ---
 
-## 🧠 One Strategic Insight (Important)
+## 🧠 Strategic Insight (Important)
 
-Right now, SprigConfig’s identity is:
+SprigConfig’s identity is:
 
-> “Predictable, debuggable configuration composition.”
+> **Predictable, debuggable configuration composition.**
 
-This roadmap **reinforces that identity** instead of diluting it.
-
-You are not chasing features.
-You are **closing a structural gap** cleanly.
+This roadmap reinforces that identity instead of diluting it.
+You are not chasing features—you are closing a structural gap cleanly.
 
 ---
 
 ## TL;DR Roadmap Summary
 
-| Version | Focus                  | Risk             |
-| ------- | ---------------------- | ---------------- |
-| 1.1.0   | Parser abstraction     | 🟢               |
-| 1.2.0   | JSON/TOML support      | 🟡               |
-| 1.3.x   | Debugging & provenance | 🟡               |
-| 1.4.x   | Experimental plugins   | 🟠               |
-| 2.0.0   | Stable parser platform | 🔴 (intentional) |
+| Version | Focus                    | Risk |
+|--------:|--------------------------|------|
+| 1.1.0   | Parser abstraction       | 🟢 |
+| 1.2.0   | JSON & TOML support      | 🟡 |
+| 1.3.x   | Debugging & provenance   | 🟡 |
+| 1.4.x   | Experimental plugins     | 🟠 |
+| 2.0.0   | Stable parser platform   | 🔴 |
+
