@@ -1,141 +1,106 @@
 # SprigConfig Roadmap (Parser Engine Focus)
 
-## 🎯 Guiding Principles (Keep These Written Down)
+## Guiding Principles
 
-- **Config behavior > file format**
-- **Parsing is a leaf concern**
-- **Backward compatibility is sacred in 1.x**
-- **2.0 only when contracts change**
+- Config behavior is more important than file format
+- Parsing is treated as a leaf concern
+- Backward compatibility is preserved throughout 1.x
+- A 2.0 release occurs only when public contracts change
 
-If a change violates one of these principles, it is either deferred or
-explicitly reserved for a 2.0 release.
+Any change that violates these principles is deferred or reserved for a 2.0 release.
 
 ---
 
-## ✅ Phase 1 — 1.1.0 (Completed)
+## Phase 1 — 1.1.0 (Completed)
 
 **Parser Abstraction (Internal, Backward Compatible)**
 
-> Goal: Extract parsing cleanly without changing user behavior.
+### Scope
 
-### Deliverables
-
-- Introduced an internal `ConfigParser` abstraction
-- Moved YAML parsing behind the interface
-- Added a parser registry (extension → parser)
+- Internal `ConfigParser` abstraction introduced
+- YAML parsing moved behind the abstraction
+- Parser registry added (extension to parser)
 - Loader delegates parsing instead of parsing directly
-- All existing tests passed unchanged
+- All existing tests pass unchanged
 
 ### Non-Goals
 
-- No public plugin API
+- No public parser or plugin API
 - No documentation for custom parsers
 - No behavior changes
 - No new defaults
 
-### Risk Level
-
-🟢 Very Low  
-This phase was primarily architectural refactoring with long-term payoff.
-
-### Release Messaging
-
-> “Internal refactor enabling future format extensibility. No breaking changes.”
-
 ---
 
-## ➕ Phase 2 — 1.2.0 (Updated)
+## Phase 2 — 1.2.0
 
-**Additional Formats (Abstraction Proven)**
+**Additional Formats**
 
-> Goal: Formalize multi-format support and confirm that parsing is truly a leaf concern.
+### Scope
 
-### Deliverables
-
-- Built-in JSON parser ✅ *(validated during 1.1.x)*
+- Built-in JSON parser
 - Built-in TOML parser (stdlib only)
 - Explicit errors for unsupported file extensions
-- Test coverage proving mixed-format layering works
-- Documentation clarifying supported formats and guarantees
+- Test coverage demonstrating mixed-format imports
+- Documentation updated to reflect supported formats
 
-### Still Backward Compatible
+### Compatibility
 
 - YAML remains the default and recommended format
 - No required configuration changes
-- No change in merge, import, or profile resolution semantics
-
-### Why This Matters
-
-This phase confirms that SprigConfig behavior is independent of file format.
-The abstraction is no longer theoretical—it is exercised and proven.
-
-### Risk Level
-
-🟡 Low  
-Edge cases (types, lists, overrides) exist, but are bounded and testable.
+- Merge, import, profile, and secret behavior unchanged
 
 ---
 
-## 🧪 Phase 3 — 1.3.x
+## Phase 3 — 1.3.x
 
-**Hardening & Provenance Improvements**
+**Hardening and Provenance Improvements**
 
-> Goal: Make mixed-format configuration debuggable, explicit, and boring.
+### Scope
 
-### Deliverables
+- Record source format metadata for loaded values
+- Improve error clarity (parse vs merge vs secret resolution)
+- Document merge semantics across formats
 
-- Add `_meta.source_format` (or equivalent provenance field)
-- Improve error clarity:
-  - parse vs merge vs secret resolution
-- Explicit documentation of merge semantics across formats
-- Possibly:
-  - `Config.get_source("path.to.key")`
+### Potential Enhancements
 
-### Still Not Yet
+- Programmatic access to value source information
+
+### Exclusions
 
 - No public plugin stability guarantees
 - No automatic plugin discovery
 
-This phase focuses on **operational confidence**, not new features.
+---
+
+## Phase 4 — 1.4.x (Optional)
+
+**Experimental Parser Registration**
+
+### Scope
+
+- Public `register_parser()` API
+- Experimental documentation and warnings
+- Explicit notice that parser APIs may change prior to 2.0
+
+This phase is dependent on demonstrated user demand.
 
 ---
 
-## 🔓 Phase 4 — 1.4.x (Optional, Demand-Driven)
+## Phase 5 — 2.0.0
 
-**Experimental Plugin Registration (Soft Public API)**
+**Stable Parser Platform**
 
-> Goal: Allow advanced users to extend parsing without promises of stability.
+### Scope
 
-### Deliverables
-
-- Public `register_parser()` function
-- Clear "experimental" documentation
-- Explicit statement:
-
-  > “Parser APIs may change before 2.0”
-
-### Why This Is Optional
-
-If there is no demonstrated demand, this phase is skipped.
-SprigConfig does not ship features for hypothetical users.
-
----
-
-## 🚀 Phase 5 — 2.0.0
-
-**Parser Engine as a First-Class Platform**
-
-> This is the contract moment.
-
-### What Changes in 2.0
-
-- Parser interface is frozen and fully documented
-- Plugin system is supported and versioned
-- Clear guarantees around:
+- Parser interfaces frozen and documented
+- Supported plugin system with versioning guarantees
+- Defined expectations for:
   - parser lifecycle
   - error behavior
-  - merge expectations
-- Possibly:
-  - official XML support (opt-in)
-  - schema hooks (still optional)
+  - merge semantics
 
+### Potential Enhancements
+
+- Optional XML support
+- Optional schema integration hooks
