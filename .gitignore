@@ -50,3 +50,4 @@
 **/*.code-workspace
 *.zip
 sprig-config-module/test-dump.yml
+sprig-tools/fixtures/dev_fake_secrets.json
