@@ -51,3 +51,9 @@
 *.zip
 sprig-config-module/test-dump.yml
 sprig-tools/fixtures/dev_fake_secrets.json
+
+# ==========================
+# Claude AI
+# ==========================
+.claude*
+claude.md
