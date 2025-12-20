@@ -1,0 +1,60 @@
+title: SprigConfig
+description: Spring Boot-style configuration for Python applications
+remote_theme: pages-themes/minimal@v0.2.0
+
+# GitHub Pages settings
+baseurl: ""
+url: "https://derikgw.github.io/sprig-config"
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    css_class: highlight
+
+# Plugins
+plugins:
+  - jekyll-remote-theme
+
+# Exclude from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+
+# Collections (optional, for future expansion)
+# collections:
+#   guides:
+#     output: true
+
+# Default front matter
+defaults:
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "default"
+
+# Navigation (used by some themes)
+navigation:
+  - title: Home
+    url: /
+  - title: Getting Started
+    url: /getting-started
+  - title: Configuration
+    url: /configuration
+  - title: Profiles
+    url: /profiles
+  - title: Imports
+    url: /imports
+  - title: Security
+    url: /security
+  - title: CLI
+    url: /cli
+  - title: FAQ
+    url: /faq
