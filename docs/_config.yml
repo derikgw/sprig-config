@@ -43,18 +43,18 @@ defaults:
 # Navigation (used by some themes)
 navigation:
   - title: Home
-    url: /
+    url: "{{ site.baseurl }}/"
   - title: Getting Started
-    url: /getting-started
+    url: "{{ site.baseurl }}/getting-started"
   - title: Configuration
-    url: /configuration
+    url: "{{ site.baseurl }}/configuration"
   - title: Profiles
-    url: /profiles
+    url: "{{ site.baseurl }}/profiles"
   - title: Imports
-    url: /imports
+    url: "{{ site.baseurl }}/imports"
   - title: Security
-    url: /security
+    url: "{{ site.baseurl }}/security"
   - title: CLI
-    url: /cli
+    url: "{{ site.baseurl }}/cli"
   - title: FAQ
-    url: /faq
+    url: "{{ site.baseurl }}/faq"
