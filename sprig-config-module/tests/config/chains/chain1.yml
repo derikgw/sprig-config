@@ -2,4 +2,4 @@ chain:
   level1: "L1"
 
 imports:
-  - chains/chain2.yml
+  - chains/chain2

@@ -33,6 +33,7 @@ SprigConfig currently supports:
 
 * YAML (`.yml`, `.yaml`)
 * JSON (`.json`)
+* TOML (`.toml`)
 
 Exactly **one format is active per run**. The active format is determined by the following precedence:
 
@@ -41,6 +42,8 @@ Exactly **one format is active per run**. The active format is determined by the
 3. A default of `yml` if neither is provided
 
 All configuration files involved in a single load (base file, profile overlay, and imports) **must use the active format**. Mixing formats within a single run is intentionally not supported.
+
+**Note on TOML**: When using TOML format, the `imports` directive must be placed at the root level before any table headers (e.g., `[app]`) due to TOML syntax requirements.
 
 ---
 
@@ -110,11 +113,24 @@ Any configuration node may include:
 
 ```yaml
 imports:
-  - imports/common.<ext>
-  - imports/logging.<ext>
+  - imports/common
+  - imports/logging
 ```
 
-`ConfigLoader` resolves each import relative to the configuration directory (unless an absolute path is provided), loads the file using the active format, merges it into the current node, and records the operation.
+**Import Resolution**: Import paths are **extension-less** for portability across formats. The loader automatically appends the active format's extension (`.yml`, `.json`, or `.toml`). This allows the same configuration structure to work across all supported formats without modification.
+
+**Positional Imports**: Imports are **positional** — they merge relative to where the `imports:` key appears in the tree:
+
+* Root-level `imports:` merge at the root
+* Nested `imports:` (e.g., `app.imports:`) merge **under that key**
+  * If the imported file has `foo: bar`, you get `app.foo: bar`
+  * If the imported file has `app: {foo: bar}`, you get `app.app.foo: bar` (nested!)
+
+This positional behavior allows fine-grained control over configuration composition.
+
+**Security**: Import paths are validated to prevent **path traversal attacks**. Imports like `../../etc/passwd` will raise a `ConfigLoadError`. All imports must resolve within the configuration directory.
+
+`ConfigLoader` resolves each import relative to the configuration directory, loads the file using the active format, merges it into the current node, and records the operation.
 
 For each import, the loader tracks:
 
@@ -178,19 +194,25 @@ Secrets remain encrypted until explicitly accessed, preventing accidental exposu
 
 ### `_load_file(path: Path)`
 
-Reads a configuration file from disk using the active format, expands environment variables, and returns a Python dictionary.
+Reads a configuration file from disk using the active format (YAML, JSON, or TOML), expands environment variables, and returns a Python dictionary. Supports all three formats transparently.
+
+---
+
+### `_resolve_import(import_key: str)`
+
+Resolves an import path by appending the active format's extension if not already present. For example, `imports/common` becomes `imports/common.yml` when using YAML format. Also validates that the resolved path stays within the config directory to prevent path traversal attacks.
 
 ---
 
 ### `_expand_env(text: str)`
 
-Substitutes `${VAR}` or `${VAR:default}` expressions using environment variables before parsing.
+Substitutes `${VAR}` or `${VAR:default}` expressions using environment variables before parsing. Works across all supported formats.
 
 ---
 
 ### `_apply_imports_recursive(node, ...)`
 
-Walks the entire configuration tree and processes `imports` wherever they appear, maintaining correct import order and cycle detection.
+Walks the entire configuration tree and processes `imports` wherever they appear, maintaining correct import order and cycle detection. Merges imported content **positionally** into the current node where the `imports:` key appears.
 
 ---
 

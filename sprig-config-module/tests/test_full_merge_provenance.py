@@ -13,7 +13,7 @@ from pathlib import Path
 from sprigconfig.config_loader import ConfigLoader
 
 
-def test_full_mergÍe_provenance():
+def test_full_merge_provenance():
     """
     End-to-end verification of merge correctness and _meta integrity.
     """

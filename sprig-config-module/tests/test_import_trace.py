@@ -43,7 +43,10 @@ def test_import_trace_direct_imports(full_config_dir):
     expected_imports = _load_import_list(full_config_dir / "application.yml")
 
     for imp in expected_imports:
-        imp_path = (full_config_dir / imp).resolve()
+        # Import keys are now extension-less, so we need to append .yml
+        # to match the resolved file path
+        imp_with_ext = f"{imp}.yml" if '.' not in Path(imp).name else imp
+        imp_path = (full_config_dir / imp_with_ext).resolve()
         assert any(
             e["file"] == str(imp_path) and e["imported_by"] == root_file
             for e in trace

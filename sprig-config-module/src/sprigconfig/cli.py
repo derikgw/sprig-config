@@ -49,11 +49,12 @@ def run_dump(
     profile: str,
     reveal_secrets: bool,
     output_file: Path | None,
-    fmt: str,
+    output_fmt: str,
+    config_fmt: str | None,
 ):
     """Perform config load + pretty output."""
     try:
-        loader = ConfigLoader(config_dir=config_dir, profile=profile)
+        loader = ConfigLoader(config_dir=config_dir, profile=profile, ext=config_fmt)
         config = loader.load()
     except ConfigLoadError as e:
         print(f"Error: {e}", file=sys.stderr)
@@ -61,7 +62,7 @@ def run_dump(
 
     output = _extract_data_for_dump(config, reveal_secrets=reveal_secrets)
 
-    if fmt == "json":
+    if output_fmt == "json":
         rendered = json.dumps(output, indent=2)
     else:
         rendered = _render_pretty_yaml(output)
@@ -109,6 +110,13 @@ def main():
     )
 
     dump.add_argument(
+        "--format",
+        choices=["yml", "yaml", "json", "toml"],
+        default=None,
+        help="Config file format (default: yml, or SPRIGCONFIG_FORMAT env var)",
+    )
+
+    dump.add_argument(
         "--secrets",
         action="store_true",
         help="Reveal decrypted LazySecret values (UNSAFE!)",
@@ -152,7 +160,8 @@ def main():
             profile=args.profile,
             reveal_secrets=args.secrets,
             output_file=args.output,
-            fmt=args.output_format,
+            output_fmt=args.output_format,
+            config_fmt=args.format,
         )
 
 

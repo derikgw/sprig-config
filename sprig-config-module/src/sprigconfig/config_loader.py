@@ -3,8 +3,8 @@
 ConfigLoader with full import-trace support.
 
 Responsibilities:
-- Load application.yml
-- Load application-<profile>.yml overlay
+- Load application.<ext> (yml, json, or toml)
+- Load application-<profile>.<ext> overlay
 - Expand ${ENV} and ${ENV:default}
 - Perform deep merges
 - Process recursive literal imports
@@ -18,6 +18,7 @@ Responsibilities:
 
 import os
 import re
+import tomllib
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
@@ -34,13 +35,18 @@ ENV_PATTERN = re.compile(r"\$\{([^}:]+)(?::([^}]+))?\}")
 
 class ConfigLoader:
     """
-    Loads YAML configs from a directory with support for:
-      - application.yml (base)
-      - application-<profile>.yml (overlay)
-      - recursive literal imports
+    Loads config files (YAML, JSON, or TOML) from a directory with support for:
+      - application.<ext> (base)
+      - application-<profile>.<ext> (overlay)
+      - recursive literal imports (inheriting parent format)
       - circular detection
       - LazySecret wrapping
       - metadata injection (profile, sources, import_trace)
+
+    Supported formats:
+      - YAML (.yml, .yaml)
+      - JSON (.json)
+      - TOML (.toml)
     """
 
     def __init__(self, config_dir: Path, profile: str, *, ext: str | None = None):
@@ -61,7 +67,7 @@ class ConfigLoader:
         self.config_dir = Path(config_dir)
         self.profile = profile
 
-        # All loaded YAML file paths
+        # All loaded config file paths
         self._merge_trace: List[str] = []
 
         # import_trace structured events
@@ -80,9 +86,16 @@ class ConfigLoader:
     def load(self) -> Config:
         """
         Load, merge, process imports, inject metadata, wrap secrets.
+
+        Merge order:
+          1. Base (application.<ext>)
+          2. Base's imports
+          3. Profile overlay (application-<profile>.<ext>)
+          4. Profile's imports
+          5. Nested imports (recursive)
         """
         # --------------------------------------------------
-        # 1. Load application.yml (root)
+        # 1. Load application.<ext> (root)
         # --------------------------------------------------
         base_file = self.config_dir / f"application.{self.ext}"
         base = self._load_file(base_file)
@@ -97,54 +110,67 @@ class ConfigLoader:
             depth=0,
         )
 
-        # --------------------------------------------------
-        # 2. Load profile overlay *immediately after base*
-        # --------------------------------------------------
-        profile_file = self.config_dir / f"application-{self.profile}.yml"
-        profile_file_resolved = str(profile_file.resolve())
-
-        if profile_file.exists():
-            profile_data = self._load_file(profile_file)
-
-            # Record profile overlay as imported by root
-            self._record_import(
-                file=profile_file_resolved,
-                imported_by=root_file,
-                import_key=f"application-{self.profile}.yml",
-                depth=1,
-            )
-        else:
-            profile_data = {}
-
-        suppress = (
-            base.get("suppress_config_merge_warnings", False)
-            or profile_data.get("suppress_config_merge_warnings", False)
-        )
-
-        merged = deep_merge(base, profile_data, suppress=suppress)
+        suppress = base.get("suppress_config_merge_warnings", False)
 
         # --------------------------------------------------
-        # 3. Apply imports recursively
+        # 2. Apply base's imports
         # --------------------------------------------------
         self._apply_imports_recursive(
-            merged,
+            base,
             parent_file=root_file,
             depth=0,
             suppress=suppress
         )
 
         # --------------------------------------------------
-        # 4. Normalize runtime profile
+        # 3. Load profile overlay
+        # --------------------------------------------------
+        profile_file = self.config_dir / f"application-{self.profile}.{self.ext}"
+        profile_file_resolved = str(profile_file.resolve())
+
+        if profile_file.exists():
+            profile_data = self._load_file(profile_file)
+
+            # Record profile overlay
+            self._record_import(
+                file=profile_file_resolved,
+                imported_by=root_file,
+                import_key=f"application-{self.profile}.{self.ext}",
+                depth=1,
+            )
+
+            # Update suppress if profile specifies it
+            suppress = suppress or profile_data.get("suppress_config_merge_warnings", False)
+
+            # --------------------------------------------------
+            # 4. Apply profile's imports
+            # --------------------------------------------------
+            self._apply_imports_recursive(
+                profile_data,
+                parent_file=profile_file_resolved,
+                depth=1,
+                suppress=suppress
+            )
+        else:
+            profile_data = {}
+
+        # --------------------------------------------------
+        # 5. Merge base (with imports) + profile (with imports)
+        # --------------------------------------------------
+        merged = deep_merge(base, profile_data, suppress=suppress)
+
+        # --------------------------------------------------
+        # 6. Normalize runtime profile
         # --------------------------------------------------
         merged.setdefault("app", {})["profile"] = self.profile
 
         # --------------------------------------------------
-        # 5. Inject metadata
+        # 7. Inject metadata
         # --------------------------------------------------
         self._inject_metadata(merged)
 
         # --------------------------------------------------
-        # 6. Inject LazySecret wrappers
+        # 8. Inject LazySecret wrappers
         # --------------------------------------------------
         self._inject_secrets(merged)
 
@@ -158,8 +184,35 @@ class ConfigLoader:
         return self.config_dir / f"{stem}.{self.ext}"
 
     def _resolve_import(self, import_key: str) -> Path:
-        stem = Path(import_key).with_suffix("").as_posix()
-        return (self.config_dir / f"{stem}.{self.ext}").resolve()
+        """
+        Resolve import path, appending the current file extension if not present.
+
+        If import_key has no extension (no dot in basename), append self.ext.
+        This ensures imports use the same format as the parent config file.
+
+        Raises ConfigLoadError if the resolved path is outside config_dir
+        (protects against path traversal attacks).
+        """
+        import_path = Path(import_key)
+
+        # Check if the basename has an extension
+        if '.' not in import_path.name:
+            # No extension - append the current format's extension
+            import_key = f"{import_key}.{self.ext}"
+
+        resolved_path = (self.config_dir / import_key).resolve()
+        config_dir_resolved = self.config_dir.resolve()
+
+        # Path traversal protection: ensure resolved path is within config_dir
+        try:
+            resolved_path.relative_to(config_dir_resolved)
+        except ValueError:
+            raise ConfigLoadError(
+                f"Path traversal detected: import '{import_key}' "
+                f"resolves outside config directory '{config_dir_resolved}'"
+            )
+
+        return resolved_path
 
     def _load_file(self, path: Path) -> Dict[str, Any]:
         if not path.exists():
@@ -169,17 +222,30 @@ class ConfigLoader:
         self._merge_trace.append(resolved)
 
         try:
-            text = path.read_text(encoding="utf-8-sig")
-            expanded = self._expand_env(text)
-            if self.ext == "yml":
+            if self.ext == "yml" or self.ext == "yaml":
+                text = path.read_text(encoding="utf-8-sig")
+                expanded = self._expand_env(text)
                 data = yaml.safe_load(expanded)
             elif self.ext == "json":
+                text = path.read_text(encoding="utf-8-sig")
+                expanded = self._expand_env(text)
                 data = json.loads(expanded)
+            elif self.ext == "toml":
+                # TOML must be parsed as binary, then we do env expansion on the result
+                # Read as text for env expansion first
+                text = path.read_text(encoding="utf-8-sig")
+                expanded = self._expand_env(text)
+                # Parse the expanded text as TOML
+                data = tomllib.loads(expanded)
             else:
                 raise ConfigLoadError(f"Unsupported config format: {self.ext}")
             return data or {}
         except yaml.YAMLError as e:
             raise ConfigLoadError(f"Invalid YAML in {path}: {e}")
+        except json.JSONDecodeError as e:
+            raise ConfigLoadError(f"Invalid JSON in {path}: {e}")
+        except tomllib.TOMLDecodeError as e:
+            raise ConfigLoadError(f"Invalid TOML in {path}: {e}")
 
     def _expand_env(self, text: str) -> str:
         def replacer(match):
