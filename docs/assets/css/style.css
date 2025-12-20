@@ -1,5 +1,6 @@
 ---
 ---
+@import "{{ site.theme }}";
 
 /* Widen content */
 header {
