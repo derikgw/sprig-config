@@ -1,0 +1,10 @@
+/* Widen the main content area */
+.wrapper {
+  max-width: 1200px;   /* try 1100–1300 if you want */
+}
+
+/* Optional: improve code readability */
+pre,
+code {
+  font-size: 0.95em;
+}
