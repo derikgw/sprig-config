@@ -1,5 +1,5 @@
 etl:
   jobs:
     imports:
-      - imports/nested.yml
-      - imports/misc.yml
+      - imports/nested
+      - imports/misc

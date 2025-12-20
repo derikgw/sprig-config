@@ -1,0 +1,6 @@
+[etl.jobs]
+root = "/jobs/default"
+default_shell = "/bin/bash"
+
+[etl.jobs.repositories.inmemory]
+class = "InMemoryJobRepo"

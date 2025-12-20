@@ -11,7 +11,7 @@ sprigconfig._meta.sources
 ```
 
 This metadata field must contain a **deterministic, complete, ordered list**
-of all YAML files that contributed to the final merged configuration.
+of all configuration files (YAML, JSON, or TOML) that contributed to the final merged configuration.
 
 ---
 
@@ -29,11 +29,12 @@ The test ensures that:
 
 | Requirement | Description |
 |------------|-------------|
-| Include all loaded YAML files | Base, profile, imports, nested imports |
+| Include all loaded config files | Base, profile, imports, nested imports (any format) |
 | Preserve actual load order | Reflects deep-merge precedence |
 | No missing entries allowed | Every real loaded file must appear |
 | No extra entries allowed | Only actually-loaded files may appear |
 | Profile-aware | Must include the profile overlay and its imports |
+| Format-agnostic | Works with YAML, JSON, and TOML equally |
 
 ---
 
@@ -43,9 +44,11 @@ Reads a YAML file and extracts the literal `imports:` list:
 
 ```yaml
 imports:
-  - imports/job-default.yml
-  - imports/common.yml
+  - imports/job-default
+  - imports/common
 ```
+
+**Note**: Since v1.1.0, import paths are **extension-less** for format portability. The test automatically appends the correct extension (`.yml`, `.json`, or `.toml`) based on the active format when constructing expected file paths.
 
 This lets the test automatically adjust to changes in `tests/config` without modification.
 
@@ -139,12 +142,13 @@ This test suite defines the **contract** for metadata source tracking in SprigCo
 
 | Behavior | Must be True |
 |----------|--------------|
-| `sources[]` lists all YAML files actually loaded | ✔ |
+| `sources[]` lists all config files actually loaded (any format) | ✔ |
 | Ordering matches merge precedence | ✔ |
 | No duplicates, no omissions | ✔ |
 | Uses absolute resolved paths | ✔ |
-| Respects real YAML import lists | ✔ |
+| Respects extension-less import lists | ✔ |
 | Profile-aware, import-aware | ✔ |
+| Format-agnostic (YAML, JSON, TOML) | ✔ |
 
 This ensures SprigConfig provides **complete, transparent, auditable** insight into all configuration sources.
 

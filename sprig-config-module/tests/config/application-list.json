@@ -6,6 +6,6 @@
     ]
   },
   "imports": [
-    "imports/list-override.yml"
+    "imports/list-override"
   ]
 }

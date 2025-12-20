@@ -52,14 +52,18 @@ def test_meta_sources_records_all_loaded_files(full_config_dir):
 
     # 2. imports from application.yml (exact order)
     for imp in imports_base:
-        expected.append((full_config_dir / imp).resolve())
+        # Import keys are now extension-less, so append .yml
+        imp_with_ext = f"{imp}.yml" if '.' not in Path(imp).name else imp
+        expected.append((full_config_dir / imp_with_ext).resolve())
 
     # 3. application-dev.yml
     expected.append(profile_yml)
 
     # 4. imports from application-dev.yml (exact order)
     for imp in imports_dev:
-        expected.append((full_config_dir / imp).resolve())
+        # Import keys are now extension-less, so append .yml
+        imp_with_ext = f"{imp}.yml" if '.' not in Path(imp).name else imp
+        expected.append((full_config_dir / imp_with_ext).resolve())
 
     # Assertions
     # --- Every expected file must be present ---

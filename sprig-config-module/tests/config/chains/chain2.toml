@@ -1,0 +1,4 @@
+[chain]
+level2 = "L2"
+
+imports = ["chains/chain3"]

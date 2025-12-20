@@ -1,0 +1,23 @@
+# Base application config
+imports = [
+  "imports/job-default",
+  "imports/common"
+]
+
+[app]
+name = "SprigTestApp"
+profile = "base"
+
+[logging]
+level = "INFO"
+format = "%(message)s"
+
+[etl.jobs]
+root = "/jobs/default"
+default_shell = "/bin/bash"
+
+[etl.jobs.repositories.inmemory]
+class = "InMemoryJobRepo"
+
+[etl.jobs.repositories.inmemory.params]
+x = 1

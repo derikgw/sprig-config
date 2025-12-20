@@ -1,0 +1,4 @@
+# Dev profile overlay
+[app]
+debug_mode = true
+profile = "dev"

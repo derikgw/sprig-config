@@ -66,17 +66,20 @@ Validates **top-level imports**:
 
 ```
 application.yml
-  -> imports/job-default.yml
-  -> imports/common.yml
+  -> imports/job-default
+  -> imports/common
 ```
+
+**Note**: Import keys are now **extension-less** for format portability. The `import_key` in the trace matches the literal value from the config file (e.g., `"imports/common"`), while the `file` field contains the resolved path with extension (e.g., `"/path/to/imports/common.yml"`).
 
 Each direct import must:
 
 - appear in `import_trace`
 - have `imported_by == application.yml`
-- match the literal list in application.yml
+- have `import_key` matching the literal (extension-less) value from the config
+- have `file` path with the appropriate extension appended
 
-Ensures exact, literal propagation of import directives.
+Ensures exact, literal propagation of import directives while supporting format-agnostic imports.
 
 ---
 
@@ -121,14 +124,18 @@ This creates a stable mapping between load order and import structure.
 
 ## 6. `test_import_trace_import_key`
 
-Ensures the `import_key` stored in the trace is **exactly** what appeared in the YAML import list.
+Ensures the `import_key` stored in the trace is **exactly** what appeared in the config file's import list.
+
+**Extension-less Imports**: Since v1.1.0, import keys are extension-less (e.g., `"imports/common"` instead of `"imports/common.yml"`). This allows the same configuration to work across YAML, JSON, and TOML formats without modification.
+
+The `import_key` field preserves the literal value from the config, while the `file` field contains the fully-resolved path with the appropriate extension for the active format.
 
 This guarantees:
 
-- No path rewriting  
-- No normalization  
-- Literal preservation of user input  
-- Debuggable import metadata  
+- Literal preservation of user input
+- Format portability (same imports work for .yml, .json, .toml)
+- Debuggable import metadata
+- Separation of logical imports from physical file paths  
 
 ---
 

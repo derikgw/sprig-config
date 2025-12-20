@@ -22,7 +22,7 @@
     }
   },
   "imports": [
-    "imports/job-default.yml",
-    "imports/common.yml"
+    "imports/job-default",
+    "imports/common"
   ]
 }
