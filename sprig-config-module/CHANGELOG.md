@@ -6,6 +6,60 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ---
 
+## [1.2.0] — 2025-12-20
+
+### 🎯 Summary
+
+This release adds **TOML configuration support** and fixes an important **merge order bug** that affected how profile overlays interact with imports.
+
+---
+
+### ✨ Added
+
+- **TOML configuration format support** — use `.toml` files alongside YAML and JSON
+- **`--format` CLI flag** — explicitly specify input config format (`yml`, `yaml`, `json`, `toml`)
+- Security scanning in CI pipeline (Snyk, Bandit)
+
+---
+
+### 🛠️ Fixed
+
+- **Merge order bug** — imports are now processed in the correct order:
+  1. Base config (`application.<ext>`)
+  2. Base imports
+  3. Profile overlay (`application-<profile>.<ext>`)
+  4. Profile imports
+
+  Profile overlays now correctly have final say over imported values.
+
+- Snyk CI job failures due to Docker entrypoint conflicts
+
+---
+
+### 🔄 Changed
+
+- Test config files aligned across YAML, JSON, and TOML formats for stable generic tests
+- Updated `config_loader.py` docstrings to document merge order
+
+---
+
+### 🔒 Backward Compatibility
+
+- YAML remains the default configuration format
+- Existing projects continue to work unchanged
+- The merge order fix may change behavior if you relied on imports overriding profile values (which was unintended)
+
+---
+
+### 🚀 What's Next
+
+- **1.3.x** — Provenance, debugging, and introspection improvements
+- **2.0.0** — Stable parser and plugin contracts
+
+See `ROADMAP.md` for full details.
+
+---
+
 ## [1.1.0] — 2025-12-15
 
 ### 🎯 Summary
