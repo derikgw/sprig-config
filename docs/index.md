@@ -1,19 +1,3 @@
-<style>
-  /* This targets the most common GitHub theme containers */
-  .wrapper, .inner, .container-lg, #main_content {
-    max-width: 1200px !important;
-    width: 95% !important;
-  }
-  section {
-    width: 75% !important;
-    float: right !important;
-  }
-  header, .sidebar, aside {
-    width: 20% !important;
-    float: left !important;
-  }
-</style>
-
 ---
 layout: default
 title: SprigConfig

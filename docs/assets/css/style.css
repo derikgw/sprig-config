@@ -1,5 +1,42 @@
 ---
 ---
-$content-width: 1200px;
-$nav-width: 260px;
 @import "{{ site.theme }}";
+
+/* --- Force Widen the Layout (Flex Container) --- */
+.wrapper, .inner, .container-lg, #main_content {
+  max-width: 1200px !important; 
+  width: 95% !important;
+  margin: 0 auto !important;
+  display: flex !important; 
+  flex-wrap: wrap; /* Allows items to wrap if needed */
+  align-items: flex-start; /* Ensures top-alignment */
+}
+
+/* --- Keep the Sidebar Intact --- */
+header, .sidebar, aside {
+  width: 250px !important; 
+  flex-shrink: 0;
+  /* Ensure text within the header/nav also aligns correctly */
+  text-align: left;
+}
+
+/* --- Expand the Main Section & Fix Alignment --- */
+section {
+  flex-grow: 1;             /* Takes up remaining horizontal space */
+  max-width: calc(100% - 250px) !important; /* Ensures it doesn't overlap the 250px nav */
+  padding-left: 40px !important; 
+  /* Force all children of the section to align normally */
+  text-align: left;
+}
+
+/* --- Original Readability Fixes --- */
+body {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+pre {
+  /* ... your existing pre styles ... */
+  max-width: 100%; /* Ensures code blocks respect the section width */
+  box-sizing: border-box; /* Includes padding in the width calculation */
+}
