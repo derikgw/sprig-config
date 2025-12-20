@@ -59,12 +59,12 @@ print(cfg["app.profile"])    # dev (injected at runtime)
 
 | Feature | Description |
 |---------|-------------|
-| [Profile Overlays](sprig-config/profiles.md) | Environment-specific configuration without code changes |
-| [Deep Merge](sprig-config/merge-order.md) | Predictable layering with collision warnings |
-| [Recursive Imports](sprig-config/imports.md) | Modular configuration with `imports:` directive |
-| [Secure Secrets](sprig-config/security.md) | Fernet-encrypted values with lazy decryption |
-| [CLI Tools](sprig-config/cli.md) | Inspect and debug merged configuration |
-| [Provenance Tracking](sprig-config/configuration.md#metadata) | Know where every value came from |
+| [Profile Overlays](profiles.md) | Environment-specific configuration without code changes |
+| [Deep Merge](merge-order.md) | Predictable layering with collision warnings |
+| [Recursive Imports](imports.md) | Modular configuration with `imports:` directive |
+| [Secure Secrets](security.md) | Fernet-encrypted values with lazy decryption |
+| [CLI Tools](cli.md) | Inspect and debug merged configuration |
+| [Provenance Tracking](configuration.md#metadata) | Know where every value came from |
 
 ---
 
@@ -100,16 +100,16 @@ All files in a single configuration load must use the same format.
 
 ## Documentation
 
-- [Philosophy](sprig-config/philosophy.md) — Design principles and goals
-- [Getting Started](sprig-config/getting-started.md) — Installation and first steps
-- [Configuration](sprig-config/configuration.md) — Core concepts and API
-- [Merge Order](sprig-config/merge-order.md) — How layering works
-- [Profiles](sprig-config/profiles.md) — Environment-specific overlays
-- [Imports](sprig-config/imports.md) — Modular configuration
-- [CLI](sprig-config/cli.md) — Command-line tools
-- [Security](sprig-config/security.md) — Secret management
-- [FAQ](sprig-config/faq.md) — Common questions
-- [Roadmap](sprig-config/roadmap.md) — Future plans
+- [Philosophy](philosophy.md) — Design principles and goals
+- [Getting Started](getting-started.md) — Installation and first steps
+- [Configuration](configuration.md) — Core concepts and API
+- [Merge Order](merge-order.md) — How layering works
+- [Profiles](profiles.md) — Environment-specific overlays
+- [Imports](imports.md) — Modular configuration
+- [CLI](cli.md) — Command-line tools
+- [Security](security.md) — Secret management
+- [FAQ](faq.md) — Common questions
+- [Roadmap](roadmap.md) — Future plans
 
 ---
 
