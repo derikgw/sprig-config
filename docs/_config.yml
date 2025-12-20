@@ -1,6 +1,7 @@
 title: SprigConfig
 description: Spring Boot-style configuration for Python applications
 remote_theme: pages-themes/minimal@v0.2.0
+stylesheet: /assets/css/style.scss
 
 # GitHub Pages settings
 baseurl: "/sprig-config"
