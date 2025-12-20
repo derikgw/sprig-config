@@ -2,65 +2,32 @@
 ---
 @import "{{ site.theme }}";
 
-/* Disable the two-column layout */
-header {
-  float: none !important;
-  width: auto !important;
+/* STEP 1: Widen the outer container that holds everything */
+.wrapper, .container-lg, .inner, #main_content {
+  max-width: 1200px !important; /* Increase this to widen the whole site */
+  width: 95% !important;
+  margin: 0 auto;
 }
 
+/* STEP 2: Prevent the sidebar and section from stacking */
+/* We use flex to keep them side-by-side even when wider */
+body > .wrapper, .inner {
+  display: flex !important;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+/* STEP 3: Adjust the Main Content Section */
 section {
-  float: none !important;
-  width: auto !important;
-  max-width: 1200px !important;   /* THIS is the real control */
-  margin: 0 auto !important;
+  flex: 1;             /* Tells the section to take up remaining space */
+  max-width: 75% !important; 
+  padding-left: 40px;  /* Adds space between sidebar and text */
 }
 
-/* Optional: keep page centered */
-.wrapper {
-  max-width: none !important;
-}
-
-
-/* CODE BLOCKS — this is the big fix */
-pre {
-  background-color: #f6f8fa;
-  border: 1px solid #d0d7de;
-  border-radius: 6px;
-  padding: 12px 14px;
-  overflow-x: auto;
-  font-size: 0.9em;
-  line-height: 1.4;
-}
-
-/* Inline code */
-code {
-  background-color: #f6f8fa;
-  padding: 2px 5px;
-  border-radius: 4px;
-  font-size: 0.9em;
-}
-
-/* Prevent inline code from breaking layout */
-pre code {
-  background: none;
-  padding: 0;
-}
-
-/* Improve table readability */
-table {
-  border-collapse: collapse;
-  margin: 1rem 0;
-}
-
-th,
-td {
-  border: 1px solid #d0d7de;
-  padding: 6px 10px;
-}
-
-/* Reduce excessive separators */
-hr {
-  margin: 2rem 0;
+/* STEP 4: Protect the Left Sidebar */
+header, .side-bar, #sidebar {
+  width: 250px !important; /* Keep your nav at a fixed width */
+  flex-shrink: 0;
 }
 
 
