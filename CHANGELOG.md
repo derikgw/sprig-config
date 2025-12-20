@@ -6,6 +6,46 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ---
 
+## [1.2.1] — 2025-12-20
+
+### 🎯 Summary
+
+This is a **documentation and metadata release** that improves project discoverability and alignment across PyPI, GitHub, and hosted documentation.
+
+There are **no functional or behavioral changes**.
+
+---
+
+### ✨ Added
+
+- **PyPI project links** for Homepage and Documentation, pointing to the official GitHub Pages site
+- Explicit Documentation URL surfaced on PyPI for easier navigation
+
+---
+
+### 🔄 Changed
+
+- Updated package metadata to include `tool.poetry.urls`
+- Improved consistency between PyPI, GitHub, and documentation site references
+
+---
+
+### 🔒 Backward Compatibility
+
+- No runtime changes
+- No API changes
+- No configuration changes
+- Fully backward compatible
+
+---
+
+### 🧭 Notes for Users
+
+If you are upgrading from **1.2.0**, no action is required.  
+This release exists to improve documentation visibility and packaging metadata only.
+
+---
+
 ## [1.2.0] — 2025-12-20
 
 ### 🎯 Summary
