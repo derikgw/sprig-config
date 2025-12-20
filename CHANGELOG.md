@@ -6,6 +6,46 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ---
 
+## [1.2.2] — 2025-12-20
+
+### 🎯 Summary
+
+This is a **packaging and documentation correction release** addressing issues discovered immediately after publishing 1.2.1.
+
+There are **no functional or behavioral changes**.
+
+---
+
+### 🛠️ Fixed
+
+- Corrected installation instructions to reference the proper package name (`sprig-config` instead of `sprigconfig`)
+- Relaxed Python version requirement to allow installation on future Python 3.x releases (`>=3.13`)
+- Regenerated lock file to reflect updated project metadata
+
+---
+
+### 🔄 Changed
+
+- Documentation and packaging metadata adjustments finalized after 1.2.1 publication
+- Release version incremented to comply with PyPI immutability rules
+
+---
+
+### 🔒 Backward Compatibility
+
+- No runtime changes
+- No API changes
+- No configuration changes
+- Fully backward compatible
+
+---
+
+### 🧭 Notes for Users
+
+If you attempted to install **1.2.1** and encountered dependency or installation issues, upgrading to **1.2.2** resolves them. No other action is required.
+
+---
+
 ## [1.2.1] — 2025-12-20
 
 ### 🎯 Summary
