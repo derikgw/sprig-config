@@ -3,13 +3,21 @@
 
 /* Widen content */
 .wrapper {
-  max-width: 1200px;
+  max-width: 1400px;
 }
 
 /* Improve body text readability */
 body {
   font-size: 16px;
   line-height: 1.6;
+}
+
+header {
+  width: 260px;
+}
+
+section {
+  width: calc(100% - 300px);
 }
 
 /* CODE BLOCKS — this is the big fix */
@@ -53,3 +61,5 @@ td {
 hr {
   margin: 2rem 0;
 }
+
+
