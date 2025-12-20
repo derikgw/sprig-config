@@ -4,7 +4,7 @@ remote_theme: pages-themes/minimal@v0.2.0
 
 # GitHub Pages settings
 baseurl: "/sprig-config"
-url: "https://derikgw.github.io/sprig-config"
+url: "https://derikgw.github.io"
 
 # Build settings
 markdown: kramdown
