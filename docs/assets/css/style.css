@@ -1,33 +1,5 @@
 ---
 ---
+$content-width: 1200px;
+$nav-width: 260px;
 @import "{{ site.theme }}";
-
-/* STEP 1: Widen the outer container that holds everything */
-.wrapper, .container-lg, .inner, #main_content {
-  max-width: 1200px !important; /* Increase this to widen the whole site */
-  width: 95% !important;
-  margin: 0 auto;
-}
-
-/* STEP 2: Prevent the sidebar and section from stacking */
-/* We use flex to keep them side-by-side even when wider */
-body > .wrapper, .inner {
-  display: flex !important;
-  flex-direction: row;
-  justify-content: space-between;
-}
-
-/* STEP 3: Adjust the Main Content Section */
-section {
-  flex: 1;             /* Tells the section to take up remaining space */
-  max-width: 75% !important; 
-  padding-left: 40px;  /* Adds space between sidebar and text */
-}
-
-/* STEP 4: Protect the Left Sidebar */
-header, .side-bar, #sidebar {
-  width: 250px !important; /* Keep your nav at a fixed width */
-  flex-shrink: 0;
-}
-
-
