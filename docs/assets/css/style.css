@@ -2,8 +2,19 @@
 ---
 
 /* Widen content */
+header {
+  float: none;
+  width: 100%;
+}
+
+section {
+  float: none;
+  width: 100%;
+}
+
 .wrapper {
-  max-width: 1400px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 /* Improve body text readability */
@@ -12,13 +23,6 @@ body {
   line-height: 1.6;
 }
 
-header {
-  width: 260px;
-}
-
-section {
-  width: calc(100% - 300px);
-}
 
 /* CODE BLOCKS — this is the big fix */
 pre {
