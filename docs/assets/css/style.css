@@ -2,26 +2,27 @@
 ---
 @import "{{ site.theme }}";
 
-/* Widen content */
-header {
-  float: none;
-  width: 100%;
-}
+@import "{{ site.theme }}";
 
-section {
-  float: none;
-  width: 100%;
-}
-
-.wrapper {
-  max-width: 1200px;
+/* 1. Widen the overall container */
+.wrapper, .container-lg, .inner, #main_content {
+  max-width: 1400px !important; /* Increase this number to your preference */
+  width: 95% !important;
   margin: 0 auto;
 }
 
-/* Improve body text readability */
-body {
-  font-size: 16px;
-  line-height: 1.6;
+/* 2. Fix the Columns (Sidebar + Main Content) */
+/* This assumes your theme uses standard float or flex layouts */
+section {
+  width: 75% !important; /* This is the main content area */
+  float: right !important;
+}
+
+header, .sidebar, aside {
+  width: 20% !important; /* This keeps your left-hand nav */
+  float: left !important;
+  position: sticky;      /* Optional: keeps nav visible while scrolling */
+  top: 20px;
 }
 
 
