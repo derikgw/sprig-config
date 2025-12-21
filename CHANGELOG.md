@@ -6,6 +6,32 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ---
 
+## [1.2.3] — 2025-12-20
+
+### 🎯 Summary
+
+This is a **documentation metadata synchronization release** to ensure PyPI correctly links to the hosted GitHub Pages documentation.
+
+There are **no functional or behavioral changes**.
+
+---
+
+### 🔄 Changed
+
+- Updated package metadata so PyPI points to the official documentation site hosted on GitHub Pages
+- No code changes
+
+---
+
+### 🔒 Backward Compatibility
+
+- No runtime changes
+- No API changes
+- No configuration changes
+- Fully backward compatible
+
+---
+
 ## [1.2.2] — 2025-12-20
 
 ### 🎯 Summary

@@ -7,7 +7,7 @@ sprigconfig = "sprigconfig.cli:main"
 
 [tool.poetry]
 name = "sprig-config"
-version = "1.2.2"
+version = "1.2.3"
 description = "Spring-like deep merge configuration loader for Python"
 authors = ["Derik G. Wilson <derikwilson6@gmail.com>"]
 readme = "README.md"
