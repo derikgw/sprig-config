@@ -14,7 +14,7 @@ SprigConfig includes a CLI for inspecting and debugging configuration. This is i
 The CLI is included when you install SprigConfig:
 
 ```bash
-pip install sprigconfig
+pip install sprig-config
 ```
 
 Verify installation:
@@ -172,7 +172,7 @@ Add to your CI pipeline:
 # GitLab CI example
 validate-config:
   script:
-    - pip install sprigconfig
+    - pip install sprig-config
     - sprigconfig dump --config-dir=config --profile=prod
   rules:
     - changes:

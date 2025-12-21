@@ -114,9 +114,9 @@ files don’t introduce odd keys like `ï»¿server`.
 # 📦 Installation
 
 ```bash
-pip install sprigconfig
+pip install sprig-config
 # or
-poetry add sprigconfig
+poetry add sprig-config
 ```
 
 ---

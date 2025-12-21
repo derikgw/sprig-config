@@ -71,13 +71,13 @@ print(cfg["app.profile"])    # dev (injected at runtime)
 ## Installation
 
 ```bash
-pip install sprigconfig
+pip install sprig-config
 ```
 
 Or with Poetry:
 
 ```bash
-poetry add sprigconfig
+poetry add sprig-config
 ```
 
 **Requirements:** Python 3.13+

@@ -289,7 +289,7 @@ set_key_provider(dual_key_provider)
 # GitLab CI example
 deploy:
   script:
-    - pip install sprigconfig
+    - pip install sprig-config
     # Key is injected as protected variable
     - sprigconfig dump --config-dir=config --profile=prod  # Redacted
   variables:

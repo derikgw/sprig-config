@@ -155,7 +155,7 @@ priority = "supplemental"
 Then:
 
 ```
-poetry add sprigconfig
+poetry add sprig-config
 ```
 
 ---

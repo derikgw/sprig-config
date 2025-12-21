@@ -14,13 +14,13 @@ This guide walks you through installing SprigConfig and loading your first confi
 Install SprigConfig from PyPI:
 
 ```bash
-pip install sprigconfig
+pip install sprig-config
 ```
 
 Or with Poetry:
 
 ```bash
-poetry add sprigconfig
+poetry add sprig-config
 ```
 
 **Requirements:** Python 3.13 or later.
