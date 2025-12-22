@@ -25,7 +25,7 @@ host = "localhost"
 port = 8080
 """)
 
-    cfg = ConfigLoader(config_dir=config_dir, profile="dev", ext="toml").load()
+    cfg = ConfigLoader(config_dir=config_dir, profile="dev", config_format="toml").load()
 
     assert cfg.get("app.name") == "TestApp"
     assert cfg.get("app.version") == "1.0.0"
@@ -61,7 +61,7 @@ port = 5432
 name = "testdb"
 """)
 
-    cfg = ConfigLoader(config_dir=config_dir, profile="dev", ext="toml").load()
+    cfg = ConfigLoader(config_dir=config_dir, profile="dev", config_format="toml").load()
 
     assert cfg.get("app.name") == "TestApp"
     assert cfg.get("database.host") == "localhost"
@@ -97,7 +97,7 @@ host = "localhost"
 level = "DEBUG"
 """)
 
-    cfg = ConfigLoader(config_dir=config_dir, profile="dev", ext="toml").load()
+    cfg = ConfigLoader(config_dir=config_dir, profile="dev", config_format="toml").load()
 
     # Profile should override base values
     assert cfg.get("server.host") == "localhost"
@@ -124,7 +124,7 @@ port = "${TEST_PORT}"
 fallback = "${MISSING_VAR:default_value}"
 """)
 
-    cfg = ConfigLoader(config_dir=config_dir, profile="dev", ext="toml").load()
+    cfg = ConfigLoader(config_dir=config_dir, profile="dev", config_format="toml").load()
 
     assert cfg.get("server.host") == "example.com"
     assert cfg.get("server.port") == "9000"
