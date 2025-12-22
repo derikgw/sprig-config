@@ -37,7 +37,7 @@ SprigConfig currently supports:
 
 Exactly **one format is active per run**. The active format is determined by the following precedence:
 
-1. An explicit `ext=` argument passed to `ConfigLoader`
+1. An explicit `config_format=` argument passed to `ConfigLoader`
 2. The `SPRIGCONFIG_FORMAT` environment variable
 3. A default of `yml` if neither is provided
 

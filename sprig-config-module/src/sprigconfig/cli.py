@@ -54,7 +54,7 @@ def run_dump(
 ):
     """Perform config load + pretty output."""
     try:
-        loader = ConfigLoader(config_dir=config_dir, profile=profile, ext=config_fmt)
+        loader = ConfigLoader(config_dir=config_dir, profile=profile, config_format=config_fmt)
         config = loader.load()
     except ConfigLoadError as e:
         print(f"Error: {e}", file=sys.stderr)

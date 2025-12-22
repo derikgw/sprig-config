@@ -1,9 +1,8 @@
-# sprigconfig/config_loader.py
 """
 ConfigLoader with full import-trace support.
 
 Responsibilities:
-- Load application.<ext> (yml, json, or toml)
+- Load application.<ext> (format-driven, extension-resolved)
 - Load application-<profile>.<ext> overlay
 - Expand ${ENV} and ${ENV:default}
 - Perform deep merges
@@ -18,44 +17,76 @@ Responsibilities:
 
 import os
 import re
-import tomllib
 from pathlib import Path
 from typing import Dict, Any, List, Optional
-
-import yaml
-import json
 
 from .config import Config
 from .lazy_secret import LazySecret
 from .exceptions import ConfigLoadError
 from .deepmerge import deep_merge
+from .parsers import YamlParser, JsonParser, TomlParser
+
+# ======================================================================
+# CONSTANTS
+# ======================================================================
 
 ENV_PATTERN = re.compile(r"\$\{([^}:]+)(?::([^}]+))?\}")
 
+SUPPORTED_FORMATS = {"yaml", "json", "toml"}
+
+FORMAT_ALIASES = {
+    "yml": "yaml",
+}
+
+FORMAT_EXTENSIONS = {
+    "yaml": ("yaml", "yml"),
+    "json": ("json",),
+    "toml": ("toml",),
+}
+
+PARSERS = {
+    "yaml": YamlParser(),
+    "json": JsonParser(),
+    "toml": TomlParser(),
+}
+
+# ======================================================================
+# CONFIG LOADER
+# ======================================================================
 
 class ConfigLoader:
     """
-    Loads config files (YAML, JSON, or TOML) from a directory with support for:
+    Loads config files from a directory with support for:
       - application.<ext> (base)
       - application-<profile>.<ext> (overlay)
-      - recursive literal imports (inheriting parent format)
+      - recursive literal imports (format inheritance)
       - circular detection
       - LazySecret wrapping
       - metadata injection (profile, sources, import_trace)
-
-    Supported formats:
-      - YAML (.yml, .yaml)
-      - JSON (.json)
-      - TOML (.toml)
     """
 
-    def __init__(self, config_dir: Path, profile: str, *, ext: str | None = None):
-        self.ext = (
-            ext
-            or os.getenv("SPRIGCONFIG_FORMAT")
-            or "yml"
-        ).lstrip(".")
+    # ------------------------------------------------------------------
+    # FORMAT NORMALIZATION
+    # ------------------------------------------------------------------
 
+    @staticmethod
+    def _normalize_format(config_format: str) -> str:
+        normalized = FORMAT_ALIASES.get(config_format.lower(), config_format.lower())
+        if normalized not in SUPPORTED_FORMATS:
+            raise ConfigLoadError(f"Unsupported config format: {config_format}")
+        return normalized
+
+    # ------------------------------------------------------------------
+    # INIT
+    # ------------------------------------------------------------------
+
+    def __init__(
+        self,
+        config_dir: Path,
+        profile: str,
+        *,
+        config_format: Optional[str] = None,
+    ):
         if config_dir is None:
             env_dir = os.getenv("APP_CONFIG_DIR")
             if not env_dir:
@@ -67,152 +98,151 @@ class ConfigLoader:
         self.config_dir = Path(config_dir)
         self.profile = profile
 
-        # All loaded config file paths
+        raw_format = (
+            config_format
+            or os.getenv("SPRIGCONFIG_FORMAT")
+            or "yaml"
+        ).lstrip(".")
+
+        self.format = self._normalize_format(raw_format)
+        self.parser = PARSERS[self.format]
+
+        # Import + merge tracking
         self._merge_trace: List[str] = []
-
-        # import_trace structured events
         self._import_trace: List[dict] = []
-
-        # Detect cycles
         self._seen_imports: set[str] = set()
-
-        # Monotonic order counter
         self._order = 0
 
-    # ======================================================================
+    # ==================================================================
     # PUBLIC API
-    # ======================================================================
+    # ==================================================================
 
     def load(self) -> Config:
-        """
-        Load, merge, process imports, inject metadata, wrap secrets.
-
-        Merge order:
-          1. Base (application.<ext>)
-          2. Base's imports
-          3. Profile overlay (application-<profile>.<ext>)
-          4. Profile's imports
-          5. Nested imports (recursive)
-        """
         # --------------------------------------------------
-        # 1. Load application.<ext> (root)
+        # 1. Load base config
         # --------------------------------------------------
-        base_file = self.config_dir / f"application.{self.ext}"
-        base = self._load_file(base_file)
+        base_file = self._resolve_root_file("application")
+        base_data = self._load_file(base_file)
 
-        root_file = str(base_file.resolve())
-
-        # Record root as first import_trace entry
+        root_path = str(base_file.resolve())
         self._record_import(
-            file=root_file,
+            file=root_path,
             imported_by=None,
             import_key=None,
             depth=0,
         )
 
-        suppress = base.get("suppress_config_merge_warnings", False)
+        suppress = base_data.get("suppress_config_merge_warnings", False)
 
-        # --------------------------------------------------
-        # 2. Apply base's imports
-        # --------------------------------------------------
         self._apply_imports_recursive(
-            base,
-            parent_file=root_file,
+            base_data,
+            parent_file=root_path,
             depth=0,
-            suppress=suppress
+            suppress=suppress,
         )
 
         # --------------------------------------------------
-        # 3. Load profile overlay
+        # 2. Load profile overlay
         # --------------------------------------------------
-        profile_file = self.config_dir / f"application-{self.profile}.{self.ext}"
-        profile_file_resolved = str(profile_file.resolve())
+        profile_data = {}
+        profile_file = self._resolve_root_file(f"application-{self.profile}")
 
         if profile_file.exists():
             profile_data = self._load_file(profile_file)
 
-            # Record profile overlay
+            profile_path = str(profile_file.resolve())
             self._record_import(
-                file=profile_file_resolved,
-                imported_by=root_file,
-                import_key=f"application-{self.profile}.{self.ext}",
+                file=profile_path,
+                imported_by=root_path,
+                import_key=profile_file.name,
                 depth=1,
             )
 
-            # Update suppress if profile specifies it
-            suppress = suppress or profile_data.get("suppress_config_merge_warnings", False)
+            suppress = suppress or profile_data.get(
+                "suppress_config_merge_warnings", False
+            )
 
-            # --------------------------------------------------
-            # 4. Apply profile's imports
-            # --------------------------------------------------
             self._apply_imports_recursive(
                 profile_data,
-                parent_file=profile_file_resolved,
+                parent_file=profile_path,
                 depth=1,
-                suppress=suppress
+                suppress=suppress,
             )
-        else:
-            profile_data = {}
 
         # --------------------------------------------------
-        # 5. Merge base (with imports) + profile (with imports)
+        # 3. Merge
         # --------------------------------------------------
-        merged = deep_merge(base, profile_data, suppress=suppress)
+        merged = deep_merge(base_data, profile_data, suppress=suppress)
 
-        # --------------------------------------------------
-        # 6. Normalize runtime profile
-        # --------------------------------------------------
         merged.setdefault("app", {})["profile"] = self.profile
 
-        # --------------------------------------------------
-        # 7. Inject metadata
-        # --------------------------------------------------
         self._inject_metadata(merged)
-
-        # --------------------------------------------------
-        # 8. Inject LazySecret wrappers
-        # --------------------------------------------------
         self._inject_secrets(merged)
 
         return Config(merged)
 
-    # ======================================================================
-    # Config File Loading
-    # ======================================================================
+    # ==================================================================
+    # FILE RESOLUTION
+    # ==================================================================
 
-    def _resolve_file(self, stem: str) -> Path:
-        return self.config_dir / f"{stem}.{self.ext}"
+    def _resolve_root_file(self, stem: str) -> Path:
+        """
+        Resolve root config files using format-specific extension aliases.
+        """
+        for ext in FORMAT_EXTENSIONS[self.format]:
+            candidate = self.config_dir / f"{stem}.{ext}"
+            if candidate.exists():
+                return candidate
+
+        # Default canonical path (for error reporting)
+        return self.config_dir / f"{stem}.{self.format}"
 
     def _resolve_import(self, import_key: str) -> Path:
         """
-        Resolve import path, appending the current file extension if not present.
+        Resolve import paths.
 
-        If import_key has no extension (no dot in basename), append self.ext.
-        This ensures imports use the same format as the parent config file.
-
-        Raises ConfigLoadError if the resolved path is outside config_dir
-        (protects against path traversal attacks).
+        Imports inherit format and never specify extensions.
+        If the canonical extension does not exist on disk,
+        try format-specific alias extensions (e.g. .yml for yaml).
         """
         import_path = Path(import_key)
 
-        # Check if the basename has an extension
-        if '.' not in import_path.name:
-            # No extension - append the current format's extension
-            import_key = f"{import_key}.{self.ext}"
+        candidates: list[Path] = []
 
-        resolved_path = (self.config_dir / import_key).resolve()
-        config_dir_resolved = self.config_dir.resolve()
+        if "." in import_path.name:
+            # Explicit extension provided (rare, but allow it)
+            candidates.append(self.config_dir / import_key)
+        else:
+            # No extension: try canonical first, then aliases
+            for ext in FORMAT_EXTENSIONS[self.format]:
+                candidates.append(self.config_dir / f"{import_key}.{ext}")
 
-        # Path traversal protection: ensure resolved path is within config_dir
-        try:
-            resolved_path.relative_to(config_dir_resolved)
-        except ValueError:
-            raise ConfigLoadError(
-                f"Path traversal detected: import '{import_key}' "
-                f"resolves outside config directory '{config_dir_resolved}'"
-            )
+        base = self.config_dir.resolve()
 
-        return resolved_path
+        for candidate in candidates:
+            resolved = candidate.resolve()
+
+            # Path traversal protection
+            try:
+                resolved.relative_to(base)
+            except ValueError:
+                raise ConfigLoadError(
+                    f"Path traversal detected: import '{import_key}' escapes config directory"
+                )
+
+            if resolved.exists():
+                return resolved
+
+        # If we get here, nothing matched
+        tried = ", ".join(str(p.name) for p in candidates)
+        raise ConfigLoadError(
+            f"Import '{import_key}' not found. Tried: {tried}"
+        )
+
+
+    # ==================================================================
+    # FILE LOADING
+    # ==================================================================
 
     def _load_file(self, path: Path) -> Dict[str, Any]:
         if not path.exists():
@@ -222,30 +252,12 @@ class ConfigLoader:
         self._merge_trace.append(resolved)
 
         try:
-            if self.ext == "yml" or self.ext == "yaml":
-                text = path.read_text(encoding="utf-8-sig")
-                expanded = self._expand_env(text)
-                data = yaml.safe_load(expanded)
-            elif self.ext == "json":
-                text = path.read_text(encoding="utf-8-sig")
-                expanded = self._expand_env(text)
-                data = json.loads(expanded)
-            elif self.ext == "toml":
-                # TOML must be parsed as binary, then we do env expansion on the result
-                # Read as text for env expansion first
-                text = path.read_text(encoding="utf-8-sig")
-                expanded = self._expand_env(text)
-                # Parse the expanded text as TOML
-                data = tomllib.loads(expanded)
-            else:
-                raise ConfigLoadError(f"Unsupported config format: {self.ext}")
+            text = path.read_text(encoding="utf-8-sig")
+            expanded = self._expand_env(text)
+            data = self.parser.parse(expanded)
             return data or {}
-        except yaml.YAMLError as e:
-            raise ConfigLoadError(f"Invalid YAML in {path}: {e}")
-        except json.JSONDecodeError as e:
-            raise ConfigLoadError(f"Invalid JSON in {path}: {e}")
-        except tomllib.TOMLDecodeError as e:
-            raise ConfigLoadError(f"Invalid TOML in {path}: {e}")
+        except Exception as e:
+            raise ConfigLoadError(f"Invalid {self.format.upper()} in {path}: {e}") from e
 
     def _expand_env(self, text: str) -> str:
         def replacer(match):
@@ -254,9 +266,9 @@ class ConfigLoader:
 
         return ENV_PATTERN.sub(replacer, text)
 
-    # ======================================================================
-    # IMPORT PROCESSING + TRACE
-    # ======================================================================
+    # ==================================================================
+    # IMPORT PROCESSING
+    # ==================================================================
 
     def _record_import(
         self,
@@ -264,7 +276,7 @@ class ConfigLoader:
         file: str,
         imported_by: Optional[str],
         import_key: Optional[str],
-        depth: int
+        depth: int,
     ):
         self._import_trace.append(
             {
@@ -283,69 +295,51 @@ class ConfigLoader:
         *,
         parent_file: str,
         depth: int,
-        suppress: bool
+        suppress: bool,
     ):
-        """
-        Walk the tree for `imports:` anywhere.
-        Maintain correct:
-            - imported_by
-            - depth
-            - order
-            - cycle detection
-        """
         if not isinstance(node, dict):
             return
 
-        # --------------------------------------------------
-        # Process imports on this node
-        # --------------------------------------------------
         if "imports" in node:
-            imports_list = node.get("imports", [])
+            imports = node.get("imports", [])
+            if not isinstance(imports, list):
+                raise ConfigLoadError("imports must be a list")
 
-            if isinstance(imports_list, list):
-                for import_key in imports_list:
-                    imp_file = self._resolve_import(import_key)
-                    imp_str = str(imp_file)
+            for import_key in imports:
+                import_file = self._resolve_import(import_key)
+                import_path = str(import_file)
 
-                    # Cycle detection
-                    if imp_str in self._seen_imports:
-                        raise ConfigLoadError(f"Circular import detected: {imp_file}")
-                    self._seen_imports.add(imp_str)
+                if import_path in self._seen_imports:
+                    raise ConfigLoadError(f"Circular import detected: {import_file}")
+                self._seen_imports.add(import_path)
 
-                    # Record BEFORE loading
-                    self._record_import(
-                        file=imp_str,
-                        imported_by=parent_file,
-                        import_key=import_key,
-                        depth=depth + 1,
-                    )
+                self._record_import(
+                    file=import_path,
+                    imported_by=parent_file,
+                    import_key=import_key,
+                    depth=depth + 1,
+                )
 
-                    imported_yaml = self._load_file(imp_file)
+                imported_data = self._load_file(import_file)
 
-                    # Recurse using this file as new parent
-                    self._apply_imports_recursive(
-                        imported_yaml,
-                        parent_file=imp_str,
-                        depth=depth + 1,
-                        suppress=suppress
-                    )
+                self._apply_imports_recursive(
+                    imported_data,
+                    parent_file=import_path,
+                    depth=depth + 1,
+                    suppress=suppress,
+                )
 
-                    # Merge into current node
-                    deep_merge(node, imported_yaml, suppress=suppress)
+                deep_merge(node, imported_data, suppress=suppress)
 
-            # Remove the directive so it's not in final config
             del node["imports"]
 
-        # --------------------------------------------------
-        # Recurse child structures
-        # --------------------------------------------------
-        for key, value in list(node.items()):
+        for value in node.values():
             if isinstance(value, dict):
                 self._apply_imports_recursive(
                     value,
                     parent_file=parent_file,
                     depth=depth,
-                    suppress=suppress
+                    suppress=suppress,
                 )
             elif isinstance(value, list):
                 for item in value:
@@ -354,13 +348,17 @@ class ConfigLoader:
                             item,
                             parent_file=parent_file,
                             depth=depth,
-                            suppress=suppress
+                            suppress=suppress,
                         )
 
-    # ======================================================================
+    # ==================================================================
     # SECRETS
-    # ======================================================================
+    # ==================================================================
 
+    # NOTE:
+    # APP_SECRET_KEY is intentionally read directly from os.getenv()
+    # and never stored on ConfigLoader or Config objects.
+    # This minimizes secret lifetime and prevents accidental leakage.
     def _inject_secrets(self, data: Dict[str, Any]):
         for key, value in list(data.items()):
             if isinstance(value, str) and value.startswith("ENC(") and value.endswith(")"):
@@ -374,17 +372,14 @@ class ConfigLoader:
                     elif isinstance(item, dict):
                         self._inject_secrets(item)
 
-    # ======================================================================
+    # ==================================================================
     # METADATA
-    # ======================================================================
+    # ==================================================================
 
     def _inject_metadata(self, merged: dict):
-        runtime_profile = self.profile or "default"
-
         node = merged.setdefault("sprigconfig", {})
         meta = node.setdefault("_meta", {})
 
-        # Don't overwrite user-defined
-        meta.setdefault("profile", runtime_profile)
+        meta.setdefault("profile", self.profile or "default")
         meta.setdefault("sources", list(self._merge_trace))
         meta.setdefault("import_trace", list(self._import_trace))
