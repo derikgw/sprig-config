@@ -6,6 +6,61 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ---
 
+## [1.2.4] — 2025-12-21
+
+### 🎯 Summary
+
+This is a **backward-compatible feature completion release** that brings **TOML configuration support to full parity with YAML and JSON**.
+
+TOML configs now support imports, profile overlays, and environment variable expansion with identical semantics across all supported formats.
+
+---
+
+### ✨ Added
+
+* **Full TOML format support** with feature parity across:
+
+  * Recursive imports
+  * Profile overlays (`application-<profile>.toml`)
+  * Environment variable expansion (`${VAR}` / `${VAR:default}`)
+* Alias-aware extension handling (e.g. `yaml` / `yml`) during import resolution
+* Comprehensive TOML-specific tests validating loader behavior and parity
+
+---
+
+### 🛠️ Fixed
+
+* Import resolution edge cases where canonical extensions did not exist on disk (e.g. `.yaml` vs `.yml`)
+* Incomplete TOML import and overlay handling uncovered during parity testing
+* Ensured secrets are never persisted on long-lived objects during config loading
+
+---
+
+### 🔄 Changed
+
+* Import resolution now deterministically falls back to format aliases when resolving files
+* Internal loader logic hardened to treat **format and file extension as distinct concerns**
+* Test coverage expanded to explicitly validate TOML behavior under real-world scenarios
+
+---
+
+### 🔒 Backward Compatibility
+
+* No breaking changes
+* No API changes
+* No configuration changes required
+* Existing YAML and JSON projects continue to work unchanged
+
+---
+
+### 🧭 Notes for Users
+
+* TOML configuration files are now fully supported and behave identically to YAML and JSON
+* Exactly **one configuration format may be used per run**
+* Mixed-format imports remain intentionally unsupported
+
+---
+
 ## [1.2.3] — 2025-12-20
 
 ### 🎯 Summary
