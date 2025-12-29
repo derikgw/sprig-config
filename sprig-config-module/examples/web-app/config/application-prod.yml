@@ -1,0 +1,36 @@
+# Production Environment Overrides
+
+app:
+  host: 0.0.0.0
+  port: 8000
+  debug: false  # Never enable debug in production
+  secret_key: ${FLASK_SECRET_KEY}  # Use environment variable
+
+database:
+  host: ${DB_HOST}
+  name: webapp_production
+  username: ${DB_USERNAME}
+  password: ${DB_PASSWORD}
+  pool_size: 50
+  pool_timeout: 10
+
+logging:
+  level: ERROR  # Only log errors in production
+  file: /var/log/webapp/app.log
+
+security:
+  cors_enabled: true
+  cors_origins:
+    - https://myapp.example.com
+  rate_limit_enabled: true
+  rate_limit: 1000 per hour
+
+features:
+  enable_analytics: true
+  enable_caching: true
+  enable_email: true
+
+cache:
+  type: redis
+  ttl_seconds: 600
+  max_entries: 10000

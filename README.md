@@ -58,6 +58,7 @@ These tools are **not required** to use SprigConfig itself.
 - Documentation for SprigConfig lives primarily under:
   - `sprig-config-module/`
   - `sprig-config-module/docs/`
+- **Authoritative CHANGELOG:** `sprig-config-module/CHANGELOG.md`
 
 ---
 
