@@ -1,0 +1,46 @@
+# Base Web Application Configuration
+
+app:
+  name: MyWebApp
+  version: 1.0.0
+  host: localhost
+  port: 5000
+  debug: false
+  secret_key: change-this-in-production
+
+database:
+  host: localhost
+  port: 5432
+  name: webapp_db
+  username: webapp_user
+  password: changeme
+  pool_size: 10
+  pool_timeout: 30
+
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: app.log
+
+security:
+  cors_enabled: false
+  cors_origins: []
+  rate_limit_enabled: true
+  rate_limit: 100 per hour
+  session_timeout_minutes: 30
+
+features:
+  enable_analytics: false
+  enable_caching: true
+  enable_email: true
+
+cache:
+  type: simple
+  ttl_seconds: 300
+  max_entries: 1000
+
+email:
+  smtp_host: smtp.example.com
+  smtp_port: 587
+  from_address: noreply@example.com
+  use_tls: true

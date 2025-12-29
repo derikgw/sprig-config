@@ -1,0 +1,28 @@
+# Development Environment Overrides
+
+app:
+  debug: true  # Enable Flask debug mode
+  port: 5000
+
+database:
+  name: webapp_dev
+  password: dev_password
+  pool_size: 5
+
+logging:
+  level: DEBUG
+  file: dev_app.log
+
+security:
+  cors_enabled: true
+  cors_origins:
+    - http://localhost:3000
+    - http://localhost:8080
+  rate_limit_enabled: false  # Disable rate limiting in dev
+
+features:
+  enable_analytics: false  # No analytics in dev
+  enable_caching: false  # Disable cache for easier debugging
+
+cache:
+  ttl_seconds: 10  # Short TTL for development

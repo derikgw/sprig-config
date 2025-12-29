@@ -1,3 +1,96 @@
-site_name: SprigConfig Docs
+site_name: SprigConfig Documentation
+site_description: Spring Boot-style configuration for Python applications
+site_url: https://dgw-software.gitlab.io/sprig-config/
+repo_url: https://gitlab.com/dgw_software/sprig-config
+repo_name: GitLab
+
+theme:
+  name: material
+  palette:
+    primary: green
+    accent: light green
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+
 nav:
-  - Home: index.md
+  - Home: ../docs/index.md
+  - Getting Started:
+      - Installation & Quickstart: ../docs/getting-started.md
+      - Configuration Guide: ../docs/configuration.md
+  - Core Concepts:
+      - Profiles: ../docs/profiles.md
+      - Imports: ../docs/imports.md
+      - Merge Semantics: ../docs/merge-order.md
+  - Features:
+      - Security & Secrets: ../docs/security.md
+      - Command Line Interface: ../docs/cli.md
+  - API Reference:
+      - Overview: ../docs/api/index.md
+      - Core API: ../docs/api/core.md
+      - Secrets: ../docs/api/secrets.md
+      - Utilities: ../docs/api/utilities.md
+      - Exceptions: ../docs/api/exceptions.md
+  - Reference:
+      - FAQ: ../docs/faq.md
+      - Design Philosophy: ../docs/philosophy.md
+      - Roadmap: ../docs/roadmap.md
+      - Migration Guide: docs/migration_guide.md
+  - Developer Guides:
+      - Overview: docs/README_Developer_Guide.md
+      - Release Checklist: docs/release_checklist.md
+      - Secret Best Practices: docs/SprigConfig_ENC_BestPractices.md
+      - GitLab CI/CD: docs/GitLab.md
+      - PyPI Publishing: docs/PyPI.md
+      - Snyk Setup: docs/snyk-gitlab-setup.md
+      - Git Workflows: docs/git_skip_worktree_for_test_config_files.md
+      - AI Assistant Guide: docs/AI_Info.md
+
+markdown_extensions:
+  - admonition
+  - codehilite:
+      guess_lang: false
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.details
+  - pymdownx.tabbed
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            docstring_section_style: table
+            members_order: source
+            show_root_heading: true
+            show_root_full_path: false
+            show_source: true
+            show_bases: true
+            show_signature_annotations: true
+            separate_signature: true
+            line_length: 80
+  - git-revision-date-localized:
+      enable_creation_date: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/gitlab
+      link: https://gitlab.com/dgw_software/sprig-config
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/sprigconfig/
+
+copyright: Copyright &copy; 2025 SprigConfig Contributors

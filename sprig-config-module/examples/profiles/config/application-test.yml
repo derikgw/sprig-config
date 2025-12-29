@@ -1,0 +1,28 @@
+# Test Profile Overrides
+# Settings optimized for automated testing
+
+app:
+  port: 0  # Random port for parallel test execution
+
+database:
+  name: webapp_test
+  pool_size: 3  # Minimal pool for tests
+
+logging:
+  level: WARNING  # Reduce noise in test output
+  format: json
+
+security:
+  cors_enabled: false  # Not needed in tests
+  rate_limit_enabled: false  # Don't rate limit tests
+
+features:
+  enable_analytics: false
+  enable_email_notifications: false  # Don't send emails during tests
+  enable_background_jobs: false  # Synchronous execution for tests
+  cache_ttl_seconds: 1  # Minimal cache for test isolation
+
+external_services:
+  api_base_url: http://mock-api:8000  # Mock service in test environment
+  timeout_seconds: 5  # Fast failures in tests
+  retry_attempts: 1  # No retries in tests

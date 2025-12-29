@@ -1,0 +1,39 @@
+# Production Profile Overrides
+# Settings optimized for production deployment
+
+app:
+  port: 8080
+  host: 0.0.0.0
+
+database:
+  host: db.production.example.com
+  port: 5432
+  name: webapp_production
+  pool_size: 50  # Larger pool for production traffic
+  timeout_seconds: 10  # Stricter timeout
+  ssl_enabled: true  # Always use SSL in production
+
+logging:
+  level: ERROR  # Only log errors in production
+  format: json  # Structured logging for log aggregation
+  include_timestamp: true
+
+security:
+  cors_enabled: true
+  cors_origins:
+    - https://myapp.example.com
+    - https://www.myapp.example.com
+  rate_limit_enabled: true
+  rate_limit_requests: 1000  # Higher limit for production
+  rate_limit_window_seconds: 60
+
+features:
+  enable_analytics: true  # Enable in production
+  enable_email_notifications: true
+  enable_background_jobs: true
+  cache_ttl_seconds: 600  # Longer cache in production
+
+external_services:
+  api_base_url: https://api.production.example.com
+  timeout_seconds: 10
+  retry_attempts: 3

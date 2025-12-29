@@ -1,0 +1,30 @@
+# Development Profile Overrides
+# Settings optimized for local development
+
+app:
+  port: 9000  # Different port to avoid conflicts
+  host: localhost
+
+database:
+  name: webapp_dev
+  pool_size: 5  # Smaller pool for local development
+
+logging:
+  level: DEBUG  # Verbose logging for development
+  format: text  # Easier to read in console
+
+security:
+  cors_enabled: true
+  cors_origins:
+    - http://localhost:3000
+    - http://localhost:3001
+    - http://localhost:8080
+  rate_limit_enabled: false  # Disable rate limiting in dev
+
+features:
+  enable_analytics: false  # No analytics in dev
+  cache_ttl_seconds: 10  # Short cache for faster iteration
+
+external_services:
+  api_base_url: http://localhost:8001  # Local mock server
+  timeout_seconds: 30  # Longer timeout for debugging

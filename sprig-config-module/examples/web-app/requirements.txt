@@ -1,0 +1,16 @@
+# Flask Web Application Example Dependencies
+
+# SprigConfig (use local development version or install from PyPI)
+# sprigconfig>=1.2.4
+
+# Flask web framework
+flask>=3.0.0
+
+# Optional: CORS support
+flask-cors>=4.0.0
+
+# Optional: Rate limiting
+# flask-limiter>=3.5.0
+
+# Optional: Production WSGI server
+# gunicorn>=21.2.0
