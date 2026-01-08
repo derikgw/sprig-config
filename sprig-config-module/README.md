@@ -1,6 +1,6 @@
 # 🌱 SprigConfig
 
-[![Latest Version](https://gitlab.com/dgw_software/sprig-config/-/badges/release.svg)](https://gitlab.com/dgw_software/sprig-config/-/packages)
+[![PyPI version](https://img.shields.io/pypi/v/sprig-config.svg)](https://pypi.org/project/sprig-config/)
 [![Security Scan](https://img.shields.io/badge/security-monitored-brightgreen)](https://sprig-config-7f4835.gitlab.io/)
 
 SprigConfig is a lightweight, opinionated configuration system for Python
