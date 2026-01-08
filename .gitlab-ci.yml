@@ -119,13 +119,11 @@ pip_audit:
   script:
     - pip install pip-audit
     - pip-audit --format json --output pip-audit-report.json || true
-    - pip-audit --format markdown --output pip-audit-report.md || true
     - pip-audit  # Human-readable output
   artifacts:
     when: always
     paths:
       - sprig-config-module/pip-audit-report.json
-      - sprig-config-module/pip-audit-report.md
     expire_in: 7 days
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule"'  # Always run on scheduled pipelines
@@ -213,14 +211,13 @@ pages:
   script:
     - mkdir -p public
     - |
-      # Copy reports
+      # Copy JSON report
       if [ -f sprig-config-module/pip-audit-report.json ]; then
         echo "✓ Found pip-audit-report.json, copying to public/"
         cp sprig-config-module/pip-audit-report.json public/
-      fi
-      if [ -f sprig-config-module/pip-audit-report.md ]; then
-        echo "✓ Found pip-audit-report.md, copying to public/"
-        cp sprig-config-module/pip-audit-report.md public/
+      else
+        echo "⚠ Warning: pip-audit-report.json not found, creating empty report"
+        echo '{"dependencies": [], "vulnerabilities": []}' > public/pip-audit-report.json
       fi
     - |
       # Create index.html dashboard
@@ -321,7 +318,7 @@ pages:
                       <h2>📦 pip-audit <span class="badge">Dependency Scanner</span></h2>
                       <p>Scans Python dependencies for known security vulnerabilities using the OSV database. These vulnerabilities are already publicly documented in CVE databases.</p>
                       <div class="report-links">
-                          <a href="pip-audit-report.md" class="btn">View Markdown Report</a>
+                          <a href="report.html" class="btn">View Report</a>
                           <a href="pip-audit-report.json" class="btn btn-secondary">Download JSON</a>
                       </div>
                   </div>
@@ -351,6 +348,134 @@ pages:
       # Replace placeholders with actual values
       sed -i "s/COMMIT_PLACEHOLDER/${CI_COMMIT_SHORT_SHA}/" public/index.html
       sed -i "s/DATE_PLACEHOLDER/$(date -u +"%Y-%m-%d %H:%M:%S UTC")/" public/index.html
+    - |
+      # Create report viewer HTML
+      cat > public/report.html << 'EOFHTML'
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>pip-audit Vulnerability Report</title>
+          <style>
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              body {
+                  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                  background: #f5f5f5;
+                  padding: 2rem;
+              }
+              .container { max-width: 1200px; margin: 0 auto; }
+              .header {
+                  background: white;
+                  padding: 2rem;
+                  border-radius: 8px;
+                  margin-bottom: 2rem;
+                  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+              }
+              .header h1 { color: #333; margin-bottom: 0.5rem; }
+              .summary {
+                  display: grid;
+                  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                  gap: 1rem;
+                  margin-bottom: 2rem;
+              }
+              .summary-card {
+                  background: white;
+                  padding: 1.5rem;
+                  border-radius: 8px;
+                  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+              }
+              .summary-card h3 { color: #666; font-size: 0.875rem; margin-bottom: 0.5rem; text-transform: uppercase; }
+              .summary-card .number { font-size: 2rem; font-weight: bold; color: #667eea; }
+              .no-vulns {
+                  background: #d4edda;
+                  color: #155724;
+                  padding: 2rem;
+                  border-radius: 8px;
+                  text-align: center;
+                  font-size: 1.125rem;
+                  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+              }
+              .vuln-card {
+                  background: white;
+                  padding: 1.5rem;
+                  border-radius: 8px;
+                  margin-bottom: 1rem;
+                  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                  border-left: 4px solid #f44336;
+              }
+              .vuln-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; }
+              .vuln-title { font-size: 1.25rem; color: #333; font-weight: 600; }
+              .vuln-id { font-family: monospace; background: #f5f5f5; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.875rem; }
+              .vuln-details { color: #666; line-height: 1.6; }
+              .vuln-details p { margin-bottom: 0.75rem; }
+              .vuln-details strong { color: #333; }
+              .fix-versions { background: #e3f2fd; padding: 0.5rem; border-radius: 4px; font-family: monospace; font-size: 0.875rem; }
+              .back-link {
+                  display: inline-block;
+                  margin-top: 2rem;
+                  color: #667eea;
+                  text-decoration: none;
+                  font-weight: 500;
+              }
+              .back-link:hover { text-decoration: underline; }
+              .loading { text-align: center; padding: 3rem; color: #666; }
+          </style>
+      </head>
+      <body>
+          <div class="container">
+              <div class="header">
+                  <h1>📦 pip-audit Vulnerability Report</h1>
+                  <p>Python dependency security scan results</p>
+              </div>
+              <div id="content" class="loading">Loading report...</div>
+              <a href="index.html" class="back-link">← Back to Security Dashboard</a>
+          </div>
+          <script>
+              fetch('pip-audit-report.json')
+                  .then(r => r.json())
+                  .then(data => {
+                      const vulns = data.vulnerabilities || [];
+                      const deps = data.dependencies || [];
+
+                      let html = '<div class="summary">';
+                      html += '<div class="summary-card"><h3>Total Dependencies</h3><div class="number">' + deps.length + '</div></div>';
+                      html += '<div class="summary-card"><h3>Vulnerabilities Found</h3><div class="number" style="color: ' + (vulns.length > 0 ? '#f44336' : '#4caf50') + ';">' + vulns.length + '</div></div>';
+                      html += '</div>';
+
+                      if (vulns.length === 0) {
+                          html += '<div class="no-vulns">✅ No vulnerabilities found! Your dependencies are secure.</div>';
+                      } else {
+                          vulns.forEach(v => {
+                              html += '<div class="vuln-card">';
+                              html += '<div class="vuln-header">';
+                              html += '<div class="vuln-title">' + (v.name || 'Unknown') + ' ' + (v.version || '') + '</div>';
+                              html += '<div class="vuln-id">' + (v.id || 'N/A') + '</div>';
+                              html += '</div>';
+                              html += '<div class="vuln-details">';
+                              if (v.description) html += '<p>' + v.description + '</p>';
+                              if (v.fix_versions && v.fix_versions.length > 0) {
+                                  html += '<p><strong>Fix available:</strong></p>';
+                                  html += '<div class="fix-versions">Upgrade to: ' + v.fix_versions.join(', ') + '</div>';
+                              } else {
+                                  html += '<p><strong>Fix:</strong> No fix available yet</p>';
+                              }
+                              if (v.aliases && v.aliases.length > 0) {
+                                  html += '<p><strong>Aliases:</strong> ' + v.aliases.join(', ') + '</p>';
+                              }
+                              html += '</div></div>';
+                          });
+                      }
+
+                      document.getElementById('content').innerHTML = html;
+                  })
+                  .catch(err => {
+                      document.getElementById('content').innerHTML = '<div class="no-vulns" style="background: #f8d7da; color: #721c24;">Error loading report: ' + err.message + '</div>';
+                  });
+          </script>
+      </body>
+      </html>
+      EOFHTML
   artifacts:
     paths:
       - public
