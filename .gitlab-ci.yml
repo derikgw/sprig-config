@@ -215,10 +215,16 @@ pages:
     - |
       # Copy pip-audit reports only (dependency vulnerabilities are already public)
       if [ -f sprig-config-module/pip-audit-report.html ]; then
+        echo "✓ Found pip-audit-report.html, copying to public/"
         cp sprig-config-module/pip-audit-report.html public/
+      else
+        echo "⚠ Warning: pip-audit-report.html not found"
       fi
       if [ -f sprig-config-module/pip-audit-report.json ]; then
+        echo "✓ Found pip-audit-report.json, copying to public/"
         cp sprig-config-module/pip-audit-report.json public/
+      else
+        echo "⚠ Warning: pip-audit-report.json not found"
       fi
       # Note: Bandit reports (code vulnerabilities) are kept private as artifacts only
     - |
@@ -341,12 +347,15 @@ pages:
                   </div>
               </div>
               <div class="timestamp">
-                  Last updated: <strong>$CI_COMMIT_SHORT_SHA</strong> on <strong>$(date -u +"%Y-%m-%d %H:%M:%S UTC")</strong>
+                  Last updated: <strong>COMMIT_PLACEHOLDER</strong> on <strong>DATE_PLACEHOLDER</strong>
               </div>
           </div>
       </body>
       </html>
       EOF
+      # Replace placeholders with actual values
+      sed -i "s/COMMIT_PLACEHOLDER/${CI_COMMIT_SHORT_SHA}/" public/index.html
+      sed -i "s/DATE_PLACEHOLDER/$(date -u +"%Y-%m-%d %H:%M:%S UTC")/" public/index.html
   artifacts:
     paths:
       - public
