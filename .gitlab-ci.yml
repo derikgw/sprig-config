@@ -119,13 +119,13 @@ pip_audit:
   script:
     - pip install pip-audit
     - pip-audit --format json --output pip-audit-report.json || true
-    - pip-audit --format html --output pip-audit-report.html || true
+    - pip-audit --format markdown --output pip-audit-report.md || true
     - pip-audit  # Human-readable output
   artifacts:
     when: always
     paths:
       - sprig-config-module/pip-audit-report.json
-      - sprig-config-module/pip-audit-report.html
+      - sprig-config-module/pip-audit-report.md
     expire_in: 7 days
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule"'  # Always run on scheduled pipelines
@@ -213,20 +213,15 @@ pages:
   script:
     - mkdir -p public
     - |
-      # Copy pip-audit reports only (dependency vulnerabilities are already public)
-      if [ -f sprig-config-module/pip-audit-report.html ]; then
-        echo "✓ Found pip-audit-report.html, copying to public/"
-        cp sprig-config-module/pip-audit-report.html public/
-      else
-        echo "⚠ Warning: pip-audit-report.html not found"
-      fi
+      # Copy reports
       if [ -f sprig-config-module/pip-audit-report.json ]; then
         echo "✓ Found pip-audit-report.json, copying to public/"
         cp sprig-config-module/pip-audit-report.json public/
-      else
-        echo "⚠ Warning: pip-audit-report.json not found"
       fi
-      # Note: Bandit reports (code vulnerabilities) are kept private as artifacts only
+      if [ -f sprig-config-module/pip-audit-report.md ]; then
+        echo "✓ Found pip-audit-report.md, copying to public/"
+        cp sprig-config-module/pip-audit-report.md public/
+      fi
     - |
       # Create index.html dashboard
       cat > public/index.html << 'EOF'
@@ -326,7 +321,7 @@ pages:
                       <h2>📦 pip-audit <span class="badge">Dependency Scanner</span></h2>
                       <p>Scans Python dependencies for known security vulnerabilities using the OSV database. These vulnerabilities are already publicly documented in CVE databases.</p>
                       <div class="report-links">
-                          <a href="pip-audit-report.html" class="btn">View HTML Report</a>
+                          <a href="pip-audit-report.md" class="btn">View Markdown Report</a>
                           <a href="pip-audit-report.json" class="btn btn-secondary">Download JSON</a>
                       </div>
                   </div>
