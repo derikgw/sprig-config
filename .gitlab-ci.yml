@@ -119,11 +119,14 @@ pip_audit:
   script:
     - pip install pip-audit
     - pip-audit --format json --output pip-audit-report.json || true
+    - pip-audit --format markdown --output pip-audit-report.md || true
     - pip-audit  # Human-readable output
+    - echo "Files generated:" && ls -la *.json *.md 2>/dev/null || true
   artifacts:
     when: always
     paths:
       - sprig-config-module/pip-audit-report.json
+      - sprig-config-module/pip-audit-report.md
     expire_in: 7 days
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule"'  # Always run on scheduled pipelines
@@ -211,13 +214,17 @@ pages:
   script:
     - mkdir -p public
     - |
-      # Copy JSON report
+      # Copy reports
       if [ -f sprig-config-module/pip-audit-report.json ]; then
         echo "✓ Found pip-audit-report.json, copying to public/"
         cp sprig-config-module/pip-audit-report.json public/
       else
         echo "⚠ Warning: pip-audit-report.json not found, creating empty report"
         echo '{"dependencies": [], "vulnerabilities": []}' > public/pip-audit-report.json
+      fi
+      if [ -f sprig-config-module/pip-audit-report.md ]; then
+        echo "✓ Found pip-audit-report.md, copying to public/"
+        cp sprig-config-module/pip-audit-report.md public/
       fi
     - |
       # Create index.html dashboard
