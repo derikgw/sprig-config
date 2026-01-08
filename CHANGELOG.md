@@ -6,6 +6,62 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ---
 
+## [1.2.5] — 2026-01-08
+
+### 🎯 Summary
+
+This is a **security and developer tooling release** that addresses a dependency vulnerability and adds comprehensive security scanning capabilities for both CI/CD and local development.
+
+---
+
+### 🔒 Security
+
+* **Fixed CVE-2025-21441**: Updated `urllib3` from 2.6.2 to 2.6.3 to address security vulnerability
+
+---
+
+### ✨ Added
+
+* **pip-audit** for dependency vulnerability scanning in GitLab CI/CD pipeline
+* **Pre-commit hooks** for local security scanning:
+  * pip-audit (dependency vulnerabilities) - non-blocking, informational only
+  * Bandit (Python code security analysis) - runs on commits
+  * ruff (linting)
+* **Dependency management documentation** (`docs/dependency-management.md`) covering:
+  * Viewing and understanding dependency trees
+  * Finding why packages are installed (Poetry equivalent of `yarn why`)
+  * Updating dependencies safely
+  * Security scanning workflows
+  * Vulnerability remediation procedures
+
+---
+
+### 🔄 Changed
+
+* Replaced Snyk with pip-audit for dependency scanning (official PyPA tool, no authentication required)
+* Added `pre-commit`, `pip-audit`, and `bandit` to dev dependencies
+
+---
+
+### 🔒 Backward Compatibility
+
+* No breaking changes
+* No API changes
+* No configuration changes required
+* Existing functionality unchanged
+
+---
+
+### 🧭 Notes for Developers
+
+* Run `poetry install` to get new dev dependencies (pre-commit, pip-audit, bandit)
+* Install pre-commit hooks: `poetry run pre-commit install`
+* Scan dependencies manually: `poetry run pip-audit`
+* Scan code manually: `poetry run bandit -r src`
+* See `docs/dependency-management.md` for complete dependency management guide
+
+---
+
 ## [1.2.4] — 2025-12-21
 
 ### 🎯 Summary

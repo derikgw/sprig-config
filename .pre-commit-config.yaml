@@ -1,0 +1,33 @@
+# Pre-commit hooks for sprig-config repository
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+# Skip on commit: git commit --no-verify
+
+repos:
+  # pip-audit - Python dependency vulnerability scanning (non-blocking)
+  - repo: local
+    hooks:
+      - id: pip-audit
+        name: pip-audit (sprig-config-module)
+        entry: bash -c 'cd sprig-config-module && poetry run pip-audit || echo "⚠️  Vulnerabilities found - review before pushing"'
+        language: system
+        pass_filenames: false
+        verbose: true
+        # Always exit 0 (non-blocking - informational only)
+        always_run: true
+
+      - id: bandit
+        name: bandit (sprig-config-module)
+        entry: bash -c 'cd sprig-config-module && poetry run bandit -r src'
+        language: system
+        pass_filenames: false
+        types: [python]
+
+  # Optional: ruff linting (already in CI, can add here for local checks)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.1
+    hooks:
+      - id: ruff
+        name: ruff (sprig-config-module)
+        args: [--fix]
+        files: ^sprig-config-module/src/

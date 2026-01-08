@@ -7,7 +7,7 @@ sprigconfig = "sprigconfig.cli:main"
 
 [tool.poetry]
 name = "sprig-config"
-version = "1.2.4"
+version = "1.2.5"
 description = "Spring-like deep merge configuration loader for Python"
 authors = ["Derik G. Wilson <derikwilson6@gmail.com>"]
 readme = "README.md"
@@ -44,8 +44,11 @@ pluggy = ">=1.6.0"
 Pygments = ">=2.19.2"
 pyproject-hooks = ">=1.2.0"
 python-dotenv = "^1.1.1"
+pip-audit = "^2.8.0"
+bandit = {extras = ["toml"], version = "^1.8.0"}
 markdown = "^3.10"
 weasyprint = "^67.0"
+pre-commit = "^4.5.1"
 
 [tool.poetry.group.docs.dependencies]
 mkdocs = "^1.6.0"
@@ -61,3 +64,10 @@ markers = [
   "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
   "crypto: mark test as requiring real crypto key"
 ]
+
+[tool.bandit]
+# Bandit security linting configuration
+targets = ["src"]
+exclude_dirs = ["/tests", "/test_*"]
+# Skip test-related security checks
+skips = ["B101"]  # B101: Use of assert detected (common in tests)

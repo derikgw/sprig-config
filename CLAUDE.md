@@ -193,6 +193,7 @@ Key environment variables:
 - `sprig-config-module/README.md` — User-facing documentation
 - `sprig-config-module/CONTRIBUTING.md` — Contribution guidelines for core module
 - `sprig-config-module/docs/` — Developer guides, release checklists, design notes
+- `sprig-config-module/docs/dependency-management.md` — Managing Python dependencies with Poetry
 - `sprig-config-module/ROADMAP.md` — Future plans
 - `sprig-config-module/CHANGELOG.md` — Version history
 - `CONTRIBUTING.md` (root) — General contribution overview
