@@ -178,7 +178,9 @@ fi
 info "Found pyproject.toml version: ${PYPROJECT_VERSION}"
 
 # Compare versions (case-insensitive)
-if [[ "${CHANGELOG_VERSION,,}" != "${PYPROJECT_VERSION,,}" ]]; then
+CHANGELOG_VERSION_LOWER=$(echo "${CHANGELOG_VERSION}" | tr '[:upper:]' '[:lower:]')
+PYPROJECT_VERSION_LOWER=$(echo "${PYPROJECT_VERSION}" | tr '[:upper:]' '[:lower:]')
+if [[ "${CHANGELOG_VERSION_LOWER}" != "${PYPROJECT_VERSION_LOWER}" ]]; then
     error "Version mismatch!\n  CHANGELOG.md: ${CHANGELOG_VERSION}\n  pyproject.toml: ${PYPROJECT_VERSION}\n\nPlease ensure both files have the same version."
 fi
 
@@ -187,8 +189,19 @@ success "Version matches in both files: ${CHANGELOG_VERSION}"
 # Get latest git tag to validate version progression
 info "Checking version progression against latest git tag..."
 
-# Get all tags matching V*.*.* or v*.*.* pattern, sort by version, get the latest
-LATEST_TAG=$(git tag -l "[Vv]*.*.*" | grep -E '^[Vv][0-9]+\.[0-9]+\.[0-9]+(-RC[0-9]+)?$' | sort -V | tail -n 1)
+# Get all tags matching V*.*.* or v*.*.* pattern, strip prefix, sort by version, get the latest
+LATEST_TAG=$(git tag -l "[Vv]*.*.*" | grep -E '^[Vv][0-9]+\.[0-9]+\.[0-9]+(-RC[0-9]+)?$' | \
+    sed 's/^[Vv]//' | sort -V | tail -n 1)
+
+# If we found a version, prepend V to reconstruct the tag format
+if [[ -n "${LATEST_TAG}" ]]; then
+    LATEST_VERSION="${LATEST_TAG}"
+    # Find the actual tag name (could be V or v prefix)
+    ACTUAL_TAG=$(git tag -l "[Vv]${LATEST_VERSION}" | head -n 1)
+    LATEST_TAG="${ACTUAL_TAG}"
+else
+    LATEST_TAG=""
+fi
 
 if [[ -n "${LATEST_TAG}" ]]; then
     # Strip the V/v prefix from tag
