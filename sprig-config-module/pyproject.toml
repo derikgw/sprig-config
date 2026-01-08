@@ -4,6 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 sprigconfig = "sprigconfig.cli:main"
+create-release = "scripts.create_release:main"
 
 [tool.poetry]
 name = "sprig-config"
@@ -13,7 +14,10 @@ authors = ["Derik G. Wilson <derikwilson6@gmail.com>"]
 readme = "README.md"
 license = "MIT"
 # Tell Poetry where your package lives (src layout)
-packages = [{ include = "sprigconfig", from = "src" }]
+packages = [
+  { include = "sprigconfig", from = "src" },
+  { include = "scripts" }
+]
 
 [tool.poetry.urls]
 Homepage = "https://derikgw.github.io/sprig-config/"
