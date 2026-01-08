@@ -122,6 +122,34 @@ pip_audit:
     - pip-audit --format markdown --output pip-audit-report.md || true
     - pip-audit  # Human-readable output
     - echo "Files generated:" && ls -la *.json *.md 2>/dev/null || true
+  after_script:
+    - |
+      # Create GitLab issue if vulnerabilities found during scheduled scans
+      if [ "$CI_PIPELINE_SOURCE" = "schedule" ] && [ -f pip-audit-report.json ]; then
+        # Count vulnerabilities using python
+        VULN_COUNT=$(python3 -c "import json; data=json.load(open('pip-audit-report.json')); print(sum(len(d.get('vulns', [])) for d in data.get('dependencies', [])))")
+
+        if [ "$VULN_COUNT" -gt 0 ]; then
+          echo "🚨 Found $VULN_COUNT vulnerabilities, creating GitLab issue..."
+
+          # Create issue via GitLab API
+          apt-get update && apt-get install -y curl
+
+          ISSUE_TITLE="Security Alert: $VULN_COUNT Vulnerabilities Found in Dependencies"
+          ISSUE_DESCRIPTION="**Automated Security Scan Results**%0A%0A🔴 Found **$VULN_COUNT** known vulnerabilities in dependencies.%0A%0A**Actions Required:**%0A- Review the [security dashboard](https://sprig-config-7f4835.gitlab.io/)%0A- Check the [detailed report](https://sprig-config-7f4835.gitlab.io/report.html)%0A- Update vulnerable dependencies%0A%0A**Pipeline:** [#${CI_PIPELINE_ID}](${CI_PIPELINE_URL})%0A**Scanned:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')%0A%0A---%0A*This issue was automatically created by the scheduled security scan.*"
+
+          curl --request POST \
+            --header "PRIVATE-TOKEN: ${CI_JOB_TOKEN}" \
+            --data "title=${ISSUE_TITLE}" \
+            --data "description=${ISSUE_DESCRIPTION}" \
+            --data "labels=security,automated" \
+            "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/issues"
+
+          echo "✅ Issue created successfully"
+        else
+          echo "✅ No vulnerabilities found, no issue created"
+        fi
+      fi
   artifacts:
     when: always
     paths:
