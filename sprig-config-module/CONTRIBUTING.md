@@ -88,6 +88,39 @@ If in doubt, choose the option that makes configuration behavior easier to **rea
 
 ---
 
+## Development Resources
+
+### Dependency Management
+
+See [docs/dependency-management.md](docs/dependency-management.md) for guidance on:
+
+- Viewing and understanding dependency trees
+- Finding why a package is installed (equivalent to `yarn why`)
+- Updating dependencies safely
+- Security scanning with pip-audit
+- Fixing vulnerabilities
+
+### Security Scanning
+
+SprigConfig uses:
+- **pip-audit** for dependency vulnerability scanning
+- **Bandit** for Python code security analysis (SAST)
+
+Both tools run automatically in CI and can be run locally:
+
+```bash
+# Scan for dependency vulnerabilities
+poetry run pip-audit
+
+# Scan for code security issues
+poetry run bandit -r src
+
+# Run all pre-commit checks (includes both)
+poetry run pre-commit run --all-files
+```
+
+---
+
 ## License
 
 By contributing, you agree that your contributions will be licensed under the MIT License.
