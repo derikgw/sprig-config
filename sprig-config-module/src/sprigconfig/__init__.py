@@ -11,9 +11,9 @@ This file intentionally exposes ONLY the supported, stable API surface:
     - ConfigLoadError     (all loader errors)
     - load_config()       (legacy API, now calls ConfigLoader)
 
-    AOP Configuration Injection (NEW):
+    Dependency Injection (NEW):
     - ConfigValue                (field-level descriptor for lazy config binding)
-    - ConfigurationProperties    (class-level auto-binding decorator)
+    - ConfigurationProperties    (class decorator for section binding)
     - config_inject              (function parameter injection decorator)
 
 Backward compatibility:
@@ -31,7 +31,7 @@ from .config_singleton import ConfigSingleton
 from .deepmerge import deep_merge
 from .exceptions import ConfigLoadError
 
-# AOP Configuration Injection
+# Dependency Injection
 from .injection import (
     ConfigValue,
     ConfigurationProperties,
@@ -73,7 +73,7 @@ __all__ = [
     "deep_merge",
     "ConfigLoadError",
     "load_config",
-    # AOP Configuration Injection
+    # Dependency Injection
     "ConfigValue",
     "ConfigurationProperties",
     "config_inject",

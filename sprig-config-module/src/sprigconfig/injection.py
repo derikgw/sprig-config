@@ -1,10 +1,10 @@
 # sprigconfig/injection.py
 """
-Spring Boot-style AOP configuration injection for SprigConfig.
+Spring Boot-style dependency injection for SprigConfig.
 
 This module provides three patterns for dependency injection:
 1. ConfigValue - Field-level descriptor for lazy config binding
-2. @ConfigurationProperties - Class-level auto-binding with nested objects
+2. @ConfigurationProperties - Class-level auto-binding decorator
 3. @config_inject - Function parameter injection with override support
 
 All patterns integrate with ConfigSingleton and support:
