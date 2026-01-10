@@ -52,7 +52,31 @@ Any change that violates these principles is deferred or reserved for a 2.0 rele
 
 ---
 
-## Phase 3 — 1.3.x
+## Phase 3 — 1.3.0 (Completed)
+
+**Dependency Injection**
+
+### Scope
+
+- Spring Boot-style dependency injection patterns
+- `ConfigValue` descriptor for field-level lazy binding
+- `@ConfigurationProperties` decorator for class-level binding
+- `@config_inject` decorator for function parameter injection
+- Type conversion system based on type hints
+- LazySecret integration with configurable decryption
+- Nested object auto-binding
+- Comprehensive documentation and test coverage
+
+### Delivered
+
+- Three dependency injection patterns fully implemented
+- 100% backward compatible (opt-in feature)
+- 82% test coverage with 51 comprehensive tests
+- Implementation guide: `docs/dependency-injection-explained.md`
+
+---
+
+## Phase 4 — 1.4.x (Planned)
 
 **Hardening and Provenance Improvements**
 
@@ -65,6 +89,8 @@ Any change that violates these principles is deferred or reserved for a 2.0 rele
 ### Potential Enhancements
 
 - Programmatic access to value source information
+- Validation framework for dependency injection (`@Min`, `@Max`, `@Pattern`)
+- Complex type hint support (`list[str]`, `Optional[str]`)
 
 ### Exclusions
 
@@ -73,7 +99,7 @@ Any change that violates these principles is deferred or reserved for a 2.0 rele
 
 ---
 
-## Phase 4 — 1.4.x (Optional)
+## Phase 5 — 1.5.x (Optional)
 
 **Experimental Parser Registration**
 
@@ -87,7 +113,7 @@ This phase is dependent on demonstrated user demand.
 
 ---
 
-## Phase 5 — 2.0.0
+## Phase 6 — 2.0.0
 
 **Stable Parser Platform**
 
