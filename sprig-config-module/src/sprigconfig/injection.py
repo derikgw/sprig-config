@@ -28,6 +28,9 @@ from .exceptions import ConfigLoadError
 # ConfigValue Descriptor
 # =============================================================================
 
+_MISSING = object()  # Sentinel for missing default
+
+
 class ConfigValue:
     """
     Descriptor that lazily resolves config values from ConfigSingleton.
@@ -41,7 +44,7 @@ class ConfigValue:
 
     Args:
         key: Dotted config key (e.g., "database.url")
-        default: Default value if key missing (default: None)
+        default: Default value if key missing (default: _MISSING sentinel)
         decrypt: For LazySecret values (default: False)
             - False: Return LazySecret object, decrypt on .get()
             - True: Auto-decrypt immediately at binding time
@@ -60,7 +63,7 @@ class ConfigValue:
         - decrypt=True auto-decrypts (use only for frequently-accessed secrets)
     """
 
-    def __init__(self, key: str, *, default: Any = None, decrypt: bool = False):
+    def __init__(self, key: str, *, default: Any = _MISSING, decrypt: bool = False):
         self.key = key
         self.default = default
         self.decrypt = decrypt
@@ -98,11 +101,12 @@ class ConfigValue:
                 f"Hint: Call ConfigSingleton.initialize(profile, config_dir) at startup"
             )
 
-        # Resolve from config
-        value = cfg.get(self.key, self.default)
+        # Resolve from config (use sentinel if no default)
+        default_to_use = None if self.default is _MISSING else self.default
+        value = cfg.get(self.key, default_to_use)
 
         # Check if value is missing and no default provided
-        if value is None and self.default is None:
+        if value is None and self.default is _MISSING:
             # Try to provide helpful context
             key_parts = self.key.split(".")
             if len(key_parts) > 1:
@@ -150,6 +154,61 @@ class ConfigValue:
             f"Cannot set config value '{self.key}' on {self._owner_name}.{self._attr_name}. "
             f"ConfigValue descriptors are read-only."
         )
+
+    def resolve(self):
+        """
+        Resolve value directly without instance (for @config_inject).
+
+        This method performs the same logic as __get__ but without
+        requiring an instance object.
+
+        Returns:
+            Resolved config value
+
+        Raises:
+            ConfigLoadError: If config key is missing or resolution fails
+        """
+        # Get current config from singleton
+        try:
+            cfg = ConfigSingleton.get()
+        except ConfigLoadError as e:
+            raise ConfigLoadError(
+                f"ConfigSingleton not initialized when resolving "
+                f"ConfigValue('{self.key}')\n"
+                f"Original error: {e}\n"
+                f"Hint: Call ConfigSingleton.initialize(profile, config_dir) at startup"
+            )
+
+        # Resolve from config
+        default_to_use = None if self.default is _MISSING else self.default
+        value = cfg.get(self.key, default_to_use)
+
+        # Check if value is missing and no default provided
+        if value is None and self.default is _MISSING:
+            raise ConfigLoadError(
+                f"Config key '{self.key}' not found and no default provided.\n"
+                f"ConfigValue('{self.key}')\n"
+                f"Hint: Check your config files or add default= parameter"
+            )
+
+        # Handle LazySecret
+        if isinstance(value, LazySecret):
+            if self.decrypt:
+                try:
+                    value = value.get()  # Auto-decrypt
+                except Exception as e:
+                    raise ConfigLoadError(
+                        f"Failed to decrypt LazySecret for key '{self.key}'\n"
+                        f"ConfigValue('{self.key}', decrypt=True)\n"
+                        f"Reason: {e}\n"
+                        f"Hint: Check APP_SECRET_KEY environment variable"
+                    )
+
+        # Type conversion (only if not LazySecret and type hint present)
+        if self._type_hint and value is not None and not isinstance(value, LazySecret):
+            value = self._convert_type(value, self._type_hint)
+
+        return value
 
     def _convert_type(self, value: Any, target_type: type) -> Any:
         """
@@ -305,8 +364,12 @@ def ConfigurationProperties(prefix: str):
                         # Skip missing keys (could add default support later)
                         continue
 
+                    # Handle LazySecret (don't try to instantiate it!)
+                    if isinstance(value, LazySecret):
+                        # Keep encrypted by default
+                        setattr(self, attr_name, value)
                     # Handle nested objects (auto-instantiate if class type)
-                    if _is_config_class(attr_type):
+                    elif _is_config_class(attr_type):
                         try:
                             # Recursively instantiate nested config class
                             # Assumes nested class also has @ConfigurationProperties
@@ -320,9 +383,6 @@ def ConfigurationProperties(prefix: str):
                                 f"Reason: {e}\n"
                                 f"Hint: Ensure nested class has @ConfigurationProperties decorator"
                             )
-                    elif isinstance(value, LazySecret):
-                        # Keep encrypted by default
-                        setattr(self, attr_name, value)
                     else:
                         # Type conversion
                         try:
@@ -444,9 +504,9 @@ def config_inject(func: Callable) -> Callable:
                 continue  # Already provided
 
             if isinstance(param.default, ConfigValue):
-                # Resolve from config
+                # Resolve from config using resolve() method
                 try:
-                    resolved = param.default.__get__(None, None)
+                    resolved = param.default.resolve()
                     bound_args[param_name] = resolved
                 except Exception as e:
                     raise ConfigLoadError(
