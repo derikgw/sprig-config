@@ -6,6 +6,118 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ---
 
+## [Unreleased]
+
+### 🎯 Summary
+
+This is a **major feature release** that adds Spring Boot-style AOP (Aspect-Oriented Programming) configuration injection to SprigConfig, enabling cleaner, more declarative code through annotations and decorators.
+
+---
+
+### ✨ Added
+
+* **AOP Configuration Injection** - Three new patterns for dependency injection:
+  * **`ConfigValue`** - Field-level descriptor for lazy config binding with type conversion
+  * **`@ConfigurationProperties`** - Class-level decorator for auto-binding config sections
+  * **`@config_inject`** - Function parameter injection decorator with override support
+
+* **Type Conversion System**:
+  * Automatic type conversion based on Python type hints (int, float, bool, str, list, dict)
+  * Clear error messages with full context when conversion fails
+  * Preserves LazySecret and Config objects (no conversion)
+
+* **LazySecret Integration**:
+  * Configurable `decrypt` parameter (default: False for security)
+  * `decrypt=False` - Returns LazySecret object (encrypted in memory)
+  * `decrypt=True` - Auto-decrypts at binding time (plaintext in memory)
+  * Zero-trust security by default
+
+* **Nested Object Binding**:
+  * Auto-instantiate nested config classes recursively
+  * Preserves `._config` attribute for access to underlying Config object
+  * Supports multiple levels of nesting
+
+* **Test-Only Refresh**:
+  * `ConfigValue` descriptors auto-refresh after config reload (reads from new singleton)
+  * `@ConfigurationProperties` instances require re-instantiation after reload
+  * No production code for reload (maintains immutability guarantee)
+
+* **Documentation**:
+  * Comprehensive user guide: `docs/configuration-injection.md`
+  * Design documentation: `src/sprigconfig/injection.md`
+  * Updated README with AOP examples
+  * Updated CLAUDE.md with AOP patterns
+
+---
+
+### 🔄 Changed
+
+* **Public API Exports** - Added to `sprigconfig/__init__.py`:
+  * `ConfigValue` - Field-level descriptor
+  * `ConfigurationProperties` - Class-level decorator
+  * `config_inject` - Function injection decorator
+
+---
+
+### 🔒 Backward Compatibility
+
+* **No breaking changes** - 100% backward compatible
+* **Config.get()** - Works exactly as before, will be supported indefinitely
+* **ConfigSingleton** - No changes to initialization or access patterns
+* **LazySecret** - No changes to existing secret handling
+* **AOP injection is opt-in** - Existing code requires zero changes
+* **Gradual adoption** - Can mix `Config.get()` and AOP patterns in same codebase
+
+---
+
+### 📚 Examples
+
+**Before (Traditional):**
+```python
+cfg = ConfigSingleton.get()
+db_url = cfg.get("database.url")
+db_port = cfg.get("database.port", 5432)
+api_key = cfg.get("api.key").get()  # LazySecret
+```
+
+**After (AOP Injection):**
+```python
+from sprigconfig import ConfigValue, ConfigurationProperties
+
+class MyService:
+    db_url: str = ConfigValue("database.url")
+    db_port: int = ConfigValue("database.port", default=5432)
+    api_key: str = ConfigValue("api.key", decrypt=True)
+
+@ConfigurationProperties(prefix="database")
+class DatabaseConfig:
+    url: str
+    port: int
+```
+
+---
+
+### 🎁 Benefits
+
+* **Reduced Boilerplate** - No more repetitive `Config.get()` calls
+* **Type Safety** - Automatic type conversion based on type hints
+* **Security** - Zero-trust LazySecret handling (encrypted by default)
+* **Clear Errors** - Rich error messages with full context
+* **Testing** - Auto-refresh behavior for descriptors in tests
+* **Flexibility** - Three patterns for different use cases
+
+---
+
+### 🔮 Future Enhancements
+
+Potential additions for future releases (not in this version):
+* Validation framework (`@Min`, `@Max`, `@Pattern`)
+* Complex type hints (`list[str]`, `Optional[str]`)
+* Production config reload (file watcher, hot reload)
+* Nested collection binding (`list[NestedConfig]`)
+
+---
+
 ## [1.2.5] — 2026-01-08
 
 ### 🎯 Summary

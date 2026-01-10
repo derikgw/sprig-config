@@ -78,6 +78,62 @@ are mapped to `LazySecret` objects.
 
 ---
 
+### ✔️ Configuration Injection (AOP)
+
+Spring Boot-style dependency injection for cleaner code. Bind config values using decorators instead of explicit `Config.get()` calls:
+
+**Field-Level Binding:**
+```python
+from sprigconfig import ConfigValue
+
+class MyService:
+    db_url: str = ConfigValue("database.url")
+    timeout: int = ConfigValue("service.timeout", default=30)
+    api_key: str = ConfigValue("api.key", decrypt=True)
+
+service = MyService()
+print(service.db_url)  # Resolved from config
+```
+
+**Class-Level Binding:**
+```python
+from sprigconfig import ConfigurationProperties
+
+@ConfigurationProperties(prefix="database")
+class DatabaseConfig:
+    url: str
+    port: int
+    username: str
+
+db = DatabaseConfig()
+print(db.url)  # Auto-bound from config["database"]["url"]
+```
+
+**Function Parameter Injection:**
+```python
+from sprigconfig import config_inject
+
+@config_inject
+def connect_db(
+    host: str = ConfigValue("database.host"),
+    port: int = ConfigValue("database.port", default=5432)
+):
+    return connect(host, port)
+
+connect_db()  # Uses config values
+connect_db(host="override")  # Override specific params
+```
+
+**Features:**
+- Type conversion based on type hints (int, float, bool, str, list, dict)
+- LazySecret handling with configurable `decrypt` parameter
+- Nested object auto-binding
+- Clear error messages with full context
+
+See [Configuration Injection Guide](docs/configuration-injection.md) for full details.
+
+---
+
 ### ✔️ Import Chains
 Inside any YAML file:
 
