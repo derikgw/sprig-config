@@ -66,3 +66,8 @@ These tools are **not required** to use SprigConfig itself.
 ## 📄 License
 
 MIT
+
+## Support SprigConfig
+
+SprigConfig is developed and maintained in my personal time.
+If it helps your project, you can support its continued development via GitHub Sponsors.
