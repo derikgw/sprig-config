@@ -18,8 +18,8 @@ class MSSQLDatabase:
     @config_inject
     def connect(
         self,
-        user: str = ConfigValue("mssql_database.server.user"),
-        password: str = ConfigValue("mssql_database.server.password")
+        user: str = ConfigValue("mssql_database.username"),
+        password: str = ConfigValue("mssql_database.password")
     ):
         print(f"This is {self.__class__.__name__} invoked with User: {user} and Password: {password}")
 
