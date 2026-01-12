@@ -102,85 +102,6 @@ Any change that violates these principles is deferred or reserved for a 2.0 rele
 
 ## Phase 4 — 1.4.x (Planned)
 
-**Dynamic Class Instantiation (`_target_` Support)**
-
-### Scope
-
-Building on 1.3.0's dependency injection, add Hydra-style `_target_` support for dynamic class instantiation from configuration. Perfect for hexagonal architecture and adapter patterns.
-
-**Core Feature:**
-- `_target_` keyword in config to specify fully-qualified class names
-- `instantiate()` function to dynamically create objects from config
-- Support for constructor argument binding from config values
-- Nested instantiation (if constructor args are also `_target_` objects)
-- Integration with existing dependency injection patterns
-
-**Example Use Case (Hexagonal Architecture):**
-
-```yaml
-adapters:
-  auth:
-    _target_: myapp.adapters.oauth.OAuthAdapter
-    client_id: ${env:OAUTH_CLIENT_ID}
-    client_secret: ${secrets.oauth_secret}
-
-  database:
-    _target_: myapp.adapters.postgres.PostgresAdapter
-    host: localhost
-    port: 5432
-    pool_size: 10
-    connection_timeout: 30
-```
-
-**Bootstrap Code:**
-```python
-from sprigconfig import ConfigSingleton, instantiate
-
-cfg = ConfigSingleton.get()
-
-# Dynamic instantiation - no hardcoded adapter names!
-auth_adapter = instantiate(cfg.adapters.auth)
-db_adapter = instantiate(cfg.adapters.database)
-
-# Wire up hexagonal core with swappable adapters
-app = MyApplication(auth=auth_adapter, db=db_adapter)
-```
-
-**Key Benefits:**
-- Completely decouples adapter selection from application code
-- Swap implementations via config (PostgreSQL → MySQL, OAuth → SAML, etc.)
-- Profile-specific adapters (dev uses SQLite, prod uses PostgreSQL)
-- Perfect for ports/adapters pattern (hexagonal architecture)
-- Type-safe instantiation with error messages showing config path
-
-### Implementation Details
-
-- New module: `sprigconfig.instantiate`
-- Support `_target_` in any config section (not just top-level)
-- Recursive instantiation for nested objects
-- Error handling: clear messages if class not found or args invalid
-- Optional `_partial_` support for partial function application (future)
-- Integration with LazySecret (auto-decrypt if needed)
-
-### Potential Enhancements
-
-- Validation framework for dependency injection (`@Min`, `@Max`, `@Pattern`)
-- Complex type hint support (`list[str]`, `Optional[str]`)
-- `_partial_` keyword for functools.partial behavior
-- `_recursive_` flag to control nested instantiation depth
-- Plugin registry for custom instantiation strategies
-
-### Compatibility
-
-- 100% backward compatible (opt-in feature)
-- No changes to existing config loading behavior
-- `_target_` is just another config key unless explicitly used with `instantiate()`
-- Works with all config formats (YAML, JSON, TOML)
-
----
-
-## Phase 5 — 1.5.x (Planned)
-
 **Hardening and Provenance Improvements**
 
 ### Scope
@@ -188,7 +109,12 @@ app = MyApplication(auth=auth_adapter, db=db_adapter)
 - Record source format metadata for loaded values
 - Improve error clarity (parse vs merge vs secret resolution)
 - Document merge semantics across formats
+
+### Potential Enhancements
+
 - Programmatic access to value source information
+- Validation framework for dependency injection (`@Min`, `@Max`, `@Pattern`)
+- Complex type hint support (`list[str]`, `Optional[str]`)
 
 ### Exclusions
 
@@ -197,7 +123,7 @@ app = MyApplication(auth=auth_adapter, db=db_adapter)
 
 ---
 
-## Phase 6 — 1.6.x (Optional)
+## Phase 5 — 1.5.x (Optional)
 
 **Experimental Parser Registration**
 
@@ -211,7 +137,7 @@ This phase is dependent on demonstrated user demand.
 
 ---
 
-## Phase 7 — 2.0.0
+## Phase 6 — 2.0.0
 
 **Stable Parser Platform**
 

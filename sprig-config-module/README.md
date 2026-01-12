@@ -22,8 +22,7 @@
 </svg>
 </p>
 
-[![PyPI version](https://img.shields.io/pypi/v/sprig-config.svg)](https://pypi.org/project/sprig-config/)
-[![Security Scan](https://img.shields.io/badge/security-monitored-brightgreen)](https://sprig-config-7f4835.gitlab.io/)
+[![PyPI version](https://img.shields.io/pypi/v/sprig-config.svg)](https://pypi.org/project/sprig-config/) [![Security Scan](https://img.shields.io/badge/security-monitored-brightgreen)](https://sprig-config-7f4835.gitlab.io/)
 
 SprigConfig is a lightweight, opinionated configuration system for Python
 applications. It provides layered YAML loading, profile overlays, environment
