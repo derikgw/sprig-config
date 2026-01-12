@@ -57,7 +57,6 @@ sprig-tools/fixtures/dev_fake_secrets.json
 # Images
 # ==========================
 images/
-*.png
 *.jpg
 *.jpeg
 *.gif
