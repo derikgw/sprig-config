@@ -1,0 +1,7 @@
+[mssql_database]
+_target_ = "tests.db.mssql.mssql_database_adapter.MSSQLDatabase"
+url = "mssql://localhost"
+port = 1234
+database = "test"
+username = "${MSSQL_DB_USER:SA}"
+password = "${MSSQL_DB_PASSWORD}"

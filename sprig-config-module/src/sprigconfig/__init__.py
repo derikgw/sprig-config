@@ -15,6 +15,7 @@ This file intentionally exposes ONLY the supported, stable API surface:
     - ConfigValue                (field-level descriptor for lazy config binding)
     - ConfigurationProperties    (class decorator for section binding)
     - config_inject              (function parameter injection decorator)
+    - instantiate                (dynamic class instantiation from config via _target_)
 
 Backward compatibility:
     Existing projects importing:
@@ -37,6 +38,7 @@ from .injection import (
     ConfigurationProperties,
     config_inject,
 )
+from .instantiate import instantiate
 
 # ---------------------------------------------------------------------------
 # Backward-compatible load_config()
@@ -77,4 +79,5 @@ __all__ = [
     "ConfigValue",
     "ConfigurationProperties",
     "config_inject",
+    "instantiate",
 ]
