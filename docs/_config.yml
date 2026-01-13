@@ -38,8 +38,7 @@ defaults:
   - scope:
       path: ""
       type: "pages"
-    values:
-      layout: "default"
+    values: {}
 
 # Navigation (used by some themes)
 navigation:
