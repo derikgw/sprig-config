@@ -1,8 +1,8 @@
 ---
 layout: default
-title: SprigConfig — Spring Boot-style Configuration for Python
+title: SprigConfig
 ---
-![sprig_config_logo_horizontal_150_35.svg](../assets/sprig_config_logo_horizontal_150_35.svg)
+
 # SprigConfig
 
 **Spring Boot-style configuration management for Python.**
