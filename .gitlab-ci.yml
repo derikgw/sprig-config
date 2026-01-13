@@ -67,12 +67,10 @@ pytest:
   artifacts:
     when: always
     reports:
-      junit: sprig-config-module/reports/junit.xml
       coverage_report:
         coverage_format: cobertura
         path: sprig-config-module/coverage.xml
     paths:
-      - sprig-config-module/reports/
       - sprig-config-module/coverage.xml
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule"'
