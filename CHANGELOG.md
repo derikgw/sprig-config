@@ -6,13 +6,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ---
 
-## [1.4.0-RC1] — 2026-01-12
+## [1.4.0] — 2026-01-12
 
 ### 🎯 Summary
 
-This is a **pre-release for Phase 4** introducing **Hydra-style `_target_` support for dynamic class instantiation from configuration**. This enables powerful patterns like hexagonal architecture with swappable adapters instantiated directly from config files.
-
-**⚠️ Pre-Release**: This is a release candidate. API may change based on feedback. Not recommended for production use.
+introducing **Hydra-style `_target_` support for dynamic class instantiation from configuration**. This enables powerful patterns like hexagonal architecture with swappable adapters instantiated directly from config files.
 
 ---
 
