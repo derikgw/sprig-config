@@ -6,6 +6,101 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ---
 
+## [1.4.0-RC1] — 2026-01-12
+
+### 🎯 Summary
+
+This is a **pre-release for Phase 4** introducing **Hydra-style `_target_` support for dynamic class instantiation from configuration**. This enables powerful patterns like hexagonal architecture with swappable adapters instantiated directly from config files.
+
+**⚠️ Pre-Release**: This is a release candidate. API may change based on feedback. Not recommended for production use.
+
+---
+
+### ✨ Added
+
+* **Dynamic Class Instantiation** - Hydra-style `_target_` support:
+  * Specify a class path in config: `_target_: "my.module.ClassName"`
+  * Automatically extract parameters from config section
+  * Instantiate class directly from configuration
+  * Perfect for hexagonal architecture and adapter patterns
+
+* **`instantiate()` Function** - New public API in `sprigconfig`:
+  * `instantiate(config_section)` - Creates instance from `_target_`
+  * Automatic parameter extraction based on `__init__` signature
+  * Type conversion via type hints (int, float, bool, str, list, dict)
+  * `_recursive_=True` (default) - Recursively instantiate nested `_target_` objects
+  * `_convert_types_=True` (default) - Apply type conversion to parameters
+
+* **Type Conversion System**:
+  * Automatic conversion based on Python type hints
+  * Preserves LazySecret and Config objects (never converted)
+  * Clear error messages with full context
+
+* **Seamless @config_inject Integration**:
+  * Instantiated objects work perfectly with `@config_inject` decorator
+  * Constructor parameters come from `_target_` config
+  * Other values still available for `@config_inject` in methods
+  * Two DI patterns work together harmoniously
+
+* **Comprehensive Documentation**:
+  * Module documentation: `src/sprigconfig/instantiate.md`
+  * Full API reference with examples
+  * Design principles and use cases
+  * Error handling and security notes
+
+---
+
+### 📝 Examples
+
+**Config (YAML):**
+```yaml
+database:
+  _target_: app.adapters.PostgresAdapter
+  host: localhost
+  port: 5432
+  pool_size: 10
+  username: ${DB_USER}
+  password: ${DB_PASSWORD}
+```
+
+**Python:**
+```python
+from sprigconfig import ConfigSingleton, instantiate
+
+cfg = ConfigSingleton.get()
+db = instantiate(cfg.database)
+# Returns: PostgresAdapter(host="localhost", port=5432, pool_size=10)
+# username/password still available for @config_inject in methods
+```
+
+---
+
+### 🧪 Testing
+
+* 24 comprehensive tests covering all features
+* **Format-agnostic testing**: Validates YAML, JSON, and TOML configs
+* **Integration tests**: Verify `@config_inject` compatibility
+* All tests use real config files (not inline dicts only)
+* 157 total tests pass (24 new + 133 existing)
+
+---
+
+### 🔒 Backward Compatibility
+
+* **No breaking changes** - Fully backward compatible
+* `_target_` is just another config key if not used with `instantiate()`
+* Existing code continues to work unchanged
+* Opt-in feature - must explicitly call `instantiate()`
+
+---
+
+### 🚀 What's Next
+
+* **1.4.0** - Feature-complete stable release
+* **1.5.0+** - Future enhancements (partial support, validation framework, etc.)
+
+---
+
 ## [1.3.0] — 2026-01-10
 
 ### 🎯 Summary
