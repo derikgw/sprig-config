@@ -1,7 +1,8 @@
 ---
-layout: default
 title: SprigConfig
 ---
+
+![sprig_config_logo_horizontal_150_35.svg](assets/sprig_config_logo_horizontal_150_35.svg)
 
 # SprigConfig
 
