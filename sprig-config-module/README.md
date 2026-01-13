@@ -155,6 +155,40 @@ See [Dependency Injection Explained](docs/dependency-injection-explained.md) for
 
 ---
 
+### ✔️ Dynamic Class Instantiation
+
+Hydra-style `_target_` support for instantiating classes directly from configuration. Perfect for hexagonal architecture with swappable adapters:
+
+**Config (YAML):**
+```yaml
+adapters:
+  database:
+    _target_: myapp.adapters.PostgresAdapter
+    host: localhost
+    port: 5432
+    pool_size: 10
+```
+
+**Python:**
+```python
+from sprigconfig import ConfigSingleton, instantiate
+
+cfg = ConfigSingleton.get()
+db = instantiate(cfg["adapters"]["database"])
+# Returns: PostgresAdapter(host="localhost", port=5432, pool_size=10)
+```
+
+**Features:**
+- Automatic parameter extraction from `__init__` signature
+- Type conversion based on type hints (int, float, bool, str, list, dict)
+- Recursive instantiation for nested `_target_` objects
+- Seamless integration with `@config_inject` decorator
+- Control flags: `_recursive_=False`, `_convert_types_=False`
+
+See [instantiate() Documentation](src/sprigconfig/instantiate.md) for full details.
+
+---
+
 ### ✔️ Import Chains
 Inside any YAML file:
 
