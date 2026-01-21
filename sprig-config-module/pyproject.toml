@@ -52,7 +52,7 @@ pip-audit = "^2.8.0"
 filelock = "^3.20.3"
 bandit = {extras = ["toml"], version = "^1.8.0"}
 markdown = "^3.10"
-weasyprint = "^67.0"
+weasyprint = "^68.0"
 pre-commit = "^4.5.1"
 virtualenv = "^20.36.1"
 
