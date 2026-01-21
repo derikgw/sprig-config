@@ -163,13 +163,6 @@ pip_audit:
       when: manual
       allow_failure: true
 
-codeql_scan:
-  stage: security
-  image: github.com/github/codeql-action/releases:v4.31.10
-  script:
-    - codeql database create --language=python codeql-db
-    - codeql database analyze codeql-db --format=json --output=codeql-results.json
-
 dry_run_pypi:
   stage: deploy
   extends: .default_setup
