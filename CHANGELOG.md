@@ -6,6 +6,36 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ---
 
+## [1.4.1] — 2026-01-21
+
+### 🎯 Summary
+
+This is a **security patch release** addressing two dependency vulnerabilities with minimal production impact.
+
+---
+
+### 🔒 Security
+
+* **Fixed CVE-2025-68616** — Updated `weasyprint` to 68.0 to address security vulnerability
+* **Fixed CVE-2026-22701** — Updated `filelock` from 3.20.2 to 3.20.3 and `virtualenv` from 20.36.0 to 20.36.1 to address security vulnerabilities
+
+---
+
+### 🔄 Changed
+
+* Removed CodeQL scanning from CI pipeline (temporarily disabled due to tooling issues)
+
+---
+
+### 🔒 Backward Compatibility
+
+* No breaking changes
+* No API changes
+* No configuration changes required
+* Existing functionality unchanged
+
+---
+
 ## [1.4.0] — 2026-01-12
 
 ### 🎯 Summary
