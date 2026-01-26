@@ -112,10 +112,10 @@ Both tools run automatically in CI and can be run locally:
 # Scan for dependency vulnerabilities
 poetry run pip-audit
 
-# Scan for code security issues
+# Scan for code security issues locally
 poetry run bandit -r src
 
-# Run all pre-commit checks (includes both)
+# Run all pre-commit checks (includes linting and dependency scanning)
 poetry run pre-commit run --all-files
 ```
 

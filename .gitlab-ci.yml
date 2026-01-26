@@ -87,28 +87,6 @@ sast:
 secret_detection:
   stage: security
 
-# Bandit - Python security linting
-bandit:
-  stage: security
-  extends: .default_setup
-  allow_failure: true
-  script:
-    - pip install bandit[toml]
-    - bandit -r src -f json -o bandit-report.json || true
-    - bandit -r src -f screen  # Human-readable output
-  artifacts:
-    when: always
-    paths:
-      - sprig-config-module/bandit-report.json
-    expire_in: 7 days
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    - if: '$CI_COMMIT_BRANCH == "main"'
-    - if: '$CI_MERGE_REQUEST_IID'
-    - if: '$CI_COMMIT_BRANCH'
-      when: manual
-      allow_failure: true
-
 # pip-audit - Python dependency vulnerability scanning
 pip_audit:
   stage: security

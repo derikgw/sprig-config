@@ -6,6 +6,29 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ---
 
+## [1.4.2] — 2026-01-26
+
+### 🎯 Summary
+
+This is a **security patch release** addressing a path traversal vulnerability in a transitive dependency.
+
+---
+
+### 🔒 Security
+
+* **Fixed CVE-2026-23949** — Updated `jaraco-context` to 6.1.0 to address Zip Slip path traversal vulnerability in tarball extraction
+
+---
+
+### 🔒 Backward Compatibility
+
+* No breaking changes
+* No API changes
+* No configuration changes required
+* Existing functionality unchanged
+
+---
+
 ## [1.4.1] — 2026-01-21
 
 ### 🎯 Summary
