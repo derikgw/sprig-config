@@ -8,7 +8,7 @@ create-release = "scripts.create_release:main"
 
 [tool.poetry]
 name = "sprig-config"
-version = "1.4.1"
+version = "1.4.2"
 description = "Spring-like deep merge configuration loader for Python"
 authors = ["Derik G. Wilson <derikwilson6@gmail.com>"]
 readme = "README.md"
@@ -55,6 +55,8 @@ markdown = "^3.10"
 weasyprint = "^68.0"
 pre-commit = "^4.5.1"
 virtualenv = "^20.36.1"
+jaraco-context = ">=6.1.0"
+radon = "^6.0.1"
 
 [tool.poetry.group.docs.dependencies]
 mkdocs = "^1.6.0"

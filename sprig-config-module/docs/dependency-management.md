@@ -353,6 +353,61 @@ urllib3 = ">=2.6.3"  # Override transitive requirement
 poetry update requests cryptography pip-audit
 ```
 
+#### Special Case: Vendored/Hidden Transitive Dependencies
+
+Some packages vendor (bundle) dependencies internally, making them invisible to `poetry show --tree` and `poetry.lock`. A real-world example is `jaraco-context`, which is vendored inside `setuptools` as `setuptools._vendor.jaraco.context`.
+
+**How to Identify a Vendored Dependency Issue:**
+
+1. Run `pip-audit` and identify a vulnerability:
+   ```bash
+   poetry run pip-audit --desc
+   ```
+   Look for packages that don't appear when you search the tree.
+
+2. Generate a detailed JSON report to inspect:
+   ```bash
+   poetry run pip-audit --format json --output audit.json
+   ```
+
+3. Search the JSON for the vulnerable package name and note which packages have vulnerabilities.
+
+**How to Fix (Example: jaraco-context CVE-2026-23949):**
+
+1. **Identify the problem:** `jaraco-context 6.0.1` has a Zip Slip vulnerability that needs upgrading to `6.1.0`.
+
+2. **Check if it's in poetry.lock:**
+   ```bash
+   grep "jaraco-context" poetry.lock
+   # Returns nothing = vendored dependency
+   ```
+
+3. **Check if poetry show finds it:**
+   ```bash
+   poetry show jaraco-context
+   # May fail or show nothing if it's hidden
+   ```
+
+4. **Force-pin the fixed version in pyproject.toml:**
+   ```toml
+   [tool.poetry.group.dev.dependencies]
+   jaraco-context = ">=6.1.0"  # Explicitly require patched version
+   ```
+
+5. **Update and verify:**
+   ```bash
+   poetry update jaraco-context
+   poetry run pip-audit  # Confirm CVE is gone
+   ```
+
+**Why This Works:**
+- Even though `jaraco-context` is vendored inside `setuptools`, Poetry can still resolve and install an explicit constraint on it.
+- When a newer version of the vendored package is installed explicitly, it may be used by other packages that reference the original package name.
+- This forces the package ecosystem to use the patched version.
+
+**Note for CI/CD:**
+These fixes should be committed to `poetry.lock` and deployed via normal Poetry workflows. No special handling is needed for CI/CD beyond standard `poetry install`.
+
 ### 7. Monorepo Considerations
 
 This is a monorepo with two Poetry projects:
