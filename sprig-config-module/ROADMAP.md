@@ -100,30 +100,44 @@ Any change that violates these principles is deferred or reserved for a 2.0 rele
 
 ---
 
-## Phase 4 — 1.4.x (Planned)
+## Phase 4 — 1.4.x (Completed)
 
-**Hardening and Provenance Improvements**
+**Dynamic Class Instantiation**
 
 ### Scope
 
-- Record source format metadata for loaded values
-- Improve error clarity (parse vs merge vs secret resolution)
-- Document merge semantics across formats
+- Hydra-style `_target_` support for instantiating classes from configuration
+- `instantiate()` function for creating instances from config sections
+- Type conversion system based on Python type hints
+- Recursive instantiation of nested `_target_` objects
+- Seamless integration with `@config_inject` decorator
 
-### Potential Enhancements
+### Delivered
 
-- Programmatic access to value source information
-- Validation framework for dependency injection (`@Min`, `@Max`, `@Pattern`)
-- Complex type hint support (`list[str]`, `Optional[str]`)
-
-### Exclusions
-
-- No public plugin stability guarantees
-- No automatic plugin discovery
+- `instantiate(config_section)` function in public API
+- Automatic parameter extraction from `__init__` signature
+- Type conversion for int, float, bool, str, list, dict
+- 24 comprehensive tests covering all features
+- Full backward compatibility (opt-in feature)
+- Documentation: `src/sprigconfig/instantiate.md`
 
 ---
 
-## Phase 5 — 1.5.x (Optional)
+## Phase 5 — 1.5.x (Planned)
+
+**Validation and Enhanced Type Support**
+
+### Potential Enhancements
+
+- Validation framework (`@Min`, `@Max`, `@Pattern`)
+- Complex type hints (`list[str]`, `Optional[str]`)
+- Nested collection binding (`list[NestedConfig]`)
+- Enhanced error messages for configuration binding
+- Programmatic access to value source information
+
+---
+
+## Phase 6 — 1.6.x (Optional)
 
 **Experimental Parser Registration**
 
@@ -137,7 +151,7 @@ This phase is dependent on demonstrated user demand.
 
 ---
 
-## Phase 6 — 2.0.0
+## Phase 7 — 2.0.0
 
 **Stable Parser Platform**
 

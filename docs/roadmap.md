@@ -21,9 +21,9 @@ Any change violating these principles is either deferred or reserved for a major
 
 ---
 
-## Current Version: 1.2.0
+## Current Version: 1.4.2
 
-Released: December 2024
+Released: January 2026
 
 ### Features
 
@@ -35,58 +35,35 @@ Released: December 2024
 - Complete provenance tracking
 - CLI for configuration inspection
 - pytest integration
+- **Dependency injection** — `ConfigValue`, `@ConfigurationProperties`, `@config_inject`
+- **Dynamic instantiation** — Hydra-style `_target_` support via `instantiate()`
 
-### Recent Additions
+### Recent Additions (1.3.0 - 1.4.2)
 
-- **TOML configuration format** — Use `.toml` files alongside YAML and JSON
-- **`--format` CLI flag** — Explicitly specify input config format
-- **Merge order fix** — Profile overlays now correctly have final say over imported values
+- **Dependency injection patterns** (1.3.0) — Spring Boot-style configuration injection with three patterns:
+  - `ConfigValue` — Field-level descriptor for lazy config binding with type conversion
+  - `@ConfigurationProperties` — Class-level decorator for auto-binding config sections
+  - `@config_inject` — Function parameter injection decorator with override support
+- **Dynamic class instantiation** (1.4.0) — Hydra-style `_target_` support for instantiating classes from configuration
+- **Type conversion system** — Automatic conversion based on Python type hints
+- **Security patches** (1.4.1, 1.4.2) — Dependency vulnerability fixes
 
 ---
 
-## Phase 3: 1.3.x
+## Phase 5: 1.5.x
 
-**Focus: Hardening and Provenance Improvements**
-
-### Planned
-
-- **Source format metadata** — Record which format each value came from
-- **Improved error clarity** — Better distinction between parse, merge, and secret errors
-- **Cross-format merge documentation** — Document merge semantics across formats
+**Focus: Validation and Enhanced Type Support**
 
 ### Potential Enhancements
 
-- Programmatic access to value source information
-- Enhanced debugging for complex import hierarchies
-
-### Exclusions
-
-- No public plugin stability guarantees
-- No automatic plugin discovery
+- Validation framework (`@Min`, `@Max`, `@Pattern`)
+- Complex type hints (`list[str]`, `Optional[str]`)
+- Nested collection binding (`list[NestedConfig]`)
+- Enhanced error messages for configuration binding
 
 ---
 
-## Phase 4: 1.4.x (Optional)
-
-**Focus: Experimental Parser Registration**
-
-This phase depends on demonstrated user demand.
-
-### Scope
-
-- Public `register_parser()` API
-- Experimental documentation with stability warnings
-- Clear notice that parser APIs may change before 2.0
-
-### When This Happens
-
-- Users request custom format support
-- Clear use cases emerge beyond YAML/JSON/TOML
-- Community interest in extending SprigConfig
-
----
-
-## Phase 5: 2.0.0
+## Phase 6: 2.0.0
 
 **Focus: Stable Parser Platform**
 
@@ -139,19 +116,52 @@ Use Pydantic or similar for validation after loading. SprigConfig focuses on loa
 
 ## Version History
 
-### 1.2.0 (December 2024)
+### 1.4.2 (January 2026)
+
+- Security patch for jaraco-context CVE-2026-23949
+
+### 1.4.1 (January 2026)
+
+- Security patches for weasyprint and filelock vulnerabilities
+
+### 1.4.0 (January 2026)
+
+- Hydra-style `_target_` support for dynamic class instantiation
+- `instantiate()` function for creating instances from configuration
+- Type conversion based on Python type hints
+- Seamless `@config_inject` integration
+
+### 1.3.0 (January 2026)
+
+- Spring Boot-style dependency injection patterns
+- `ConfigValue` field-level descriptor
+- `@ConfigurationProperties` class-level decorator
+- `@config_inject` function parameter injection
+- LazySecret integration with configurable decrypt behavior
+
+### 1.2.5 (January 2026)
+
+- Security scanning with pip-audit and Bandit
+- Pre-commit hooks for local security scanning
+- Dependency management documentation
+
+### 1.2.4 (December 2025)
+
+- Full TOML format support with feature parity
+
+### 1.2.0 (December 2025)
 
 - TOML configuration format support
 - `--format` CLI flag
 - Merge order bug fix
 
-### 1.1.0 (December 2024)
+### 1.1.0 (December 2025)
 
 - Format-agnostic configuration loading
 - JSON configuration format support
 - Internal parser abstraction
 
-### 1.0.0 (December 2024)
+### 1.0.0 (December 2025)
 
 - Initial stable release
 - YAML-based deep-merge configuration
@@ -160,7 +170,7 @@ Use Pydantic or similar for validation after loading. SprigConfig focuses on loa
 - Secure lazy secrets
 - CLI tooling
 
-See [CHANGELOG](https://gitlab.com/dgw_software/sprig-config/-/blob/main/sprig-config-module/CHANGELOG.md) for complete version history.
+See [CHANGELOG](https://gitlab.com/dgw_software/sprig-config/-/blob/main/CHANGELOG.md) for complete version history.
 
 ---
 

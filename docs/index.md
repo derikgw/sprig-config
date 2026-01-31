@@ -103,7 +103,8 @@ That's it! Configuration is loaded, merged, and available via simple dotted-key 
 | **[Secure Secrets](security.md)** | Fernet-encrypted `ENC(...)` values, decrypted on-demand with lazy evaluation |
 | **[Format Support](configuration.md)** | YAML (recommended), JSON, and TOML |
 | **[CLI Tools](cli.md)** | Inspect, debug, and validate merged configuration from command line |
-| **[Spring Boot Patterns](sprig-config-module/docs/dependency-injection-explained.md)** | ConfigValue descriptors and @ConfigurationProperties decorators |
+| **[Dependency Injection](sprig-config-module/docs/configuration-injection.md)** | `ConfigValue` descriptors, `@ConfigurationProperties`, and `@config_inject` decorators |
+| **[Dynamic Instantiation](sprig-config-module/src/sprigconfig/instantiate.md)** | Hydra-style `_target_` support for instantiating classes from config |
 | **[Provenance Tracking](configuration.md#metadata)** | Know exactly where every value came from |
 
 ---
@@ -221,6 +222,8 @@ Located in the SprigConfig source (`src/sprigconfig/`):
 | `config.py` | Config class (dict-like interface, dotted-key access) |
 | `lazy_secret.py` | LazySecret class for deferred, secure decryption |
 | `deepmerge.py` | Deep merge algorithm with collision warnings |
+| `injection.py` | Dependency injection (`ConfigValue`, `@ConfigurationProperties`, `@config_inject`) |
+| `instantiate.py` | Dynamic class instantiation via `_target_` patterns |
 | `exceptions.py` | Custom exceptions (ConfigLoadError, etc.) |
 | `config_singleton.py` | Thread-safe cached loader |
 | `cli.py` | Command-line interface for inspection/debugging |
@@ -257,17 +260,22 @@ SprigConfig is ideal for:
 
 How does SprigConfig compare?
 
-| Feature | SprigConfig | python-dotenv | Pydantic | hydra | pyyaml |
-|---------|-------------|---------------|----------|-------|--------|
-| Layered config | ✅ | ❌ | ✅ | ✅ | ❌ |
-| Profile overlays | ✅ | ❌ | ❌ | ✅ | ❌ |
-| Recursive imports | ✅ | ❌ | ❌ | ✅ | ❌ |
-| Encrypted secrets | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Provenance tracking | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Multiple formats | ✅ | ❌ | ✅ | ✅ | YAML only |
-| CLI debugging | ✅ | ❌ | ❌ | ✅ | ❌ |
-| Spring Boot style | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Validation | ⚠️ (manual) | ❌ | ✅ | ✅ | ❌ |
+| Feature | SprigConfig | Spring Python | python-dotenv | Pydantic | hydra | pyyaml |
+|---------|-------------|---------------|---------------|----------|-------|--------|
+| Layered config | ✅ | ❌ | ❌ | ✅ | ✅ | ❌ |
+| Profile overlays | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| Recursive imports | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| Encrypted secrets | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Provenance tracking | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Multiple formats | ✅ | ✅ | ❌ | ✅ | ✅ | YAML only |
+| CLI debugging | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| Spring Boot style | ✅ | ⚠️ | ❌ | ❌ | ❌ | ❌ |
+| Dependency injection | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Dynamic instantiation | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| Validation | ⚠️ (manual) | ❌ | ❌ | ✅ | ✅ | ❌ |
+| Python 3.13+ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ |
+
+**Notes on Spring Python**: Spring Python (v1.2.1) is an older project that provides IoC container and YAML/XML configuration, inspired by Spring Framework. However, it only supports Python 2.6+ (not Python 3) and lacks modern features like profile overlays, encrypted secrets, and provenance tracking. For Python developers seeking Spring-style patterns, SprigConfig offers a modern, actively-maintained alternative.
 
 ---
 

@@ -252,6 +252,8 @@ Now that you have basic configuration working:
 - [Profiles](profiles.md) — Deep dive into profile management
 - [Imports](imports.md) — Modularize your configuration
 - [Security](security.md) — Handle sensitive values securely
+- [Dependency Injection](sprig-config-module/docs/configuration-injection.md) — Spring Boot-style `ConfigValue` and `@ConfigurationProperties`
+- [Dynamic Instantiation](sprig-config-module/src/sprigconfig/instantiate.md) — Hydra-style `_target_` class instantiation
 
 ---
 

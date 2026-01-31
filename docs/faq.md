@@ -281,6 +281,51 @@ SprigConfig handles this automatically. Files are read with `utf-8-sig` encoding
 
 ---
 
+## Dependency Injection
+
+### What are ConfigValue, @ConfigurationProperties, and @config_inject?
+
+SprigConfig provides three Spring Boot-style dependency injection patterns:
+
+- **`ConfigValue`** — Field-level descriptor for lazy config binding with type conversion
+- **`@ConfigurationProperties`** — Class-level decorator for auto-binding config sections
+- **`@config_inject`** — Function parameter injection decorator with override support
+
+```python
+from sprigconfig import ConfigValue, ConfigurationProperties, config_inject
+
+class MyService:
+    db_url: str = ConfigValue("database.url")
+    db_port: int = ConfigValue("database.port", default=5432)
+
+@ConfigurationProperties(prefix="database")
+class DatabaseConfig:
+    url: str
+    port: int
+```
+
+### What is `_target_` and how does `instantiate()` work?
+
+SprigConfig supports Hydra-style dynamic class instantiation from configuration:
+
+```yaml
+database:
+  _target_: app.adapters.PostgresAdapter
+  host: localhost
+  port: 5432
+```
+
+```python
+from sprigconfig import ConfigSingleton, instantiate
+
+cfg = ConfigSingleton.get()
+db = instantiate(cfg.database)  # Returns PostgresAdapter instance
+```
+
+This enables hexagonal architecture patterns where adapters are swapped via configuration.
+
+---
+
 ## Integration
 
 ### Can I use SprigConfig with Pydantic?
