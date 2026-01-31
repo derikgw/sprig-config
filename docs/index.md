@@ -103,8 +103,8 @@ That's it! Configuration is loaded, merged, and available via simple dotted-key 
 | **[Secure Secrets](security.md)** | Fernet-encrypted `ENC(...)` values, decrypted on-demand with lazy evaluation |
 | **[Format Support](configuration.md)** | YAML (recommended), JSON, and TOML |
 | **[CLI Tools](cli.md)** | Inspect, debug, and validate merged configuration from command line |
-| **[Dependency Injection](sprig-config-module/docs/configuration-injection.md)** | `ConfigValue` descriptors, `@ConfigurationProperties`, and `@config_inject` decorators |
-| **[Dynamic Instantiation](sprig-config-module/src/sprigconfig/instantiate.md)** | Hydra-style `_target_` support for instantiating classes from config |
+| **[Dependency Injection](../sprig-config-module/docs/configuration-injection.md)** | `ConfigValue` descriptors, `@ConfigurationProperties`, and `@config_inject` decorators |
+| **[Dynamic Instantiation](../sprig-config-module/src/sprigconfig/instantiate.md)** | Hydra-style `_target_` support for instantiating classes from config |
 | **[Provenance Tracking](configuration.md#metadata)** | Know exactly where every value came from |
 
 ---
@@ -157,19 +157,19 @@ Dive deeper into SprigConfig's behavior:
 ### 🔧 Advanced Usage
 
 For power users and framework integration:
-- **[Configuration Injection](sprig-config-module/docs/configuration-injection.md)** — Spring Boot-style ConfigValue and @ConfigurationProperties patterns
-- **[Dependency Injection Explained](sprig-config-module/docs/dependency-injection-explained.md)** — How Spring Boot-style DI works in Python
-- **[Secrets Best Practices](sprig-config-module/docs/SprigConfig_ENC_BestPractices.md)** — Key generation, rotation, and operational security
+- **[Configuration Injection](../sprig-config-module/docs/configuration-injection.md)** — Spring Boot-style ConfigValue and @ConfigurationProperties patterns
+- **[Dependency Injection Explained](../sprig-config-module/docs/dependency-injection-explained.md)** — How Spring Boot-style DI works in Python
+- **[Secrets Best Practices](../sprig-config-module/docs/SprigConfig_ENC_BestPractices.md)** — Key generation, rotation, and operational security
 
 ### 👨‍💻 Contributing & Development
 
 For developers working on SprigConfig itself:
-- **[Developer Guide](sprig-config-module/docs/README_Developer_Guide.md)** — Repository setup, testing, architecture
-- **[Release Checklist](sprig-config-module/docs/release_checklist.md)** — Releasing new versions
-- **[Dependency Management](sprig-config-module/docs/dependency-management.md)** — Managing Python dependencies with Poetry
-- **[GitLab CI/CD](sprig-config-module/docs/GitLab.md)** — CI pipeline and automated testing
-- **[PyPI Publishing](sprig-config-module/docs/PyPI.md)** — Publishing packages
-- **[Building Documentation](sprig-config-module/docs/building_documentation.md)** — Building and deploying docs
+- **[Developer Guide](../sprig-config-module/docs/README_Developer_Guide.md)** — Repository setup, testing, architecture
+- **[Release Checklist](../sprig-config-module/docs/release_checklist.md)** — Releasing new versions
+- **[Dependency Management](../sprig-config-module/docs/dependency-management.md)** — Managing Python dependencies with Poetry
+- **[GitLab CI/CD](../sprig-config-module/docs/GitLab.md)** — CI pipeline and automated testing
+- **[PyPI Publishing](../sprig-config-module/docs/PyPI.md)** — Publishing packages
+- **[Building Documentation](../sprig-config-module/docs/building_documentation.md)** — Building and deploying docs
 
 ### 🔐 Operational
 
