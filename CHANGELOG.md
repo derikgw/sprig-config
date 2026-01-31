@@ -6,6 +6,78 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ---
 
+## [1.4.3] — 2026-01-31
+
+### 🎯 Summary
+
+This is a **documentation and developer experience release** that greatly improves error diagnostics for circular imports, adds comprehensive parser documentation, and fixes UTF-8 BOM handling for cross-platform compatibility.
+
+---
+
+### ✨ Added
+
+* **Enhanced Circular Import Detection** - `config_loader.py` now shows the full cycle path in error messages:
+  * Clear visualization of import chain (e.g., `a.yml -> b.yml -> c.yml -> a.yml`)
+  * Makes debugging complex import graphs significantly easier
+  * Error messages now include the complete cycle for faster resolution
+
+* **Parser Module Documentation** - New comprehensive documentation files:
+  * `src/sprigconfig/parsers/__init__.md` - Parser architecture overview
+  * `src/sprigconfig/parsers/yaml_parser.md` - YAML parser implementation details
+  * `src/sprigconfig/parsers/json_parser.md` - JSON parser implementation details
+  * `src/sprigconfig/parsers/toml_parser.md` - TOML parser implementation details
+  * Fully documents the internal parser abstraction layer
+
+* **Test Documentation** - New test module guides:
+  * `tests/test_injection.md` - Dependency injection test patterns
+  * `tests/test_instantiate.md` - Dynamic instantiation test coverage
+  * `tests/test_target_config.md` - Target configuration test strategies
+
+---
+
+### 🛠️ Fixed
+
+* **UTF-8 BOM Handling** - `test_import_trace.py` and `test_meta_sources.py`:
+  * Added explicit `utf-8-sig` encoding for YAML file reading
+  * Prevents Windows-created files with UTF-8 BOM from causing parser issues
+  * Cross-platform file compatibility significantly improved
+  * Ensures consistent behavior across Windows, macOS, and Linux
+
+---
+
+### 📚 Documentation Changes
+
+* **docs/index.md** - Comparison table expanded:
+  * Added "Spring Python" row highlighting Spring Boot feature parity
+  * Added "Dependency Injection" row comparing DI approaches
+  * Added "Dynamic Instantiation" row explaining `_target_` support
+
+* **docs/faq.md** - New Dependency Injection section:
+  * Common questions about DI patterns
+  * Comparison with traditional `Config.get()` approach
+  * Best practices for choosing DI patterns
+
+* **docs/getting-started.md** - Improved navigation and accuracy:
+  * Added links to new features (dynamic instantiation, DI patterns)
+  * Fixed relative paths for cross-document linking
+  * Enhanced table of contents for better discoverability
+
+* **Roadmaps Updated** - Both `docs/roadmap.md` and `sprig-config-module/ROADMAP.md`:
+  * Updated to reflect 1.4.3 release completion
+  * Clarified feature delivery timeline
+
+---
+
+### 🔒 Backward Compatibility
+
+* No breaking changes
+* No API changes
+* No configuration changes required
+* Existing functionality unchanged
+* All changes are additive (documentation and improved error messages)
+
+---
+
 ## [1.4.2] — 2026-01-26
 
 ### 🎯 Summary

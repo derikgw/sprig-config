@@ -69,7 +69,7 @@ Base → profile overlay → imported files in deterministic merge order.
 
 ### ✔ Safety
 
-Circular imports throw explicit `ConfigLoadError`.
+Circular imports throw explicit `ConfigLoadError` with the full cycle path displayed (e.g., `a.yml -> b.yml -> a.yml`).
 
 ### ✔ Transparency
 

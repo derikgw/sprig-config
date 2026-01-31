@@ -10,7 +10,7 @@ def _load_import_list(yaml_path: Path):
     if not yaml_path.exists():
         return []
 
-    data = yaml.safe_load(yaml_path.read_text()) or {}
+    data = yaml.safe_load(yaml_path.read_text(encoding="utf-8-sig")) or {}
     imports = data.get("imports", [])
     return imports if isinstance(imports, list) else []
 

@@ -95,8 +95,16 @@ def test_full_merge_chain_profile(config_dir):
 # ----------------------------------------------------------------------
 
 def test_integration_circular_import(config_dir):
-    with pytest.raises(ConfigLoadError):
+    """Circular imports should raise ConfigLoadError with full cycle path."""
+    with pytest.raises(ConfigLoadError) as exc_info:
         ConfigLoader(config_dir, profile="circular").load()
+
+    error_message = str(exc_info.value)
+    # Verify the error message shows the cycle path
+    assert "Circular import detected" in error_message
+    assert "a.yml" in error_message
+    assert "b.yml" in error_message
+    assert "->" in error_message  # Shows the chain with arrows
 
 
 # ----------------------------------------------------------------------

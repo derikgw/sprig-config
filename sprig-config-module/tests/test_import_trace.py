@@ -5,7 +5,7 @@ from sprigconfig.config_loader import ConfigLoader
 
 def _load_import_list(path: Path):
     """Helper: load YAML and return the raw 'imports:' list."""
-    data = yaml.safe_load(path.read_text())
+    data = yaml.safe_load(path.read_text(encoding="utf-8-sig"))
     return data.get("imports", []) if isinstance(data, dict) else []
 
 

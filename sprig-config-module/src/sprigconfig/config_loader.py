@@ -296,9 +296,14 @@ class ConfigLoader:
         parent_file: str,
         depth: int,
         suppress: bool,
+        import_chain: Optional[List[str]] = None,
     ):
         if not isinstance(node, dict):
             return
+
+        # Initialize import chain if not provided
+        if import_chain is None:
+            import_chain = [parent_file]
 
         if "imports" in node:
             imports = node.get("imports", [])
@@ -310,7 +315,17 @@ class ConfigLoader:
                 import_path = str(import_file)
 
                 if import_path in self._seen_imports:
-                    raise ConfigLoadError(f"Circular import detected: {import_file}")
+                    # Build the cycle path for a clear error message
+                    cycle_start_idx = import_chain.index(import_path) if import_path in import_chain else -1
+                    if cycle_start_idx >= 0:
+                        cycle_path = import_chain[cycle_start_idx:] + [import_path]
+                    else:
+                        cycle_path = import_chain + [import_path]
+                    cycle_display = " -> ".join(Path(p).name for p in cycle_path)
+                    raise ConfigLoadError(
+                        f"Circular import detected: {cycle_display}\n"
+                        f"File '{Path(import_path).name}' was already imported earlier in the chain."
+                    )
                 self._seen_imports.add(import_path)
 
                 self._record_import(
@@ -322,11 +337,15 @@ class ConfigLoader:
 
                 imported_data = self._load_file(import_file)
 
+                # Extend the import chain for the recursive call
+                extended_chain = import_chain + [import_path]
+
                 self._apply_imports_recursive(
                     imported_data,
                     parent_file=import_path,
                     depth=depth + 1,
                     suppress=suppress,
+                    import_chain=extended_chain,
                 )
 
                 deep_merge(node, imported_data, suppress=suppress)
@@ -340,6 +359,7 @@ class ConfigLoader:
                     parent_file=parent_file,
                     depth=depth,
                     suppress=suppress,
+                    import_chain=import_chain,
                 )
             elif isinstance(value, list):
                 for item in value:
@@ -349,6 +369,7 @@ class ConfigLoader:
                             parent_file=parent_file,
                             depth=depth,
                             suppress=suppress,
+                            import_chain=import_chain,
                         )
 
     # ==================================================================

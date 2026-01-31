@@ -66,10 +66,13 @@ Configuration merging is the core feature of SprigConfig—these tests prevent r
 ## 3. Circular Import Detection
 
 ### `test_integration_circular_import`
-Ensures circular imports raise `ConfigLoadError`.
+Ensures circular imports raise `ConfigLoadError` with:
+- A clear "Circular import detected" message
+- The full cycle path displayed (e.g., `a.yml -> b.yml -> a.yml`)
+- Arrow notation showing the import chain
 
-**Why:**  
-Prevents infinite recursion during config resolution.
+**Why:**
+Prevents infinite recursion during config resolution and provides actionable error messages for debugging.
 
 ---
 
