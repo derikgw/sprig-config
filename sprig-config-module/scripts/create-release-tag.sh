@@ -16,9 +16,10 @@ set -euo pipefail
 # ==========================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-CHANGELOG_FILE="${PROJECT_DIR}/CHANGELOG.md"
-PYPROJECT_FILE="${PROJECT_DIR}/pyproject.toml"
+MODULE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+MONOREPO_ROOT="$(cd "${MODULE_DIR}/.." && pwd)"
+CHANGELOG_FILE="${MONOREPO_ROOT}/CHANGELOG.md"
+PYPROJECT_FILE="${MODULE_DIR}/pyproject.toml"
 
 # Colors for output
 RED='\033[0;31m'
@@ -149,8 +150,8 @@ validate_version_increment() {
     error "Invalid version progression: ${prev_version} -> ${new_version}\n${suggestion}\n\nYou cannot skip versions. Please use proper semantic versioning."
 }
 
-# Change to project directory
-cd "${PROJECT_DIR}"
+# Change to module directory
+cd "${MODULE_DIR}"
 
 # Check if files exist
 [[ -f "${CHANGELOG_FILE}" ]] || error "CHANGELOG.md not found at ${CHANGELOG_FILE}"
