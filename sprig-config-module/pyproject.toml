@@ -48,7 +48,7 @@ pluggy = ">=1.6.0"
 Pygments = ">=2.19.2"
 pyproject-hooks = ">=1.2.0"
 python-dotenv = "^1.1.1"
-pip-audit = "^2.8.0"
+pip-audit = "^2.10.0"
 filelock = "^3.20.3"
 bandit = {extras = ["toml"], version = "^1.8.0"}
 markdown = "^3.10"
@@ -57,6 +57,7 @@ pre-commit = "^4.5.1"
 virtualenv = "^20.36.1"
 jaraco-context = ">=6.1.0"
 radon = "^6.0.1"
+pip = ">=26.0"
 
 [tool.poetry.group.docs.dependencies]
 mkdocs = "^1.6.0"
