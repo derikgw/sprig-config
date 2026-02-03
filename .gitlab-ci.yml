@@ -100,10 +100,9 @@ pip_audit:
   extends: .default_setup
   allow_failure: true
   script:
-    - pip install pip-audit
-    - pip-audit --format json --output pip-audit-report.json || true
-    - pip-audit --format markdown --output pip-audit-report.md || true
-    - pip-audit  # Human-readable output
+    - poetry run pip-audit --format json --output pip-audit-report.json || true
+    - poetry run pip-audit --format markdown --output pip-audit-report.md || true
+    - poetry run pip-audit  # Human-readable output
     - echo "Files generated:" && ls -la *.json *.md 2>/dev/null || true
   after_script:
     - |
