@@ -1,6 +1,6 @@
 import argparse
 import sys
-import subprocess
+import subprocess  # nosec B404 - necessary for pip installation
 import importlib.util
 from pathlib import Path
 
@@ -45,7 +45,7 @@ def install_dependencies():
     print(f"📦 Installing missing dependencies: {', '.join(missing)}")
     try:
         cmd = [sys.executable, "-m", "pip", "install"] + missing
-        subprocess.check_call(cmd)
+        subprocess.check_call(cmd)  # nosec B603 - packages are from hardcoded REQUIRED_PACKAGES
         print("✅ Dependencies installed successfully.")
         return True
     except subprocess.CalledProcessError as e:
