@@ -44,7 +44,8 @@ def install_dependencies():
 
     print(f"📦 Installing missing dependencies: {', '.join(missing)}")
     try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", *missing])
+        cmd = [sys.executable, "-m", "pip", "install"] + missing
+        subprocess.check_call(cmd)
         print("✅ Dependencies installed successfully.")
         return True
     except subprocess.CalledProcessError as e:
