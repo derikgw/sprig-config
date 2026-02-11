@@ -6,6 +6,30 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ---
 
+## [1.4.4] — 2026-02-11
+
+### 🎯 Summary
+
+This is a **security patch release** addressing a vulnerability in the cryptography dependency.
+
+---
+
+### 🔒 Security
+
+* **Fixed CVE-2026-26007** — Updated `cryptography` from 46.0.1 to 46.0.5 to address security vulnerability
+* **Pillow security update** — Added `pillow` 12.1.1 to dev dependencies to address vulnerability (weasyprint 68.1 did not pull in the patched version)
+
+---
+
+### 🔒 Backward Compatibility
+
+* No breaking changes
+* No API changes
+* No configuration changes required
+* Existing functionality unchanged
+
+---
+
 ## [1.4.3] — 2026-01-31
 
 ### 🎯 Summary

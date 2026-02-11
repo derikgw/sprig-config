@@ -15,7 +15,7 @@ packages = [{ include = "sprigtools", from = "src" }]
 python = ">=3.13,<4.0"
 tomli = ">=2.2.1"
 tomli-w = ">=1.2.0"   # note: package name uses a hyphen; import is `tomli_w`
-cryptography = "^46.0.1"
+cryptography = "^46.0.5"
 sprig-config = "^1.2.2"
 
 [tool.poetry.group.dev.dependencies]
