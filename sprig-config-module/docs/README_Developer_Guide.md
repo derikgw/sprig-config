@@ -113,6 +113,83 @@ sprig-config-module/
 
 ---
 
+## 🔀 Deep Merge Semantics
+
+SprigConfig uses a **deterministic deep merge algorithm** to combine configuration layers. Understanding this behavior is essential for both users and contributors.
+
+### Merge Rules
+
+| Type | Behavior |
+|------|----------|
+| **Dictionaries** | Recursively merged — keys from both layers are combined, nested dicts merge deeply |
+| **Lists** | Overwrite — the overlay completely replaces the base list (no append) |
+| **Scalars** | Overwrite — later values override earlier ones |
+
+### Example
+
+**Base configuration** (`application.yml`):
+```yaml
+server:
+  port: 8080
+  host: localhost
+  timeout: 30
+features:
+  - auth
+  - logging
+```
+
+**Profile overlay** (`application-dev.yml`):
+```yaml
+server:
+  port: 9090
+  debug: true
+features:
+  - mock-auth
+```
+
+**Merged result**:
+```yaml
+server:
+  port: 9090      # overwritten by overlay
+  host: localhost # preserved from base (deep merge)
+  timeout: 30     # preserved from base
+  debug: true     # added by overlay
+features:
+  - mock-auth     # replaced entirely (lists don't append)
+```
+
+### Collision Warnings
+
+When an overlay **partially overrides** a section (some keys present, others missing), SprigConfig logs a warning. This helps catch unintentional omissions:
+
+```
+WARNING sprigconfig.deepmerge: Config section 'server' partially overridden; missing keys: {'timeout', 'host'}
+```
+
+This warning indicates the overlay touched the `server` section but didn't include all keys from the base — which may be intentional (override specific values) or a mistake (forgot to include keys).
+
+### Merge Order
+
+Configuration is merged in this order:
+
+1. `application.yml` (base)
+2. Imports from base (in declared order)
+3. `application-<profile>.yml` (profile overlay)
+4. Imports from profile overlay (in declared order)
+
+Later sources override earlier ones. The full merge order is recorded in `sprigconfig._meta.sources` for debugging.
+
+### Implementation
+
+The deep merge logic lives in `src/sprigconfig/deepmerge.py`. Key behaviors:
+
+- Recursive descent into nested dictionaries
+- Non-dict values (including lists) replace rather than merge
+- Collision detection compares keys between base and overlay sections
+- All merge operations are logged at DEBUG level for traceability
+
+---
+
 ## 🧪 Testing Architecture
 
 Each test module (`test_*.py`) has a paired markdown file (`test_*.md`) explaining its design.
