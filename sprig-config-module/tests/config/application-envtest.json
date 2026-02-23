@@ -1,6 +1,7 @@
 {
   "env": {
     "expanded": "${TEST_VALUE}",
-    "defaulted": "${MISSING_VALUE:fallback}"
+    "defaulted": "${MISSING_VALUE:fallback}",
+    "empty_default": "${UNSET_VAR:}"
   }
 }

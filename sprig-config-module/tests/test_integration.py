@@ -132,6 +132,24 @@ def test_integration_env_var_expansion(monkeypatch, config_dir):
     assert cfg.get("env.defaulted") == "fallback"
 
 
+def test_env_var_empty_default_expands_to_empty_string_yml(monkeypatch, config_dir):
+    """${VAR:} with no default text should expand to empty string in YAML."""
+    monkeypatch.delenv("UNSET_VAR", raising=False)
+
+    cfg = ConfigLoader(config_dir, profile="envtest").load()
+
+    assert cfg.get("env.empty_default") == ""
+
+
+def test_env_var_empty_default_expands_to_empty_string_json(monkeypatch, config_dir):
+    """${VAR:} with no default text should expand to empty string in JSON."""
+    monkeypatch.delenv("UNSET_VAR", raising=False)
+
+    cfg = ConfigLoader(config_dir, profile="envtest", config_format="json").load()
+
+    assert cfg.get("env.empty_default") == ""
+
+
 # ----------------------------------------------------------------------
 # SECRET HANDLING
 # ----------------------------------------------------------------------
