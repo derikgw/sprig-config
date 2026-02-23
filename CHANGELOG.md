@@ -6,6 +6,47 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ---
 
+## [1.4.5] — 2026-02-23
+
+### 🎯 Summary
+
+This is a **bug fix and developer experience release** that corrects environment variable expansion when using an empty default value (e.g., `${VAR:}`) and adds a pre-commit hook to warn about skip-worktree files.
+
+---
+
+### 🛠️ Fixed
+
+* **Empty default in env var expansion** — `${VAR:}` (colon with no value after it) was not being expanded, leaving the literal string in the config. The regex required one or more characters after the colon (`+`); changed to zero or more (`*`) so an empty default correctly resolves to `""` when the variable is unset.
+
+---
+
+### 🧪 Tests
+
+* Added empty-default env var expansion tests for all three config formats:
+  * `test_env_var_empty_default_expands_to_empty_string_yml` (YAML)
+  * `test_env_var_empty_default_expands_to_empty_string_json` (JSON)
+  * `test_toml_env_var_empty_default` (TOML)
+* All tests use `monkeypatch.delenv` to guarantee the variable is absent, preventing false positives from host environment leakage
+
+---
+
+### ✨ Added
+
+* **Pre-commit skip-worktree reminder** — New `skip-worktree-reminder` hook in `.pre-commit-config.yaml` that lists all files with `skip-worktree` set on every commit. This prevents developers from accidentally missing intentional changes to tracked test config files that git silently ignores.
+  * Non-blocking (informational only) — prints the file list and instructions to un-skip
+  * Added `scripts/check-skip-worktree.sh` helper script
+
+---
+
+### 🔒 Backward Compatibility
+
+* No breaking changes
+* No API changes
+* No configuration changes required
+* Configs using `${VAR:default}` with a non-empty default are unaffected
+
+---
+
 ## [1.4.4] — 2026-02-11
 
 ### 🎯 Summary

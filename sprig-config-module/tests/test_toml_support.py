@@ -129,3 +129,21 @@ fallback = "${MISSING_VAR:default_value}"
     assert cfg.get("server.host") == "example.com"
     assert cfg.get("server.port") == "9000"
     assert cfg.get("server.fallback") == "default_value"
+
+
+def test_toml_env_var_empty_default(tmp_path, monkeypatch):
+    """${VAR:} with no default text should expand to empty string in TOML."""
+    monkeypatch.delenv("UNSET_SMTP", raising=False)
+
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+
+    toml_config = config_dir / "application.toml"
+    toml_config.write_text("""
+[smtp]
+address = "${UNSET_SMTP:}"
+""")
+
+    cfg = ConfigLoader(config_dir=config_dir, profile="dev", config_format="toml").load()
+
+    assert cfg.get("smtp.address") == ""

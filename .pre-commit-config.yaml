@@ -23,6 +23,14 @@ repos:
         pass_filenames: false
         types: [python]
 
+      - id: skip-worktree-reminder
+        name: skip-worktree reminder
+        entry: scripts/check-skip-worktree.sh
+        language: script
+        pass_filenames: false
+        always_run: true
+        verbose: true
+
   # Optional: ruff linting (already in CI, can add here for local checks)
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.9.1

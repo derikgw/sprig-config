@@ -30,7 +30,7 @@ from .parsers import YamlParser, JsonParser, TomlParser
 # CONSTANTS
 # ======================================================================
 
-ENV_PATTERN = re.compile(r"\$\{([^}:]+)(?::([^}]+))?\}")
+ENV_PATTERN = re.compile(r"\$\{([^}:]+)(?::([^}]*))?\}")
 
 SUPPORTED_FORMATS = {"yaml", "json", "toml"}
 
