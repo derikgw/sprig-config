@@ -455,6 +455,43 @@ poetry update
    git commit -m "security: update <package> to fix CVE-XXXX-XXXXX"
    ```
 
+### "The CVE has no fix available yet. What should I do?"
+
+1. Verify whether the package is part of the shipped runtime or only used for development/docs:
+   ```bash
+   poetry show --only main | grep -i <package-name>
+   poetry show --only dev | grep -i <package-name>
+   poetry show <package-name>
+   ```
+2. Confirm whether the built wheel actually requires it:
+   ```bash
+   poetry build
+   python - <<'PY'
+   import glob
+   import zipfile
+
+   wheel = sorted(glob.glob("dist/*.whl"))[-1]
+   with zipfile.ZipFile(wheel) as zf:
+       metadata = next(name for name in zf.namelist() if name.endswith("METADATA"))
+       for line in zf.read(metadata).decode().splitlines():
+           if line.startswith("Requires-Dist:"):
+               print(line)
+   PY
+   ```
+3. If the package is dev-only or docs-only, treat it as a limited-exposure issue rather than a production incident.
+4. Record the accepted risk in the tracking work item:
+   - package name and version
+   - advisory or CVE identifier
+   - why there is no fix yet
+   - why exposure is limited in this repo
+   - upstream link
+   - review date
+5. Re-check the upstream package on the next dependency review cycle and remove the accepted-risk note once a fixed release is available.
+
+Notes:
+- Do not assume a scanner finding is a production risk until you confirm the package is in the published artifact.
+- Do not exact-pin a vulnerable version unless you need to preserve a known-good lock state while waiting for upstream. Pinning alone does not reduce the vulnerability.
+
 ### "Why is this package installed? I didn't add it."
 
 ```bash

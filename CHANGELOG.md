@@ -6,6 +6,37 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ---
 
+## [1.4.6] — 2026-03-30
+
+### 🎯 Summary
+
+This is a **security maintenance release** that refreshes vulnerable dependencies and documents how to triage advisories when scanners report no vendor-confirmed fix version.
+
+---
+
+### 🔒 Security
+
+* **Runtime dependency refresh** — Updated `cryptography` from `46.0.5` to `46.0.6`
+* **Docs and developer tooling refresh** — Updated the resolved docs/dev dependency graph, including `requests`, `Pygments`, `mkdocs`, and `mkdocs-material`, to pull patched or newer releases
+* **Audit verification** — `pip-audit` now reports `No known vulnerabilities found`
+
+---
+
+### 📚 Documentation Changes
+
+* Added dependency triage guidance for advisories that have no published fix version yet
+* Documented how to distinguish shipped runtime dependencies from docs/dev-only tooling exposure during security review
+
+---
+
+### 🔒 Backward Compatibility
+
+* No breaking changes
+* No API changes
+* No configuration changes required
+
+---
+
 ## [1.4.5] — 2026-02-23
 
 ### 🎯 Summary
