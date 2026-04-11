@@ -6,6 +6,32 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ---
 
+## [1.4.7] — 2026-04-11
+
+### 🎯 Summary
+
+This is a **security patch release** that updates the `cryptography` runtime dependency to remediate `CVE-2026-39892`.
+
+---
+
+### 🔒 Security
+
+* **Fixed CVE-2026-39892** — Updated `cryptography` from `46.0.6` to `46.0.7`
+* **Vulnerability scope** — `cryptography` versions `45.0.0` through `46.0.6` could overflow buffers when APIs that accept Python buffers (for example, `Hash.update()`) received a non-contiguous buffer
+* **Audit verification** — `pip-audit` reports `No known vulnerabilities found` after refreshing the lockfile
+* **Release intent** — Keeps SprigConfig on the patched upstream release with no expected application-level behavior changes
+
+---
+
+### 🔒 Backward Compatibility
+
+* No breaking changes
+* No API changes
+* No configuration changes required
+* Existing functionality unchanged
+
+---
+
 ## [1.4.6] — 2026-03-30
 
 ### 🎯 Summary
