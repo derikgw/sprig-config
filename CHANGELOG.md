@@ -6,6 +6,38 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ---
 
+## [1.4.8] — 2026-04-14
+
+### 🎯 Summary
+
+This is a **security maintenance release** that refreshes vulnerable development dependencies used in the SprigConfig test and tooling workflow.
+
+---
+
+### 🔒 Security
+
+* **Fixed CVE-2026-40192** — Updated `pillow` from `12.1.1` to `12.2.0`
+* **Fixed CVE-2025-71176** — Updated `pytest` from `8.4.2` to `9.0.3`
+* **Tooling compatibility refresh** — Updated `pytest-cov` from `6.2.1` to `7.1.0` to stay aligned with the refreshed pytest toolchain
+
+---
+
+### 🧪 Verification
+
+* Local tests passed after refreshing the dependency set
+* `pip-audit` reports `No known vulnerabilities found`
+
+---
+
+### 🔒 Backward Compatibility
+
+* No runtime dependency changes
+* No breaking changes to SprigConfig behavior
+* No API changes
+* No configuration changes required
+
+---
+
 ## [1.4.7] — 2026-04-11
 
 ### 🎯 Summary
