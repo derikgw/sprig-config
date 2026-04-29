@@ -32,7 +32,8 @@ variables:
   image: python:3.13-slim
   before_script:
     - cd sprig-config-module
-    - pip install --no-cache-dir "poetry==$POETRY_VERSION"
+    - python -m pip install --no-cache-dir "pip>=26.1,<27"
+    - python -m pip install --no-cache-dir "poetry==$POETRY_VERSION"
     - poetry install --no-ansi
 
 workflow:
