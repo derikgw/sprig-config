@@ -4,41 +4,6 @@ All notable changes to **SprigConfig** will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
----
-
-## [1.4.9] — 2026-05-12
-
-### 🎯 Summary
-
-This is a **security maintenance release** that refreshes the resolved `urllib3` dependency used by the SprigConfig development and documentation toolchain.
-
----
-
-### 🔒 Security
-
-* **Fixed CVE-2026-44431** — Updated resolved `urllib3` from `2.6.3` to `2.7.0` to pick up upstream redirect header handling fixes
-* **Fixed CVE-2026-44432** — Updated resolved `urllib3` from `2.6.3` to `2.7.0` to pick up upstream streaming decompression fixes
-* **Explicit floor added** — Declared `urllib3 = "^2.7.0"` in the dev dependency group so future lock refreshes keep the patched minimum
-* **Audit scope** — `urllib3` is present in the `dev` and `docs` dependency graph rather than the runtime package dependency set
-
----
-
-### 🧪 Verification
-
-* Local tests passed after refreshing the dependency set
-* `pip-audit` reports `No known vulnerabilities found`
-
----
-
-### 🔒 Backward Compatibility
-
-* No runtime dependency changes
-* No breaking changes to SprigConfig behavior
-* No API changes
-* No configuration changes required
-
----
-
 ## [1.4.8] — 2026-04-14
 
 ### 🎯 Summary
