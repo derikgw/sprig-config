@@ -59,8 +59,8 @@ python example.py
 
 ## Requirements
 
-- Python 3.13+
-- SprigConfig 1.2.4+
+- Python 3.11+
+- SprigConfig 1.4.9+
 
 ## Learning Path
 

@@ -162,4 +162,4 @@ time_only = 10:30:00
 ## Dependencies
 
 - **None** - Uses Python stdlib `tomllib` module
-- **Requires Python 3.11+** (SprigConfig requires 3.13+ anyway)
+- **Requires Python 3.11+** (matches SprigConfig's current minimum supported Python version)

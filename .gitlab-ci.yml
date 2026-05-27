@@ -29,7 +29,7 @@ variables:
   PIPELINE_LABEL: "Unknown pipeline"
 
 .default_setup:
-  image: python:3.13-slim
+  image: python:3.11-slim
   before_script:
     - cd sprig-config-module
     - python -m pip install --no-cache-dir "pip>=26.1,<27"

@@ -43,7 +43,7 @@ Or with Poetry:
 poetry add sprig-config
 ```
 
-**Requirements:** Python 3.13+
+**Requirements:** Python 3.11 to `<4.0`
 
 ### 5-Minute Example
 
@@ -273,7 +273,7 @@ How does SprigConfig compare?
 | Dependency injection | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Dynamic instantiation | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
 | Validation | ⚠️ (manual) | ❌ | ❌ | ✅ | ✅ | ❌ |
-| Python 3.13+ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ |
+| Supported Python range | `>=3.11,<4.0` | - | - | - | - | - |
 
 **Notes on Spring Python**: Spring Python (v1.2.1) is an older project that provides IoC container and YAML/XML configuration, inspired by Spring Framework. However, it only supports Python 2.6+ (not Python 3) and lacks modern features like profile overlays, encrypted secrets, and provenance tracking. For Python developers seeking Spring-style patterns, SprigConfig offers a modern, actively-maintained alternative.
 

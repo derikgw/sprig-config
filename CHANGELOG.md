@@ -4,6 +4,45 @@ All notable changes to **SprigConfig** will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.9] — 2026-05-27
+
+### 🎯 Summary
+
+This release lowers the minimum supported Python version from 3.13 to 3.11 and aligns the project documentation and CI defaults with that broader compatibility target.
+
+---
+
+### ✨ Added
+
+* **Python 3.11 support** — Relaxed the package metadata from `>=3.13,<4.0` to `>=3.11,<4.0`
+
+---
+
+### 🧪 Verification
+
+* Local validation completed on Python 3.11.15
+* `poetry run pytest` passed: `160 passed`
+* `poetry build` produced both the sdist and wheel successfully
+
+---
+
+### 📚 Documentation Changes
+
+* Updated developer and migration docs to describe Python 3.11+ support
+* Updated examples and Windows Poetry environment setup guidance to use Python 3.11
+* Updated GitLab CI defaults to use `python:3.11-slim`
+
+---
+
+### 🔒 Backward Compatibility
+
+* No breaking API changes
+* No configuration changes required
+* Existing supported Python versions remain supported
+* Additional support is now declared for Python 3.11 and 3.12
+ 
+---
+
 ## [1.4.8] — 2026-04-14
 
 ### 🎯 Summary
