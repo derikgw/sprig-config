@@ -221,12 +221,10 @@ SprigConfig follows these deprecation principles:
 
 | SprigConfig Version | Python Versions | Notes |
 |---------------------|-----------------|-------|
-| 1.2.4 (current)     | 3.13+          | Strict requirement |
-| 1.2.0 - 1.2.3       | 3.13+          | Strict requirement |
-| 1.1.0               | 3.13+          | Strict requirement |
-| 1.0.0               | 3.13+          | Strict requirement |
+| 1.4.9 (current)     | 3.11+          | Minimum version lowered to 3.11 |
+| 1.0.0 - 1.4.8       | 3.13+          | Historical requirement |
 
-**Note:** SprigConfig requires Python 3.13 or newer. Earlier Python versions are not supported.
+**Note:** SprigConfig now supports Python 3.11 or newer. Older 1.x releases before 1.4.9 required Python 3.13+.
 
 ---
 

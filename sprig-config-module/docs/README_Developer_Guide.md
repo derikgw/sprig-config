@@ -240,10 +240,10 @@ For details on the test framework, see `tests/conftest.md`.
 ## 📦 Dependency Management
 
 - **Poetry** manages all dependencies (see [pyproject.toml](../pyproject.toml))
-- **Python 3.13+** required
+- **Python 3.11+** required
 - Key dependencies:
   - `PyYAML` ≥6.0.2 — YAML parsing
-  - `cryptography` ^46.0.1 — Fernet encryption
+  - `cryptography` ^46.0.7 — Fernet encryption
   - `python-dotenv` — .env file support (dev)
 
 See **[Dependency Management](dependency-management.md)** for vendor strategies and best practices.
