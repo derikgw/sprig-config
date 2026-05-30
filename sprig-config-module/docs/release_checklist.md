@@ -66,11 +66,21 @@ A repeatable checklist for publishing **SprigConfig** releases
   - ✅ Tests
   - ✅ Security Scans
   - ✅ Build artifacts (wheel + sdist)
+- [ ] For branch validation, run `dry_run_testpypi`
+- [ ] For branch validation, run `deploy_testpypi`
+- [ ] Confirm branch build appears on **TestPyPI**
+- [ ] Run `dry_run_pypi` before publishing to the GitLab Package Registry
+- [ ] Run `deploy_pypi` to publish to the GitLab Package Registry
 - [ ] Confirm package appears in the GitLab **Package Registry**:
   <https://gitlab.com/dgw_software/sprig-config/-/packages>
-- [ ] Optional: publish manually to PyPI (if public):
+- [ ] Run `dry_run_public_pypi` before publishing to public PyPI
+- [ ] Run `deploy_public_pypi` to publish to public PyPI
+- [ ] Confirm package appears on **PyPI**:
+  <https://pypi.org/project/sprig-config/>
+- [ ] Optional emergency fallback: publish manually to PyPI with an API token:
   ```bash
-  poetry publish --build --username __token__ --password $PYPI_TOKEN
+  cd sprig-config-module
+  PYPI_API_TOKEN=... ./scripts/upload-to-pypi.sh
   ```
 
 ---
@@ -105,4 +115,3 @@ A repeatable checklist for publishing **SprigConfig** releases
 ---
 
 **Stable. Secure. Predictable.**
-

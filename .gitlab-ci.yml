@@ -2,8 +2,9 @@
 #  GitLab CI for sprig-config
 # ==========================================
 # Runs lint, tests, security scans, and
-# allows a manual publish to GitLab PyPI
-# from the main branch.
+# allows manual publishes to the GitLab
+# package registry, TestPyPI for branch
+# builds, and public PyPI from version tags.
 # ==========================================
 
 stages:
@@ -156,23 +157,11 @@ dry_run_pypi:
       when: manual
     - when: never
   script:
-    - |
-      echo "🔍 Verifying version match before dry-run..."
-      export PYPROJECT_VERSION=$(poetry version -s)
-      echo "📦 pyproject.toml version: $PYPROJECT_VERSION"
-      echo "🏷️ Git tag: ${CI_COMMIT_TAG}"
-
-      # Normalize case and strip leading "v"/"V" for comparison
-      TAG_VERSION=$(echo "${CI_COMMIT_TAG}" | sed -E 's/^[Vv]//')
-      if [ "${PYPROJECT_VERSION,,}" != "${TAG_VERSION,,}" ]; then
-        echo "❌ Version mismatch! Expected tag: v${PYPROJECT_VERSION}, got: ${CI_COMMIT_TAG}"
-        exit 1
-      fi
-
-      echo "✅ Version match confirmed, building package..."
-      poetry build
-      echo "🧪 Simulating publish (no upload)..."
-      poetry publish --dry-run -r gitlab-pypi
+    - ./scripts/verify-release-tag.sh
+    - echo "✅ Version match confirmed, building package..."
+    - poetry build
+    - echo "🧪 Simulating publish to the GitLab package registry..."
+    - poetry publish --dry-run -r gitlab-pypi
   artifacts:
     when: always
     paths:
@@ -190,27 +179,103 @@ deploy_pypi:
       when: manual
     - when: never
   script:
-    - |
-      echo "🔍 Confirming version consistency before deploy..."
-      export PYPROJECT_VERSION=$(poetry version -s)
-      echo "📦 pyproject.toml version: $PYPROJECT_VERSION"
-      echo "🏷️ Git tag: ${CI_COMMIT_TAG}"
-
-      # Normalize case and strip leading "v"/"V" for comparison
-      TAG_VERSION=$(echo "${CI_COMMIT_TAG}" | sed -E 's/^[Vv]//')
-      if [ "${PYPROJECT_VERSION,,}" != "${TAG_VERSION,,}" ]; then
-        echo "❌ Version mismatch! Expected tag: v${PYPROJECT_VERSION}, got: ${CI_COMMIT_TAG}"
-        exit 1
-      fi
-
-      echo "🚀 Publishing tested artifacts to GitLab PyPI..."
-      poetry publish --no-interaction -r gitlab-pypi
+    - ./scripts/verify-release-tag.sh
+    - echo "🚀 Publishing tested artifacts to the GitLab package registry..."
+    - poetry publish --no-interaction -r gitlab-pypi
   dependencies:
     - dry_run_pypi
   artifacts:
     expire_in: 7 days
   environment:
     name: production
+
+dry_run_testpypi:
+  stage: deploy
+  extends: .default_setup
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+      when: manual
+      allow_failure: true
+    - when: never
+  script:
+    - ./scripts/prepare-testpypi-version.sh
+    - echo "✅ Branch package version prepared for TestPyPI."
+    - poetry build
+    - echo "🧪 Validating built distributions for TestPyPI..."
+    - poetry run twine check dist/*
+  artifacts:
+    when: always
+    paths:
+      - sprig-config-module/dist/
+    expire_in: 3 days
+  environment:
+    name: testpypi-staging
+
+deploy_testpypi:
+  stage: deploy
+  extends: .default_setup
+  needs: ["dry_run_testpypi"]
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+      when: manual
+      allow_failure: true
+    - when: never
+  id_tokens:
+    PYPI_ID_TOKEN:
+      aud: testpypi
+  script:
+    - echo "🚀 Publishing branch build to TestPyPI via Trusted Publishing..."
+    - ls -lh dist/
+    - poetry run twine upload --non-interactive --repository testpypi dist/*
+  dependencies:
+    - dry_run_testpypi
+  artifacts:
+    expire_in: 7 days
+  environment:
+    name: testpypi
+
+dry_run_public_pypi:
+  stage: deploy
+  extends: .default_setup
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^[Vv]/'
+      when: manual
+    - when: never
+  script:
+    - ./scripts/verify-release-tag.sh
+    - echo "✅ Version match confirmed, building package..."
+    - poetry build
+    - echo "🧪 Validating built distributions for PyPI..."
+    - poetry run twine check dist/*
+  artifacts:
+    when: always
+    paths:
+      - sprig-config-module/dist/
+    expire_in: 3 days
+  environment:
+    name: pypi-staging
+
+deploy_public_pypi:
+  stage: deploy
+  extends: .default_setup
+  needs: ["dry_run_public_pypi"]
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^[Vv]/'
+      when: manual
+    - when: never
+  id_tokens:
+    PYPI_ID_TOKEN:
+      aud: pypi
+  script:
+    - ./scripts/verify-release-tag.sh
+    - echo "🚀 Publishing tested artifacts to PyPI via Trusted Publishing..."
+    - poetry run twine upload --non-interactive dist/*
+  dependencies:
+    - dry_run_public_pypi
+  artifacts:
+    expire_in: 7 days
+  environment:
+    name: pypi-production
 
 # GitLab Pages - Vulnerability Report Dashboard
 pages:
