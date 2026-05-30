@@ -4,6 +4,42 @@ All notable changes to **SprigConfig** will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.10] — TBD
+
+### 🎯 Summary
+
+This release prepares the packaging pipeline for Trusted Publishing to TestPyPI
+and PyPI, and fixes broken documentation links in the PyPI project description.
+
+---
+
+### ✨ Added
+
+* **TestPyPI branch publishing** — Added manual GitLab CI jobs that build and
+  publish uniquely versioned branch artifacts to TestPyPI using Trusted
+  Publishing
+* **PyPI Trusted Publishing** — Added manual tag-based GitLab CI jobs for
+  Trusted Publishing to `pypi.org`
+
+---
+
+### 📚 Documentation Changes
+
+* Fixed dead links in the PyPI-rendered README by switching package-description
+  links to stable GitLab URLs
+* Updated publishing and release documentation to cover GitLab registry,
+  TestPyPI, and public PyPI flows
+
+---
+
+### 🔧 Internal
+
+* Updated release tooling to recognize PEP 440-style `rc` versions
+* Added CI version rewriting for branch TestPyPI publishes to avoid immutable
+  upload conflicts
+
+---
+
 ## [1.4.9] — 2026-05-27
 
 ### 🎯 Summary

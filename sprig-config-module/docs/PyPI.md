@@ -1,8 +1,8 @@
 
-# SprigConfig Packaging & GitLab PyPI Publishing
+# SprigConfig Packaging & Registry Publishing
 
 This document explains how SprigConfig is packaged, versioned, and published to the
-GitLab Package Registry using Poetry and GitLab CI pipelines.
+GitLab Package Registry, TestPyPI, and the public PyPI index using GitLab CI pipelines.
 
 ---
 
@@ -47,25 +47,42 @@ No additional steps are required. Poetry handles building:
 
 # 🔑 Authentication for Publishing
 
-Publishing requires:
+SprigConfig now has three publishing targets with different authentication models:
 
-- A GitLab **project** or **group token**
-- Token must have: `write_registry`
+## GitLab Package Registry
 
-Environment variables:
+Publishing to the internal GitLab registry uses Poetry with HTTP basic auth:
 
 ```
 POETRY_HTTP_BASIC_GITLAB_PYPI_USERNAME="__token__"
-POETRY_HTTP_BASIC_GITLAB_PYPI_PASSWORD="$GITLAB_PYPI_TOKEN"
+POETRY_HTTP_BASIC_GITLAB_PYPI_PASSWORD="${CI_JOB_TOKEN}"
 ```
 
-These instruct Poetry how to authenticate to GitLab’s registry.
+These variables are already configured in `.gitlab-ci.yml`.
 
-You can test auth locally:
+## Public PyPI
 
-```
-poetry publish --dry-run -r gitlab-pypi
-```
+Publishing to `pypi.org` uses PyPI Trusted Publishing from GitLab CI/CD:
+
+- GitLab issues an OIDC ID token for the publish job
+- PyPI exchanges that token for a short-lived API token
+- `twine upload` publishes without storing a long-lived PyPI secret in GitLab
+
+The trusted publisher on PyPI must match:
+
+- Project name: `sprig-config`
+- Namespace: `dgw_software`
+- Repository: `sprig-config`
+- Top-level CI configuration path: `.gitlab-ci.yml`
+
+## TestPyPI
+
+Publishing to `test.pypi.org` also uses Trusted Publishing from GitLab CI/CD:
+
+- Branch pipelines request an OIDC ID token with audience `testpypi`
+- `twine upload --repository testpypi` publishes to TestPyPI
+- The CI job rewrites the version to `<base>.dev<CI_PIPELINE_IID>` before build
+  so every branch publish is unique and does not collide with TestPyPI's immutability
 
 ---
 
@@ -74,7 +91,7 @@ poetry publish --dry-run -r gitlab-pypi
 ```
 [[tool.poetry.source]]
 name = "gitlab-pypi"
-url = "https://gitlab.tsod.ad.usmc.mil/api/v4/projects/<project-id>/packages/pypi"
+url = "https://gitlab.com/api/v4/projects/72230105/packages/pypi"
 priority = "supplemental"
 ```
 
@@ -82,7 +99,7 @@ Details:
 
 - PyPI.org remains the primary source  
 - GitLab registry is supplemental  
-- Builds publish *only* to GitLab registry  
+- GitLab CI can publish to either registry depending on the manual deploy job
 
 ---
 
@@ -122,16 +139,35 @@ git tag v1.2.0
 git push --tags
 ```
 
-### 2️⃣ CI runs `dry_run_pypi`
+### 2️⃣ CI runs one or more validation jobs
 
-- Ensures tag matches version  
-- Builds the package  
-- Runs a simulated publish  
+- `dry_run_pypi`
+  - Ensures tag matches version
+  - Builds the package
+  - Runs a simulated publish to the GitLab registry
+- `dry_run_testpypi`
+  - Runs on branch pipelines
+  - Rewrites the package version to `<base>.dev<CI_PIPELINE_IID>`
+  - Builds the package and validates artifacts with `twine check`
+- `dry_run_public_pypi`
+  - Ensures tag matches version
+  - Builds the package
+  - Runs `twine check dist/*` before any public upload
 
-### 3️⃣ CI runs `deploy_pypi` (manual approval)
+### 3️⃣ CI runs one or more deploy jobs (manual approval)
 
-- Performs a real `poetry publish`  
-- Uploads artifacts to GitLab’s registry  
+- `deploy_pypi`
+  - Performs `poetry publish --no-interaction -r gitlab-pypi`
+  - Uploads artifacts to the GitLab Package Registry
+- `deploy_testpypi`
+  - Runs on branch pipelines
+  - Requests a GitLab OIDC token with audience `testpypi`
+  - Runs `twine upload --repository testpypi`
+  - Uploads uniquely versioned branch artifacts to TestPyPI
+- `deploy_public_pypi`
+  - Requests a GitLab OIDC token with audience `pypi`
+  - Runs `twine upload` with PyPI Trusted Publishing
+  - Uploads artifacts to `pypi.org`
 
 This ensures:
 
@@ -148,7 +184,7 @@ Add this to the consumer project's `pyproject.toml`:
 ```
 [[tool.poetry.source]]
 name = "sprigconfig-internal"
-url = "https://gitlab.tsod.ad.usmc.mil/api/v4/projects/<project-id>/packages/pypi"
+url = "https://gitlab.com/api/v4/projects/72230105/packages/pypi"
 priority = "supplemental"
 ```
 
@@ -163,7 +199,15 @@ poetry add sprig-config
 # 🧪 Troubleshooting
 
 ### ❌ 401 Unauthorized  
-Token missing or lacking `write_registry`.
+GitLab registry credentials are missing or lack `write_registry`.
+
+### ❌ invalid-publisher / invalid-pending-publisher
+The trusted publisher registered on PyPI does not match this GitLab project, namespace,
+or `.gitlab-ci.yml` path.
+
+### ❌ file already exists
+The version being uploaded has already been published to TestPyPI or PyPI.
+Branch builds avoid this by using a `.dev<CI_PIPELINE_IID>` suffix in CI.
 
 ### ❌ version mismatch  
 Tag does not match Poetry version.
@@ -184,11 +228,12 @@ poetry build -vvv
 
 SprigConfig’s packaging is:
 
-- Poetry-driven  
-- Deterministic  
-- Enforced by CI  
-- Safe (dry-run first)  
-- Published only on valid version tags  
-- Hosted entirely in GitLab’s internal registry  
+- Poetry-driven
+- Deterministic
+- Enforced by CI
+- Safe (manual validation before release)
+- Published only on valid version tags
+- Available from both the GitLab registry and the public PyPI index
 
-This makes SprigConfig easy to distribute, version, and integrate into other systems across the organization.
+This keeps internal distribution and public package distribution aligned without adding a
+long-lived PyPI token to GitLab.
