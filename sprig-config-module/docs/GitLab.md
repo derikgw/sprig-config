@@ -230,7 +230,7 @@ The TestPyPI deploy job uses:
 
 ```
 id_tokens:
-  PYPI_ID_TOKEN:
+  TESTPYPI_ID_TOKEN:
     aud: testpypi
 ```
 

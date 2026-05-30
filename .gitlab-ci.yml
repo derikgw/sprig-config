@@ -221,7 +221,7 @@ deploy_testpypi:
       allow_failure: true
     - when: never
   id_tokens:
-    PYPI_ID_TOKEN:
+    TESTPYPI_ID_TOKEN:
       aud: testpypi
   script:
     - echo "🚀 Publishing branch build to TestPyPI via Trusted Publishing..."
