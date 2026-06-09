@@ -8,7 +8,7 @@ GitLab Package Registry, TestPyPI, and the public PyPI index using GitLab CI pip
 
 # 📦 Packaging Overview
 
-SprigConfig uses **Poetry 2.2.x** as its build and dependency manager.
+SprigConfig uses **Poetry 2.3.1** as its build and dependency manager.
 
 Running:
 

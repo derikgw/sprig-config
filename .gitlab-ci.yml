@@ -15,7 +15,7 @@ stages:
   - pages
 
 variables:
-  POETRY_VERSION: "2.2.0"
+  POETRY_VERSION: "2.3.1"
   PIP_NO_CACHE_DIR: "1"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   POETRY_NO_INTERACTION: "1"
@@ -56,7 +56,8 @@ lint:
   stage: lint
   extends: .default_setup
   script:
-    - poetry run ruff check src
+    - poetry run ruff check src > ruff.log 2>&1 || { cat ruff.log; exit 1; }
+    - cat ruff.log
   artifacts:
     when: always
     paths:
