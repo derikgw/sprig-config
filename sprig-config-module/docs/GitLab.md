@@ -18,7 +18,7 @@ The CI pipeline is designed to:
 - Enforce strict version/tag consistency
 - Require manual approval before publishing
 
-The pipeline runs using `python:3.11-slim` and installs Poetry 2.2.x on each job.
+The pipeline runs using `python:3.11-slim` and installs Poetry 2.3.1 on each job.
 
 ---
 
@@ -41,7 +41,7 @@ All jobs inherit from:
   image: python:3.11-slim
   before_script:
     - cd sprig-config-module
-    - pip install poetry==2.2.0
+    - pip install poetry==2.3.1
     - poetry install
 ```
 
