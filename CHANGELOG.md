@@ -8,10 +8,38 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### 🎯 Summary
 
+This release refreshes vulnerable tooling and upgrades the runtime
+`cryptography` dependency to the patched `48.0.1` release.
+
+---
+
+### 🔒 Security
+
+* **Fixed CVE-2026-8643 / PYSEC-2026-196** — Updated the dev-only `pip`
+  dependency from `26.1` to `26.1.2`
+* **Fixed GHSA-537c-gmf6-5ccf** — Updated the runtime `cryptography`
+  dependency from `46.0.7` to `48.0.1`
+* **Audit remediation** — Refreshes the local contributor and CI tooling
+  environment so console script entry points are no longer installed from the
+  vulnerable `pip 26.1` release
+
+---
+
+### 🔧 Internal
+
+* Refreshed the resolved dependency graph for local contributor and CI tooling
+* Updated the lockfile to keep developer environments aligned with the patched
+  dependency set
+
+---
+
+## [1.4.10] — 2026-05-30
+
+### 🎯 Summary
+
 This release prepares the packaging pipeline for Trusted Publishing to TestPyPI
-and PyPI, fixes broken documentation links in the PyPI project description,
-refreshes vulnerable tooling, and upgrades the runtime `cryptography`
-dependency to the patched `48.0.1` release.
+and PyPI, and fixes broken documentation links in the PyPI project
+description.
 
 ---
 
@@ -31,18 +59,6 @@ dependency to the patched `48.0.1` release.
   links to stable GitLab URLs
 * Updated publishing and release documentation to cover GitLab registry,
   TestPyPI, and public PyPI flows
-
----
-
-### 🔒 Security
-
-* **Fixed CVE-2026-8643 / PYSEC-2026-196** — Updated the dev-only `pip`
-  dependency from `26.1` to `26.1.2`
-* **Fixed GHSA-537c-gmf6-5ccf** — Updated the runtime `cryptography`
-  dependency from `46.0.7` to `48.0.1`
-* **Audit remediation** — Refreshes the local contributor and CI tooling
-  environment so console script entry points are no longer installed from the
-  vulnerable `pip 26.1` release
 
 ---
 
