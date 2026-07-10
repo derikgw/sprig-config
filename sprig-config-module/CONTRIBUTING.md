@@ -105,6 +105,7 @@ See [docs/dependency-management.md](docs/dependency-management.md) for guidance 
 SprigConfig uses:
 - **pip-audit** for dependency vulnerability scanning
 - **Bandit** for Python code security analysis (SAST)
+- **gitleaks** in GitHub Actions for secret detection, with `.gitleaks.toml` allowlisting the known test Fernet key used in CI
 
 Both tools run automatically in CI and can be run locally:
 

@@ -81,6 +81,12 @@ poetry run ruff format src
 - **[GitLab CI/CD Pipeline](GitLab.md)** — Understanding the automated testing and deployment pipeline
 - **[PyPI Publishing](PyPI.md)** — Publishing packages to PyPI
 
+GitHub Actions now provides phased workflows in `.github/workflows/ci.yml`,
+`.github/workflows/security.yml`, `.github/workflows/release-checks.yml`, and
+`.github/workflows/manual-publish.yml`. During the migration, GitLab Pages remains on GitLab,
+while GitHub Actions now mirrors dependency scanning, Bandit SAST, gitleaks secret detection,
+and offers a manual publishing path for TestPyPI and PyPI.
+
 ### Documentation
 
 - **[Building Documentation](building_documentation.md)** — Building, previewing, and deploying these docs with MkDocs
@@ -257,7 +263,7 @@ For releasing new versions, follow the **[Release Checklist](release_checklist.m
 1. **Prep**: Verify tests pass, update version, update CHANGELOG
 2. **Build**: Create wheel and sdist artifacts
 3. **Tag**: Create annotated git tag
-4. **CI/CD**: Monitor pipeline, confirm uploads to package registry
+4. **CI/CD**: Monitor GitHub validation and publish runs plus any remaining GitLab release jobs, confirm uploads to the intended registry
 5. **Post-release**: Verify installation, announce release
 
 ---

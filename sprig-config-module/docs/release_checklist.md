@@ -109,7 +109,7 @@ A repeatable checklist for publishing **SprigConfig** releases
 | Prep | Ensure version, changelog, tests are ready | ☑ |
 | Build | Generate clean, verifiable artifacts | ☑ |
 | Tag | Create annotated version tag | ☑ |
-| CI/CD | Confirm successful pipeline + registry upload | ☑ |
+| CI/CD | Confirm GitHub validation/publish runs or the GitLab publish pipeline, and verify the registry upload | ☑ |
 | Post | Verify install, update docs, announce release | ☑ |
 
 ---

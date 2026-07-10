@@ -252,7 +252,8 @@ poetry update urllib3
 
 ### Security Scanning in CI/CD
 
-pip-audit runs automatically in GitLab CI during the `security` stage:
+pip-audit runs automatically in GitLab CI during the `security` stage and in the phased GitHub
+Actions workflow at `.github/workflows/security.yml`:
 
 ```yaml
 pip_audit:
@@ -261,6 +262,13 @@ pip_audit:
     - pip install pip-audit
     - pip-audit --format json --output pip-audit-report.json
 ```
+
+That GitHub Actions workflow also runs `bandit -r src` for Python SAST and gitleaks for secret
+detection. The gitleaks configuration in `.gitleaks.toml` allowlists the known test Fernet key used
+intentionally in CI so the scan remains actionable.
+
+The GitHub Actions migration keeps `pip-audit` non-blocking for now so vulnerability reports are
+still collected while GitLab continues to run its own security templates in parallel.
 
 ### Pre-commit Hooks
 

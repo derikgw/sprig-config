@@ -1,0 +1,10 @@
+title = "SprigConfig gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allow known test Fernet key used in CI and docs"
+regexes = [
+    '''Y1PvJOeB_Dhak0oNJecfKRaKb4VcvmTwlFUo8-gVr7Q=''',
+]

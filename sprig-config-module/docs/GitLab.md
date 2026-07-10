@@ -5,6 +5,13 @@ This document explains the CI/CD pipeline defined in `.gitlab-ci.yml` for the **
 It covers the purpose of each job, how version-controlled publishing works, required authentication,
 and how GitLab publishes SprigConfig to the GitLab Package Registry, TestPyPI, and the public PyPI index.
 
+GitHub Actions is being introduced in phases. The current workflows live at `.github/workflows/ci.yml`,
+`.github/workflows/security.yml`, `.github/workflows/release-checks.yml`, and
+`.github/workflows/manual-publish.yml`, mirroring the `sprig-config-module` validation path,
+non-blocking dependency scanning, Bandit SAST, gitleaks secret scanning, build/release checks,
+and manual TestPyPI/PyPI publishing. GitLab CI still runs its own security templates, and GitLab
+Pages remains GitLab-owned.
+
 ---
 
 # 📌 Overview of the CI Pipeline
@@ -95,12 +102,19 @@ Artifacts include:
 
 # 🔒 Security Stage
 
-Two GitLab-provided scanners run automatically:
+GitLab runs two template-provided scanners automatically:
 
 - **SAST** (Static Application Security Testing)
 - **Secret Detection**
 
 These use GitLab’s security templates and require no additional configuration.
+
+GitHub Actions now mirrors the same intent through `.github/workflows/security.yml` by running:
+
+- **Bandit** for Python-focused SAST against `src/`
+- **gitleaks** for repository secret scanning, using `.gitleaks.toml` to allowlist the known
+  test Fernet key that is intentionally committed for CI/test coverage
+- **pip-audit** for dependency vulnerability reporting
 
 ---
 

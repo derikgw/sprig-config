@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  pull_request:
+    paths:
+      - "sprig-config-module/**"
+      - ".github/workflows/ci.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "sprig-config-module/**"
+      - ".github/workflows/ci.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: sprig-config-module
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Poetry
+        run: python -m pip install --upgrade "pip>=26.1,<27" "poetry==2.3.1"
+
+      - name: Install lint dependencies
+        run: poetry install --without docs --no-ansi
+
+      - name: Run Ruff
+        run: |
+          set -o pipefail
+          poetry run ruff check src 2>&1 | tee ruff.log
+
+      - name: Upload Ruff log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruff-log
+          path: sprig-config-module/ruff.log
+
+  pytest:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: sprig-config-module
+    env:
+      APP_SECRET_KEY: "Y1PvJOeB_Dhak0oNJecfKRaKb4VcvmTwlFUo8-gVr7Q="
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Poetry
+        run: python -m pip install --upgrade "pip>=26.1,<27" "poetry==2.3.1"
+
+      - name: Install test dependencies
+        run: poetry install --without docs --no-ansi
+
+      - name: Run pytest with coverage
+        run: poetry run pytest --maxfail=1 --disable-warnings -q --cov=src --cov-report=xml
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: sprig-config-module/coverage.xml

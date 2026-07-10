@@ -1,0 +1,153 @@
+name: Manual Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Publish target"
+        required: true
+        type: choice
+        options:
+          - testpypi
+          - pypi
+      mode:
+        description: "Run validation only or publish artifacts"
+        required: true
+        default: validate
+        type: choice
+        options:
+          - validate
+          - publish
+
+concurrency:
+  group: manual-publish-${{ inputs.target }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  testpypi:
+    if: ${{ inputs.target == 'testpypi' }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.mode == 'publish' && 'testpypi' || 'testpypi-staging' }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: sprig-config-module
+    env:
+      CI_PIPELINE_IID: ${{ github.run_number }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Ensure workflow is running against a branch
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "TestPyPI publishing is branch-oriented. Re-run this workflow against a branch ref."
+            exit 1
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Poetry
+        run: python -m pip install --upgrade "pip>=26.1,<27" "poetry==2.3.1"
+
+      - name: Install publish dependencies
+        run: poetry install --without docs --no-ansi
+
+      - name: Prepare TestPyPI version
+        run: sh ./scripts/prepare-testpypi-version.sh
+
+      - name: Build TestPyPI artifacts
+        run: poetry build
+
+      - name: Validate TestPyPI artifacts
+        run: poetry run twine check dist/*
+
+      - name: Upload TestPyPI artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testpypi-publish-dist
+          path: sprig-config-module/dist
+          if-no-files-found: error
+
+      - name: Publish to TestPyPI
+        if: ${{ inputs.mode == 'publish' }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository_url: https://test.pypi.org/legacy/
+          packages_dir: sprig-config-module/dist/
+          print_hash: true
+
+  pypi:
+    if: ${{ inputs.target == 'pypi' }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.mode == 'publish' && 'pypi-production' || 'pypi-staging' }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: sprig-config-module
+    env:
+      CI_COMMIT_TAG: ${{ github.ref_name }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Ensure workflow is running against a release tag
+        run: |
+          if [ "${{ github.ref_type }}" != "tag" ]; then
+            echo "PyPI publishing requires a tag ref. Re-run this workflow against a v* or V* tag."
+            exit 1
+          fi
+
+          case "${CI_COMMIT_TAG}" in
+            v*|V*)
+              ;;
+            *)
+              echo "PyPI publishing requires a tag that starts with v or V."
+              exit 1
+              ;;
+          esac
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Poetry
+        run: python -m pip install --upgrade "pip>=26.1,<27" "poetry==2.3.1"
+
+      - name: Install publish dependencies
+        run: poetry install --without docs --no-ansi
+
+      - name: Verify release tag
+        run: sh ./scripts/verify-release-tag.sh
+
+      - name: Build PyPI artifacts
+        run: poetry build
+
+      - name: Validate PyPI artifacts
+        run: poetry run twine check dist/*
+
+      - name: Upload PyPI artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pypi-publish-dist
+          path: sprig-config-module/dist
+          if-no-files-found: error
+
+      - name: Publish to PyPI
+        if: ${{ inputs.mode == 'publish' }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages_dir: sprig-config-module/dist/
+          print_hash: true

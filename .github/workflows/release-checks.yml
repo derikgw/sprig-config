@@ -1,0 +1,146 @@
+name: Release Checks
+
+on:
+  pull_request:
+    paths:
+      - "sprig-config-module/**"
+      - ".github/workflows/release-checks.yml"
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+      - "V*"
+    paths:
+      - "sprig-config-module/**"
+      - ".github/workflows/release-checks.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: release-checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  package-build:
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: sprig-config-module
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Poetry
+        run: python -m pip install --upgrade "pip>=26.1,<27" "poetry==2.3.1"
+
+      - name: Install build dependencies
+        run: poetry install --without docs --no-ansi
+
+      - name: Build distributions
+        run: poetry build
+
+      - name: Validate built distributions
+        run: poetry run twine check dist/*
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-build-dist
+          path: sprig-config-module/dist
+          if-no-files-found: error
+
+  release-tag-validation:
+    if: ${{ startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/V') }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: sprig-config-module
+    env:
+      CI_COMMIT_TAG: ${{ github.ref_name }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Poetry
+        run: python -m pip install --upgrade "pip>=26.1,<27" "poetry==2.3.1"
+
+      - name: Install release dependencies
+        run: poetry install --without docs --no-ansi
+
+      - name: Verify tag matches package version
+        run: sh ./scripts/verify-release-tag.sh
+
+      - name: Build release artifacts
+        run: poetry build
+
+      - name: Validate release artifacts
+        run: poetry run twine check dist/*
+
+      - name: Upload release artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-tag-dist
+          path: sprig-config-module/dist
+          if-no-files-found: error
+
+  testpypi-build:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: sprig-config-module
+    env:
+      CI_PIPELINE_IID: ${{ github.run_number }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Poetry
+        run: python -m pip install --upgrade "pip>=26.1,<27" "poetry==2.3.1"
+
+      - name: Install build dependencies
+        run: poetry install --without docs --no-ansi
+
+      - name: Prepare TestPyPI version
+        run: sh ./scripts/prepare-testpypi-version.sh
+
+      - name: Build TestPyPI artifacts
+        run: poetry build
+
+      - name: Validate TestPyPI artifacts
+        run: poetry run twine check dist/*
+
+      - name: Upload TestPyPI build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testpypi-build-dist
+          path: sprig-config-module/dist
+          if-no-files-found: error

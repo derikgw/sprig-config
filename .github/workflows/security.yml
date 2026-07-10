@@ -1,0 +1,192 @@
+name: Security
+
+on:
+  pull_request:
+    paths:
+      - "sprig-config-module/**"
+      - ".github/workflows/security.yml"
+      - ".gitleaks.toml"
+  push:
+    branches:
+      - main
+    paths:
+      - "sprig-config-module/**"
+      - ".github/workflows/security.yml"
+      - ".gitleaks.toml"
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  bandit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: sprig-config-module
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Poetry
+        run: python -m pip install --upgrade "pip>=26.1,<27" "poetry==2.3.1"
+
+      - name: Install security dependencies
+        run: poetry install --without docs --no-ansi
+
+      - name: Generate Bandit JSON report
+        run: poetry run bandit -r src -f json -o bandit-report.json
+
+      - name: Generate Bandit text report
+        if: always()
+        run: |
+          set -o pipefail
+          poetry run bandit -r src 2>&1 | tee bandit-report.txt
+
+      - name: Summarize Bandit results
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          summary_path = Path(__import__("os").environ["GITHUB_STEP_SUMMARY"])
+          report_path = Path("bandit-report.json")
+
+          if not report_path.exists():
+              with summary_path.open("a", encoding="utf-8") as summary:
+                  summary.write("## Bandit\n\nNo JSON report was generated.\n")
+              raise SystemExit(0)
+
+          data = json.loads(report_path.read_text(encoding="utf-8"))
+          metrics = data.get("metrics", {}).get("_totals", {})
+          result_count = len(data.get("results", []))
+
+          lines = [
+              "## Bandit",
+              "",
+              f"- Lines of code scanned: {metrics.get('loc', 'unknown')}",
+              f"- Findings: {result_count}",
+              f"- High severity: {metrics.get('SEVERITY.HIGH', 0)}",
+              f"- Medium severity: {metrics.get('SEVERITY.MEDIUM', 0)}",
+              f"- Low severity: {metrics.get('SEVERITY.LOW', 0)}",
+          ]
+
+          with summary_path.open("a", encoding="utf-8") as summary:
+              summary.write("\n".join(lines) + "\n")
+          PY
+
+      - name: Upload Bandit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-reports
+          path: |
+            sprig-config-module/bandit-report.json
+            sprig-config-module/bandit-report.txt
+          if-no-files-found: warn
+
+  pip-audit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: sprig-config-module
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Poetry
+        run: python -m pip install --upgrade "pip>=26.1,<27" "poetry==2.3.1"
+
+      - name: Install security dependencies
+        run: poetry install --without docs --no-ansi
+
+      - name: Generate pip-audit JSON report
+        continue-on-error: true
+        run: poetry run pip-audit --ignore-vuln PYSEC-2026-89 --format json --output pip-audit-report.json
+
+      - name: Generate pip-audit Markdown report
+        continue-on-error: true
+        run: poetry run pip-audit --ignore-vuln PYSEC-2026-89 --format markdown --output pip-audit-report.md
+
+      - name: Generate pip-audit console report
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          poetry run pip-audit --ignore-vuln PYSEC-2026-89 2>&1 | tee pip-audit-report.txt
+
+      - name: Summarize pip-audit results
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          summary_path = Path(__import__("os").environ["GITHUB_STEP_SUMMARY"])
+          report_path = Path("pip-audit-report.json")
+
+          if not report_path.exists():
+              summary_path.write_text("## pip-audit\n\nNo JSON report was generated.\n", encoding="utf-8")
+              raise SystemExit(0)
+
+          data = json.loads(report_path.read_text(encoding="utf-8"))
+          dependencies = data.get("dependencies", [])
+          vulnerability_count = sum(len(dep.get("vulns", [])) for dep in dependencies)
+
+          lines = [
+              "## pip-audit",
+              "",
+              f"- Dependencies scanned: {len(dependencies)}",
+              f"- Vulnerabilities found: {vulnerability_count}",
+              "- Ignored vulnerability: `PYSEC-2026-89`",
+          ]
+
+          summary_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+
+      - name: Upload pip-audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pip-audit-reports
+          path: |
+            sprig-config-module/pip-audit-report.json
+            sprig-config-module/pip-audit-report.md
+            sprig-config-module/pip-audit-report.txt
+          if-no-files-found: warn
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
+          GITLEAKS_ENABLE_COMMENTS: "false"
