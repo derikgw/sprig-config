@@ -61,22 +61,20 @@ A repeatable checklist for publishing **SprigConfig** releases
 
 ## 📦 4️⃣  Verify CI/CD & Publish
 
-- [ ] Check the **GitLab Pipeline**:
+- [ ] Check CI validation status:
   - ✅ Lint
   - ✅ Tests
   - ✅ Security Scans
   - ✅ Build artifacts (wheel + sdist)
-- [ ] For branch validation, run `dry_run_testpypi`
-- [ ] For branch validation, run `deploy_testpypi`
+- [ ] Confirm Trusted Publishing entries exist:
+  - TestPyPI publisher for `.github/workflows/manual-publish.yml` + `testpypi` environment
+  - PyPI publisher for `.github/workflows/manual-publish.yml` + `pypi-production` environment
+- [ ] Run GitHub Actions **Manual Publish** with `target=testpypi`, `mode=publish` on a branch
 - [ ] Confirm branch build appears on **TestPyPI**
-- [ ] Run `dry_run_pypi` before publishing to the GitLab Package Registry
-- [ ] Run `deploy_pypi` to publish to the GitLab Package Registry
-- [ ] Confirm package appears in the GitLab **Package Registry**:
-  <https://gitlab.com/dgw_software/sprig-config/-/packages>
-- [ ] Run `dry_run_public_pypi` before publishing to public PyPI
-- [ ] Run `deploy_public_pypi` to publish to public PyPI
+- [ ] Run GitHub Actions **Manual Publish** with `target=pypi`, `mode=publish` on a `v*`/`V*` tag
 - [ ] Confirm package appears on **PyPI**:
   <https://pypi.org/project/sprig-config/>
+- [ ] Optional: publish to the GitLab Package Registry if internal mirror distribution is still required
 - [ ] Optional emergency fallback: publish manually to PyPI with an API token:
   ```bash
   cd sprig-config-module
