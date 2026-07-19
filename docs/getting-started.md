@@ -22,7 +22,7 @@ Or with Poetry:
 poetry add sprig-config
 ```
 
-**Requirements:** Python 3.13 or later.
+**Requirements:** Python 3.11 or later (and earlier than Python 4).
 
 ---
 
@@ -104,7 +104,7 @@ logging:
 from sprigconfig import load_config
 
 # Load with explicit profile
-cfg = load_config(profile="dev")
+cfg = load_config(profile="dev", config_dir="config")
 
 # Access values
 print(cfg["server"]["port"])      # 9090
@@ -137,12 +137,17 @@ if "server.port" in cfg:
 
 ## Profile Selection
 
-Profiles are determined at runtime in this order:
+Profiles are explicit runtime inputs. Pass the selected profile to
+`load_config()`, `ConfigLoader`, or `ConfigSingleton.initialize()`:
 
-1. **Explicit parameter:** `load_config(profile="prod")`
-2. **Environment variable:** `APP_PROFILE=prod`
-3. **pytest context:** Automatically uses `"test"`
-4. **Default:** Falls back to `"dev"`
+```python
+profile = os.environ.get("APP_PROFILE", "dev")
+cfg = load_config(profile=profile)
+```
+
+SprigConfig does not select a profile from the environment automatically. Your
+application owns that policy, which keeps profile selection visible and
+testable.
 
 The active profile is always available in the config:
 
@@ -150,13 +155,15 @@ The active profile is always available in the config:
 print(cfg["app.profile"])  # dev, test, or prod
 ```
 
-**Important:** Never set `app.profile` in your YAML files. SprigConfig ignores it with a warning.
+`app.profile` is injected from the explicit runtime profile. A value from a
+configuration file is overwritten.
 
 ---
 
 ## Configuration Directory
 
-By default, SprigConfig looks for `config/` in your project root. You can customize this:
+Pass the configuration directory explicitly, or set `APP_CONFIG_DIR` before
+loading configuration:
 
 ### Via parameter
 
@@ -171,14 +178,8 @@ cfg = load_config(profile="dev", config_dir=Path("/opt/myapp/config"))
 export APP_CONFIG_DIR=/opt/myapp/config
 ```
 
-### Via .env file
-
-Create a `.env` file in your project root:
-
-```
-APP_CONFIG_DIR=/opt/myapp/config
-APP_PROFILE=dev
-```
+SprigConfig does not load `.env` files itself. If your application uses
+`python-dotenv` or another environment loader, invoke it before SprigConfig.
 
 ---
 
@@ -236,7 +237,7 @@ export DB_PASSWORD=secret
 ```
 
 ```python
-cfg = load_config(profile="prod")
+cfg = load_config(profile="prod", config_dir="config")
 print(cfg["database.host"])  # db.example.com
 print(cfg["database.port"])  # 5432 (default)
 ```
@@ -252,8 +253,9 @@ Now that you have basic configuration working:
 - [Profiles](profiles.md) — Deep dive into profile management
 - [Imports](imports.md) — Modularize your configuration
 - [Security](security.md) — Handle sensitive values securely
-- [Dependency Injection](../sprig-config-module/docs/configuration-injection.md) — Spring Boot-style `ConfigValue` and `@ConfigurationProperties`
-- [Dynamic Instantiation](../sprig-config-module/src/sprigconfig/instantiate.md) — Hydra-style `_target_` class instantiation
+- [Schema Validation](schema-validation.md) — Opt into typed validation
+- [Dependency Injection](dependency-injection.md) — Field, section, and function binding
+- [Dynamic Instantiation](instantiation.md) — Hydra-style `_target_` class instantiation
 
 ---
 

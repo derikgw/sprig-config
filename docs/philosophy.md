@@ -78,7 +78,7 @@ When something goes wrong in production, you need to understand your configurati
 
 SprigConfig is intentionally focused. It does not:
 
-- **Validate schemas** — Use Pydantic or similar for validation
+- **Validate schemas when requested** — Pass a dataclass type with `schema=`
 - **Manage environment variables** — Use python-dotenv or similar
 - **Handle remote configuration** — It loads local files only
 - **Support hot reloading** — Configuration is loaded once at startup
@@ -118,7 +118,7 @@ When contributing to SprigConfig, keep these principles in mind:
 4. **Choose clarity** over cleverness
 5. **Document behavior** that affects configuration semantics
 
-See [CONTRIBUTING.md](https://gitlab.com/dgw_software/sprig-config/-/blob/main/sprig-config-module/CONTRIBUTING.md) for detailed guidelines.
+See [CONTRIBUTING.md](https://github.com/derikgw/sprig-config/blob/main/CONTRIBUTING.md) for detailed guidelines.
 
 ---
 

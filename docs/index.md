@@ -80,7 +80,7 @@ logging:
 from sprigconfig import load_config
 
 # Load dev configuration (profile is runtime-driven)
-cfg = load_config(profile="dev")
+cfg = load_config(profile="dev", config_dir="config")
 
 print(cfg["server.port"])      # → 9090 (from dev overlay)
 print(cfg["server.host"])      # → localhost (from base)
@@ -103,8 +103,9 @@ That's it! Configuration is loaded, merged, and available via simple dotted-key 
 | **[Secure Secrets](security.md)** | Fernet-encrypted `ENC(...)` values, decrypted on-demand with lazy evaluation |
 | **[Format Support](configuration.md)** | YAML (recommended), JSON, and TOML |
 | **[CLI Tools](cli.md)** | Inspect, debug, and validate merged configuration from command line |
-| **[Dependency Injection](../sprig-config-module/docs/configuration-injection.md)** | `ConfigValue` descriptors, `@ConfigurationProperties`, and `@config_inject` decorators |
-| **[Dynamic Instantiation](../sprig-config-module/src/sprigconfig/instantiate.md)** | Hydra-style `_target_` support for instantiating classes from config |
+| **[Schema Validation](schema-validation.md)** | Opt-in dataclass validation with path-based errors |
+| **[Dependency Injection](dependency-injection.md)** | `ConfigValue` descriptors, `@ConfigurationProperties`, and `@config_inject` decorators |
+| **[Dynamic Instantiation](instantiation.md)** | Hydra-style `_target_` support for instantiating classes from config |
 | **[Provenance Tracking](configuration.md#metadata)** | Know exactly where every value came from |
 
 ---
@@ -157,19 +158,16 @@ Dive deeper into SprigConfig's behavior:
 ### 🔧 Advanced Usage
 
 For power users and framework integration:
-- **[Configuration Injection](../sprig-config-module/docs/configuration-injection.md)** — Spring Boot-style ConfigValue and @ConfigurationProperties patterns
-- **[Dependency Injection Explained](../sprig-config-module/docs/dependency-injection-explained.md)** — How Spring Boot-style DI works in Python
-- **[Secrets Best Practices](../sprig-config-module/docs/SprigConfig_ENC_BestPractices.md)** — Key generation, rotation, and operational security
+- **[Dependency Injection](dependency-injection.md)** — Field, section, and function binding
+- **[Dynamic Instantiation](instantiation.md)** — Construct objects from `_target_` configuration
+- **[Security Guide](security.md)** — Key generation, rotation, and operational security
 
 ### 👨‍💻 Contributing & Development
 
-For developers working on SprigConfig itself:
-- **[Developer Guide](../sprig-config-module/docs/README_Developer_Guide.md)** — Repository setup, testing, architecture
-- **[Release Checklist](../sprig-config-module/docs/release_checklist.md)** — Releasing new versions
-- **[Dependency Management](../sprig-config-module/docs/dependency-management.md)** — Managing Python dependencies with Poetry
-- **[GitLab CI/CD](../sprig-config-module/docs/GitLab.md)** — CI pipeline and automated testing
-- **[PyPI Publishing](../sprig-config-module/docs/PyPI.md)** — Publishing packages
-- **[Building Documentation](../sprig-config-module/docs/building_documentation.md)** — Building and deploying docs
+Maintainer runbooks live with the package source under
+`sprig-config-module/docs/`; they are intentionally separate from this public
+usage guide. Start with the repository's `CONTRIBUTING.md` and
+`sprig-config-module/docs/README_Developer_Guide.md`.
 
 ### 🔐 Operational
 
@@ -186,12 +184,10 @@ Guides for running SprigConfig in production:
 SprigConfig follows a predictable, debuggable flow:
 
 ```
-1. Profile Resolution (runtime-driven)
+1. Profile Selection (owned by the application)
    ↓
-   Explicit: load_config(profile="prod")
-   Or: APP_PROFILE=prod environment variable
-   Or: pytest context → "test"
-   Or: default → "dev"
+   Explicit: load_config(profile="prod", config_dir="config")
+   The application may read APP_PROFILE before calling SprigConfig
 
 2. File Loading & Merging
    ↓
@@ -224,6 +220,7 @@ Located in the SprigConfig source (`src/sprigconfig/`):
 | `deepmerge.py` | Deep merge algorithm with collision warnings |
 | `injection.py` | Dependency injection (`ConfigValue`, `@ConfigurationProperties`, `@config_inject`) |
 | `instantiate.py` | Dynamic class instantiation via `_target_` patterns |
+| `validation/` | Optional dataclass schema validation |
 | `exceptions.py` | Custom exceptions (ConfigLoadError, etc.) |
 | `config_singleton.py` | Thread-safe cached loader |
 | `cli.py` | Command-line interface for inspection/debugging |
@@ -272,7 +269,7 @@ How does SprigConfig compare?
 | Spring Boot style | ✅ | ⚠️ | ❌ | ❌ | ❌ | ❌ |
 | Dependency injection | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Dynamic instantiation | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
-| Validation | ⚠️ (manual) | ❌ | ❌ | ✅ | ✅ | ❌ |
+| Validation | ✅ (opt-in) | ❌ | ❌ | ✅ | ✅ | ❌ |
 | Supported Python range | `>=3.11,<4.0` | - | - | - | - | - |
 
 **Notes on Spring Python**: Spring Python (v1.2.1) is an older project that provides IoC container and YAML/XML configuration, inspired by Spring Framework. However, it only supports Python 2.6+ (not Python 3) and lacks modern features like profile overlays, encrypted secrets, and provenance tracking. For Python developers seeking Spring-style patterns, SprigConfig offers a modern, actively-maintained alternative.
@@ -281,16 +278,15 @@ How does SprigConfig compare?
 
 ## Project Links
 
-- **GitLab** (Source of truth): [gitlab.com/dgw_software/sprig-config](https://gitlab.com/dgw_software/sprig-config)
-- **GitHub** (Mirror): [github.com/dgw_software/sprig-config](https://github.com/dgw_software/sprig-config)
+- **GitHub**: [github.com/derikgw/sprig-config](https://github.com/derikgw/sprig-config)
 - **PyPI** (Package): [pypi.org/project/sprigconfig](https://pypi.org/project/sprigconfig/)
-- **Issues & Discussions**: [GitLab Issues](https://gitlab.com/dgw_software/sprig-config/-/issues)
+- **Issues**: [GitHub Issues](https://github.com/derikgw/sprig-config/issues)
 
 ---
 
 ## License
 
-MIT License. See [LICENSE](https://gitlab.com/dgw_software/sprig-config/-/blob/main/LICENSE) for details.
+MIT License. See [LICENSE](https://github.com/derikgw/sprig-config/blob/main/sprig-config-module/LICENSE) for details.
 
 ---
 
@@ -298,9 +294,8 @@ MIT License. See [LICENSE](https://gitlab.com/dgw_software/sprig-config/-/blob/m
 
 - 📖 **Documentation** — Start with [Getting Started](getting-started.md)
 - ❓ **FAQ** — Check [Frequently Asked Questions](faq.md)
-- 🐛 **Issues** — Report bugs or request features on [GitLab Issues](https://gitlab.com/dgw_software/sprig-config/-/issues)
-- 💬 **Discussions** — Ask questions in [GitLab Discussions](https://gitlab.com/dgw_software/sprig-config/-/discussions)
-- 🤝 **Contributing** — Want to help? See [Contributing Guide](../CONTRIBUTING.md)
+- 🐛 **Issues** — Report bugs or request features on [GitHub Issues](https://github.com/derikgw/sprig-config/issues)
+- 🤝 **Contributing** — See the [Contributing Guide](https://github.com/derikgw/sprig-config/blob/main/CONTRIBUTING.md)
 
 ---
 

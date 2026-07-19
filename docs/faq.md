@@ -36,7 +36,7 @@ If these principles align with your needs, SprigConfig is a good fit. Other libr
 
 ### What Python versions are supported?
 
-SprigConfig requires **Python 3.13 or later**.
+SprigConfig requires **Python 3.11 or later and earlier than Python 4**.
 
 ---
 
@@ -49,7 +49,7 @@ This is a core design principle. If profiles came from files, you'd have circula
 2. That file might be profile-specific!
 
 Runtime-driven profiles ensure:
-- Clear precedence (explicit → env var → pytest → default)
+- Explicit selection by application code
 - No ambiguity about which profile is active
 - Profiles can't accidentally override themselves
 
@@ -58,7 +58,7 @@ Runtime-driven profiles ensure:
 The active profile is always available at `app.profile`:
 
 ```python
-cfg = load_config()
+cfg = load_config(profile="dev", config_dir="config")
 print(cfg["app.profile"])  # dev, test, or prod
 ```
 
@@ -72,20 +72,19 @@ print(cfg["sprigconfig._meta.profile"])
 Yes. Use any name you want:
 
 ```python
-cfg = load_config(profile="staging")
-cfg = load_config(profile="qa")
-cfg = load_config(profile="local-docker")
+cfg = load_config(profile="staging", config_dir="config")
+cfg = load_config(profile="qa", config_dir="config")
+cfg = load_config(profile="local-docker", config_dir="config")
 ```
 
 Just create the corresponding overlay file (e.g., `application-staging.yml`).
 
-### Why does pytest automatically use the "test" profile?
+### How should tests select a profile?
 
-SprigConfig detects pytest execution and defaults to `test` profile. This prevents accidentally running tests with production settings.
+Pass it explicitly, just as production code does:
 
-Override if needed:
 ```python
-cfg = load_config(profile="dev")  # Explicit override
+cfg = load_config(profile="test", config_dir="tests/config")
 ```
 
 ---
@@ -115,7 +114,7 @@ This invented behavior would violate SprigConfig's principle of explicit, predic
 
 ```python
 # Via parameter
-loader = ConfigLoader(config_dir=Path("config"), profile="dev", ext="json")
+loader = ConfigLoader(config_dir=Path("config"), profile="dev", config_format="json")
 
 # Via environment variable
 export SPRIGCONFIG_FORMAT=json
@@ -341,7 +340,7 @@ class DatabaseConfig(BaseModel):
     port: int
     pool_size: int
 
-cfg = load_config(profile="prod")
+cfg = load_config(profile="prod", config_dir="config")
 db_config = DatabaseConfig(**cfg["database"])
 ```
 
@@ -387,7 +386,7 @@ DATABASES = {
 
 ### How do I report bugs?
 
-Open an issue at [GitLab](https://gitlab.com/dgw_software/sprig-config/-/issues) with:
+Open an issue on [GitHub](https://github.com/derikgw/sprig-config/issues) with:
 - What you expected
 - What happened
 - Relevant configuration (redacted if needed)
@@ -400,7 +399,7 @@ Format support may be considered if:
 - The format natively expresses hierarchy
 - Semantics are explicit and documented
 
-See [CONTRIBUTING.md](https://gitlab.com/dgw_software/sprig-config/-/blob/main/sprig-config-module/CONTRIBUTING.md) for guidelines.
+See [CONTRIBUTING.md](https://github.com/derikgw/sprig-config/blob/main/CONTRIBUTING.md) for guidelines.
 
 ---
 

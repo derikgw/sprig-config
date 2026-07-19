@@ -8,7 +8,7 @@ from ..exceptions import ConfigValidationError
 def validate_schema(config: dict[str, Any], schema: type) -> None:
     if not isinstance(config, dict):
         raise ConfigValidationError("Schema validation requires a mapping configuration root.")
-    if not is_dataclass(schema):
+    if not isinstance(schema, type) or not is_dataclass(schema):
         raise ConfigValidationError(
             "Schema must be a dataclass type for validation."
         )

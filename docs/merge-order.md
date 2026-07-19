@@ -250,7 +250,7 @@ sprigconfig dump --config-dir=config --profile=dev
 The merged config includes information about what was loaded:
 
 ```python
-cfg = load_config(profile="dev")
+cfg = load_config(profile="dev", config_dir="config")
 
 # See all source files
 for source in cfg["sprigconfig._meta.sources"]:

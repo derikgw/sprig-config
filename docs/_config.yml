@@ -27,6 +27,8 @@ exclude:
   - Gemfile.lock
   - node_modules
   - vendor
+  - AOP
+  - snyk-gitlab-setup.md
 
 # Collections (optional, for future expansion)
 # collections:
@@ -56,5 +58,11 @@ navigation:
     url: "{{ site.baseurl }}/security"
   - title: CLI
     url: "{{ site.baseurl }}/cli"
+  - title: Schema Validation
+    url: "{{ site.baseurl }}/schema-validation"
+  - title: Dependency Injection
+    url: "{{ site.baseurl }}/dependency-injection"
+  - title: Dynamic Instantiation
+    url: "{{ site.baseurl }}/instantiation"
   - title: FAQ
     url: "{{ site.baseurl }}/faq"

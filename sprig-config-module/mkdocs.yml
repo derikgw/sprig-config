@@ -1,8 +1,12 @@
 site_name: SprigConfig Documentation
 site_description: Spring Boot-style configuration for Python applications
-site_url: https://dgw-software.gitlab.io/sprig-config/
-repo_url: https://gitlab.com/dgw_software/sprig-config
-repo_name: GitLab
+site_url: https://derikgw.github.io/sprig-config/
+repo_url: https://github.com/derikgw/sprig-config
+repo_name: GitHub
+docs_dir: ../docs
+exclude_docs: |
+  snyk-gitlab-setup.md
+  AOP/
 
 theme:
   name: material
@@ -18,37 +22,31 @@ theme:
     - search.highlight
 
 nav:
-  - Home: ../docs/index.md
+  - Home: index.md
   - Getting Started:
-      - Installation & Quickstart: ../docs/getting-started.md
-      - Configuration Guide: ../docs/configuration.md
+      - Installation & Quickstart: getting-started.md
+      - Configuration Guide: configuration.md
   - Core Concepts:
-      - Profiles: ../docs/profiles.md
-      - Imports: ../docs/imports.md
-      - Merge Semantics: ../docs/merge-order.md
+      - Profiles: profiles.md
+      - Imports: imports.md
+      - Merge Semantics: merge-order.md
   - Features:
-      - Security & Secrets: ../docs/security.md
-      - Command Line Interface: ../docs/cli.md
+      - Schema Validation: schema-validation.md
+      - Security & Secrets: security.md
+      - Command Line Interface: cli.md
+  - Advanced:
+      - Dependency Injection: dependency-injection.md
+      - Dynamic Instantiation: instantiation.md
   - API Reference:
-      - Overview: ../docs/api/index.md
-      - Core API: ../docs/api/core.md
-      - Secrets: ../docs/api/secrets.md
-      - Utilities: ../docs/api/utilities.md
-      - Exceptions: ../docs/api/exceptions.md
+      - Overview: api/index.md
+      - Core API: api/core.md
+      - Secrets: api/secrets.md
+      - Utilities: api/utilities.md
+      - Exceptions: api/exceptions.md
   - Reference:
-      - FAQ: ../docs/faq.md
-      - Design Philosophy: ../docs/philosophy.md
-      - Roadmap: ../docs/roadmap.md
-      - Migration Guide: docs/migration_guide.md
-  - Developer Guides:
-      - Overview: docs/README_Developer_Guide.md
-      - Release Checklist: docs/release_checklist.md
-      - Secret Best Practices: docs/SprigConfig_ENC_BestPractices.md
-      - GitLab CI/CD: docs/GitLab.md
-      - PyPI Publishing: docs/PyPI.md
-      - Snyk Setup: docs/snyk-gitlab-setup.md
-      - Git Workflows: docs/git_skip_worktree_for_test_config_files.md
-      - AI Assistant Guide: docs/AI_Info.md
+      - FAQ: faq.md
+      - Design Philosophy: philosophy.md
+      - Roadmap: roadmap.md
 
 markdown_extensions:
   - admonition
@@ -88,9 +86,9 @@ plugins:
 
 extra:
   social:
-    - icon: fontawesome/brands/gitlab
-      link: https://gitlab.com/dgw_software/sprig-config
+    - icon: fontawesome/brands/github
+      link: https://github.com/derikgw/sprig-config
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/sprigconfig/
 
-copyright: Copyright &copy; 2025 SprigConfig Contributors
+copyright: Copyright &copy; 2026 SprigConfig Contributors

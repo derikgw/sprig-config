@@ -251,7 +251,7 @@ All imports must be relative to the configuration directory.
 Every loaded configuration includes an import trace in its metadata:
 
 ```python
-cfg = load_config(profile="dev")
+cfg = load_config(profile="dev", config_dir="config")
 
 trace = cfg["sprigconfig._meta.import_trace"]
 for entry in trace:

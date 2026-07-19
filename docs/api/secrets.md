@@ -27,7 +27,7 @@ A secure wrapper for encrypted configuration values that provides lazy decryptio
 ```python
 from sprigconfig import load_config
 
-cfg = load_config()
+cfg = load_config(profile="dev", config_dir="config")
 
 # Secret is still encrypted at this point
 db_password = cfg["database"]["password"]  # LazySecret object
@@ -69,7 +69,7 @@ def get_key_from_vault():
 LazySecret.set_global_key_provider(get_key_from_vault)
 
 # Now all LazySecret.get() calls will use this key
-cfg = load_config()
+cfg = load_config(profile="dev", config_dir="config")
 password = cfg["database"]["password"].get()  # Uses global provider
 ```
 
@@ -121,7 +121,7 @@ Secrets are not decrypted until explicitly requested:
 
 ```python
 # Load config - secrets remain encrypted
-cfg = load_config()
+cfg = load_config(profile="dev", config_dir="config")
 
 # Access secret object - still encrypted
 secret = cfg["api"]["key"]  # LazySecret object
@@ -279,7 +279,7 @@ api:
 from sprigconfig import load_config
 from sprigconfig.lazy_secret import LazySecret
 
-cfg = load_config()
+cfg = load_config(profile="dev", config_dir="config")
 
 try:
     password = cfg["database"]["password"].get()
@@ -297,7 +297,7 @@ Common errors:
 
 ## Examples
 
-See the [Secrets Example](https://gitlab.com/dgw_software/sprig-config/-/tree/main/sprig-config-module/examples/secrets) for complete working code demonstrating:
+See the [Secrets Example](https://github.com/derikgw/sprig-config/tree/main/sprig-config-module/examples/secrets) for complete working code demonstrating:
 
 - Key generation
 - Secret encryption
@@ -310,5 +310,5 @@ See the [Secrets Example](https://gitlab.com/dgw_software/sprig-config/-/tree/ma
 ## Related Documentation
 
 - [Security Guide](../security.md) - Overall security best practices
-- [Best Practices Guide](../../sprig-config-module/docs/SprigConfig_ENC_BestPractices.md) - Detailed encryption patterns
+- [Security Guide](../security.md) - Encryption and operational guidance
 - [Configuration Guide](../configuration.md) - General configuration usage
