@@ -10,6 +10,44 @@ with convenience scripts.
 
 ---
 
+## VS Code Dev Container
+
+Prerequisites:
+
+- Docker Desktop for Mac is running.
+- The VS Code **Dev Containers** extension is installed.
+
+Open the repository root in VS Code, open the Command Palette, and select
+**Dev Containers: Reopen in Container**. The first build:
+
+1. creates a Python 3.11 development container;
+2. installs Poetry 2.3.1;
+3. installs `sprig-config-module` with its documentation dependencies;
+4. installs `sprig-tools`;
+5. configures VS Code to use the core module's container interpreter.
+
+Each project keeps its own `.venv`. Those directories and Poetry's download
+cache are Docker volumes, so Linux environments do not collide with virtual
+environments created on macOS and survive container rebuilds.
+
+Run project commands from their respective directories:
+
+```bash
+cd sprig-config-module
+poetry run pytest
+poetry run ruff check src tests
+poetry run mkdocs build --strict
+
+cd ../sprig-tools
+poetry run pytest
+```
+
+Use **Dev Containers: Rebuild Container** after changing files under
+`.devcontainer/`. Use **Dev Containers: Rebuild Container Without Cache** when
+the base image or Poetry installation needs to be recreated from scratch.
+
+---
+
 ## Launching IDEs
 
 ### `open-module.sh`

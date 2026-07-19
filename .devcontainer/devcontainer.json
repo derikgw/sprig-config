@@ -1,0 +1,39 @@
+{
+  "name": "SprigConfig",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "..",
+    "args": {
+      "POETRY_VERSION": "2.3.1"
+    }
+  },
+  "workspaceFolder": "/workspaces/sprig-config",
+  "mounts": [
+    "source=sprig-config-module-venv,target=/workspaces/sprig-config/sprig-config-module/.venv,type=volume",
+    "source=sprig-tools-venv,target=/workspaces/sprig-config/sprig-tools/.venv,type=volume",
+    "source=sprig-poetry-cache,target=/home/vscode/.cache/pypoetry,type=volume"
+  ],
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "remoteUser": "vscode",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "tamasfe.even-better-toml",
+        "redhat.vscode-yaml",
+        "github.vscode-github-actions"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/workspaces/sprig-config/sprig-config-module/.venv/bin/python",
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": [
+          "sprig-config-module/tests"
+        ],
+        "python.testing.unittestEnabled": false,
+        "ruff.nativeServer": "on"
+      }
+    }
+  }
+}
