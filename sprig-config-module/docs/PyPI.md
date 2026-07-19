@@ -125,7 +125,7 @@ Add a matching trusted publisher entry on TestPyPI:
    - Environment: `pypi-production`
 6. From GitHub Actions, run **Manual Publish**:
    - TestPyPI smoke test: `target=testpypi`, `mode=publish`, branch ref
-   - PyPI release: `target=pypi`, `mode=publish`, tag ref (`v*` or `V*`)
+   - PyPI release: `target=pypi`, `mode=publish`, stable tag ref (`1.2.3` or `v1.2.3`)
 7. Confirm upload results:
    - TestPyPI: `https://test.pypi.org/project/sprig-config/`
    - PyPI: `https://pypi.org/project/sprig-config/`
@@ -222,7 +222,8 @@ GitHub Actions now mirrors these dry-run checks by:
 GitHub Actions now also offers a manual release path through `.github/workflows/manual-publish.yml`:
 
 - choose `target=testpypi` and `mode=validate|publish` on a branch ref
-- choose `target=pypi` and `mode=validate|publish` on a `v*` or `V*` tag ref
+- choose `target=pypi` and `mode=validate|publish` on a stable semver tag ref
+  (`1.2.3` or `v1.2.3`; no suffixes like `-snapshot` or `-rc1`)
 - keep GitLab deploy jobs enabled until GitHub publishing has proven itself, then disable the
   GitLab publish jobs to avoid duplicate releases from mirrored tags
 

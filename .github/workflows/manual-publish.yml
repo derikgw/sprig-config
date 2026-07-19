@@ -103,18 +103,15 @@ jobs:
       - name: Ensure workflow is running against a release tag
         run: |
           if [ "${{ github.ref_type }}" != "tag" ]; then
-            echo "PyPI publishing requires a tag ref. Re-run this workflow against a v* or V* tag."
+            echo "PyPI publishing requires a tag ref. Re-run this workflow against a stable release tag (for example 1.2.3 or v1.2.3)."
             exit 1
           fi
 
-          case "${CI_COMMIT_TAG}" in
-            v*|V*)
-              ;;
-            *)
-              echo "PyPI publishing requires a tag that starts with v or V."
-              exit 1
-              ;;
-          esac
+          TAG_VERSION="$(printf '%s' "${CI_COMMIT_TAG}" | sed -E 's/^[Vv]//')"
+          if ! printf '%s' "${TAG_VERSION}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "PyPI publishing requires a stable semver tag like 1.2.3 or v1.2.3 (no suffixes such as -snapshot)."
+            exit 1
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@v5

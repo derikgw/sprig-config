@@ -71,7 +71,8 @@ A repeatable checklist for publishing **SprigConfig** releases
   - PyPI publisher for `.github/workflows/manual-publish.yml` + `pypi-production` environment
 - [ ] Run GitHub Actions **Manual Publish** with `target=testpypi`, `mode=publish` on a branch
 - [ ] Confirm branch build appears on **TestPyPI**
-- [ ] Run GitHub Actions **Manual Publish** with `target=pypi`, `mode=publish` on a `v*`/`V*` tag
+- [ ] Run GitHub Actions **Manual Publish** with `target=pypi`, `mode=publish` on a stable tag
+  (`1.2.3` or `v1.2.3`; no suffixes like `-snapshot`)
 - [ ] Confirm package appears on **PyPI**:
   <https://pypi.org/project/sprig-config/>
 - [ ] Optional: publish to the GitLab Package Registry if internal mirror distribution is still required
