@@ -168,7 +168,7 @@ This uploads the wheel + sdist to the GitLab Package Registry.
 Purpose:
 
 - Runs on branch pipelines
-- Rewrites the package version to `<base>.dev<CI_PIPELINE_IID>`
+- Rewrites the package version to the next valid TestPyPI dev release
 - Builds branch-specific artifacts intended for `test.pypi.org`
 - Runs `twine check dist/*`
 - Does **not** upload the package
@@ -248,8 +248,9 @@ id_tokens:
     aud: testpypi
 ```
 
-Before building, the branch validation job rewrites the version to
-`<base>.dev<CI_PIPELINE_IID>` so each branch publish gets a unique version number.
+Before building, the branch validation job rewrites the version to a monotonic
+`.devN` release so each branch publish gets a unique version number and remains
+greater than prior TestPyPI dev releases.
 
 ## Public PyPI
 

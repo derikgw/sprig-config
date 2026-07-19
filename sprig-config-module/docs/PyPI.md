@@ -2,11 +2,12 @@
 # SprigConfig Packaging & Registry Publishing
 
 This document explains how SprigConfig is packaged, versioned, and published to the
-GitLab Package Registry, TestPyPI, and the public PyPI index using GitLab CI pipelines.
+GitLab Package Registry, TestPyPI, and the public PyPI index using CI pipelines.
 
-GitHub Actions is being adopted in phases. The workflow at `.github/workflows/release-checks.yml`
-mirrors build and dry-run artifact validation, and `.github/workflows/manual-publish.yml` now adds
-manual GitHub-side publishing for TestPyPI and PyPI during the cutover period.
+GitHub Actions is now used for build validation and manual publish runs:
+
+- `.github/workflows/release-checks.yml` for build and validation checks
+- `.github/workflows/manual-publish.yml` for manual TestPyPI/PyPI publish from GitHub
 
 ---
 
@@ -79,13 +80,12 @@ The GitLab trusted publisher on PyPI must match:
 - Repository: `sprig-config`
 - Top-level CI configuration path: `.gitlab-ci.yml`
 
-If you want to publish manually from GitHub Actions during the migration, add a second trusted
-publisher entry on PyPI that matches:
+To publish from GitHub Actions, add a trusted publisher entry on PyPI that matches:
 
-- Owner or organization: `derikgw` or the GitHub owner that hosts the mirror
+- Owner or organization: `derikgw` (or the current GitHub owner hosting this repository)
 - Repository: `sprig-config`
 - Workflow path: `.github/workflows/manual-publish.yml`
-- Environment: `pypi-production` (if you enforce environment-scoped publishing)
+- Environment: `pypi-production`
 
 ## TestPyPI
 
@@ -93,11 +93,42 @@ Publishing to `test.pypi.org` also uses Trusted Publishing:
 
 - Branch pipelines request an OIDC ID token with audience `testpypi`
 - `twine upload --repository testpypi` publishes to TestPyPI
-- The CI job rewrites the version to `<base>.dev<CI_PIPELINE_IID>` before build
-  so every branch publish is unique and does not collide with TestPyPI's immutability
+- The CI job rewrites the version to a TestPyPI-safe dev release before build:
+  - starts from `<base>.dev<CI_PIPELINE_IID>`
+  - if TestPyPI already has a higher base or dev suffix, it bumps to the next valid dev version
+  so branch publishes remain unique and continue to sort as the latest TestPyPI release
 
-If GitHub Actions should also publish to TestPyPI during the cutover, add a matching trusted
-publisher entry there for `.github/workflows/manual-publish.yml` and the `testpypi` environment.
+Add a matching trusted publisher entry on TestPyPI:
+
+- Owner or organization: `derikgw` (or the current GitHub owner hosting this repository)
+- Repository: `sprig-config`
+- Workflow path: `.github/workflows/manual-publish.yml`
+- Environment: `testpypi`
+
+## GitHub Trusted Publishing setup (Codespaces runbook)
+
+1. In GitHub, open `derikgw/sprig-config` → **Settings** → **Environments**.
+2. Create environments used by the workflow:
+   - `testpypi`
+   - `pypi-production`
+   - (optional validation-only) `testpypi-staging`, `pypi-staging`
+3. Add protection rules for publish environments if desired (required reviewers, branch/tag restrictions).
+4. In TestPyPI (`https://test.pypi.org/manage/account/publishing/`), add a trusted publisher with:
+   - Owner: `derikgw`
+   - Repository: `sprig-config`
+   - Workflow file: `.github/workflows/manual-publish.yml`
+   - Environment: `testpypi`
+5. In PyPI (`https://pypi.org/manage/account/publishing/`), add a trusted publisher with:
+   - Owner: `derikgw`
+   - Repository: `sprig-config`
+   - Workflow file: `.github/workflows/manual-publish.yml`
+   - Environment: `pypi-production`
+6. From GitHub Actions, run **Manual Publish**:
+   - TestPyPI smoke test: `target=testpypi`, `mode=publish`, branch ref
+   - PyPI release: `target=pypi`, `mode=publish`, stable tag ref (`1.2.3` or `v1.2.3`)
+7. Confirm upload results:
+   - TestPyPI: `https://test.pypi.org/project/sprig-config/`
+   - PyPI: `https://pypi.org/project/sprig-config/`
 
 ---
 
@@ -145,8 +176,6 @@ Git tags must match these versions.
 
 # 🚀 Publishing Workflow (via CI)
 
-Publishing is performed only by GitLab CI, not manually.
-
 ### 1️⃣ Developer pushes a version tag
 
 ```
@@ -162,7 +191,7 @@ git push --tags
   - Runs a simulated publish to the GitLab registry
 - `dry_run_testpypi`
   - Runs on branch pipelines
-  - Rewrites the package version to `<base>.dev<CI_PIPELINE_IID>`
+  - Rewrites the package version to a monotonic TestPyPI dev version
   - Builds the package and validates artifacts with `twine check`
 - `dry_run_public_pypi`
   - Ensures tag matches version
@@ -173,7 +202,7 @@ GitHub Actions now mirrors these dry-run checks by:
 
 - building and validating distributions on pull requests and `main`
 - validating release tags with `scripts/verify-release-tag.sh`
-- offering a manual TestPyPI-style build that rewrites the version to `<base>.dev<run_number>`
+- offering a manual TestPyPI-style build that rewrites the version to the next valid dev version
 
 ### 3️⃣ CI runs one or more deploy jobs (manual approval)
 
@@ -193,7 +222,8 @@ GitHub Actions now mirrors these dry-run checks by:
 GitHub Actions now also offers a manual release path through `.github/workflows/manual-publish.yml`:
 
 - choose `target=testpypi` and `mode=validate|publish` on a branch ref
-- choose `target=pypi` and `mode=validate|publish` on a `v*` or `V*` tag ref
+- choose `target=pypi` and `mode=validate|publish` on a stable semver tag ref
+  (`1.2.3` or `v1.2.3`; no suffixes like `-snapshot` or `-rc1`)
 - keep GitLab deploy jobs enabled until GitHub publishing has proven itself, then disable the
   GitLab publish jobs to avoid duplicate releases from mirrored tags
 
@@ -238,7 +268,7 @@ The trusted publisher registered on PyPI or TestPyPI does not match the active r
 
 ### ❌ file already exists
 The version being uploaded has already been published to TestPyPI or PyPI.
-Branch builds avoid this by using a `.dev<CI_PIPELINE_IID>` suffix in CI.
+Branch builds avoid this by rewriting to a monotonic `.devN` suffix in CI.
 
 ### ❌ version mismatch  
 Tag does not match Poetry version.
