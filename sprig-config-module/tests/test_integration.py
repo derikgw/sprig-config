@@ -15,6 +15,7 @@ Validates:
 """
 
 import os
+import shutil
 import yaml
 from pathlib import Path
 import pytest
@@ -160,7 +161,7 @@ def test_integration_secrets_wrapped(config_dir):
     assert isinstance(node, LazySecret)
 
 
-def test_integration_secret_decryption(monkeypatch, config_dir):
+def test_integration_secret_decryption(monkeypatch, config_dir, tmp_path):
     from cryptography.fernet import Fernet
 
     key = Fernet.generate_key().decode()
@@ -169,11 +170,18 @@ def test_integration_secret_decryption(monkeypatch, config_dir):
     f = Fernet(key.encode())
     encrypted = f.encrypt(b"hello").decode()
 
-    secrets_yml = Path(config_dir) / "application-secrets.yml"
+    isolated_config_dir = tmp_path / "config"
+    shutil.copytree(config_dir, isolated_config_dir)
+
+    source_secrets_yml = Path(config_dir) / "application-secrets.yml"
+    source_before = source_secrets_yml.read_text(encoding="utf-8")
+
+    secrets_yml = isolated_config_dir / "application-secrets.yml"
     secrets_yml.write_text(f"secrets:\n  api_key: ENC({encrypted})\n")
 
-    cfg = ConfigLoader(config_dir, profile="secrets").load()
+    cfg = ConfigLoader(isolated_config_dir, profile="secrets").load()
     assert cfg.get("secrets.api_key").get() == "hello"
+    assert source_secrets_yml.read_text(encoding="utf-8") == source_before
 
 
 # ----------------------------------------------------------------------

@@ -107,6 +107,8 @@ Validates that encrypted `ENC(...)` values are wrapped in `LazySecret`.
 
 ### `test_integration_secret_decryption`
 Confirms decryption works using `APP_SECRET_KEY`.
+The test now uses an isolated temporary copy of `tests/config` so committed
+fixture files are not modified during test runs.
 
 **Why:**  
 Security-sensitive functionality must never regress.
@@ -152,4 +154,3 @@ This test suite is **legitimate**, **high-value**, and **crucial** for guarantee
 - Singleton behavior  
 
 Every test validates a meaningful and intentional part of SprigConfig’s design.
-
