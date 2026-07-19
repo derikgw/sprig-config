@@ -93,8 +93,10 @@ Publishing to `test.pypi.org` also uses Trusted Publishing:
 
 - Branch pipelines request an OIDC ID token with audience `testpypi`
 - `twine upload --repository testpypi` publishes to TestPyPI
-- The CI job rewrites the version to `<base>.dev<CI_PIPELINE_IID>` before build
-  so every branch publish is unique and does not collide with TestPyPI's immutability
+- The CI job rewrites the version to a TestPyPI-safe dev release before build:
+  - starts from `<base>.dev<CI_PIPELINE_IID>`
+  - if TestPyPI already has a higher base or dev suffix, it bumps to the next valid dev version
+  so branch publishes remain unique and continue to sort as the latest TestPyPI release
 
 Add a matching trusted publisher entry on TestPyPI:
 
@@ -189,7 +191,7 @@ git push --tags
   - Runs a simulated publish to the GitLab registry
 - `dry_run_testpypi`
   - Runs on branch pipelines
-  - Rewrites the package version to `<base>.dev<CI_PIPELINE_IID>`
+  - Rewrites the package version to a monotonic TestPyPI dev version
   - Builds the package and validates artifacts with `twine check`
 - `dry_run_public_pypi`
   - Ensures tag matches version
@@ -200,7 +202,7 @@ GitHub Actions now mirrors these dry-run checks by:
 
 - building and validating distributions on pull requests and `main`
 - validating release tags with `scripts/verify-release-tag.sh`
-- offering a manual TestPyPI-style build that rewrites the version to `<base>.dev<run_number>`
+- offering a manual TestPyPI-style build that rewrites the version to the next valid dev version
 
 ### 3️⃣ CI runs one or more deploy jobs (manual approval)
 
@@ -265,7 +267,7 @@ The trusted publisher registered on PyPI or TestPyPI does not match the active r
 
 ### ❌ file already exists
 The version being uploaded has already been published to TestPyPI or PyPI.
-Branch builds avoid this by using a `.dev<CI_PIPELINE_IID>` suffix in CI.
+Branch builds avoid this by rewriting to a monotonic `.devN` suffix in CI.
 
 ### ❌ version mismatch  
 Tag does not match Poetry version.
