@@ -153,6 +153,12 @@ validate_version_increment() {
 # Change to module directory
 cd "${MODULE_DIR}"
 
+# Enforce release tag creation only from main branch
+CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+if [[ "${CURRENT_BRANCH}" != "main" ]]; then
+    error "Release tags must be created from main. Current branch: ${CURRENT_BRANCH}\n\nSwitch to main and sync with origin before creating a release tag."
+fi
+
 # Check if files exist
 [[ -f "${CHANGELOG_FILE}" ]] || error "CHANGELOG.md not found at ${CHANGELOG_FILE}"
 [[ -f "${PYPROJECT_FILE}" ]] || error "pyproject.toml not found at ${PYPROJECT_FILE}"

@@ -43,6 +43,11 @@ A repeatable checklist for publishing **SprigConfig** releases
 
 ## 🗾 3️⃣  Commit & Tag
 
+- [ ] Ensure you are on `main` and up to date:
+  ```bash
+  git checkout main
+  git pull --ff-only origin main
+  ```
 - [ ] Commit the version bump and changelog:
   ```bash
   git add pyproject.toml CHANGELOG.md
@@ -75,7 +80,6 @@ A repeatable checklist for publishing **SprigConfig** releases
   (`1.2.3` or `v1.2.3`; no suffixes like `-snapshot`)
 - [ ] Confirm package appears on **PyPI**:
   <https://pypi.org/project/sprig-config/>
-- [ ] Optional: publish to the GitLab Package Registry if internal mirror distribution is still required
 - [ ] Optional emergency fallback: publish manually to PyPI with an API token:
   ```bash
   cd sprig-config-module
@@ -108,7 +112,7 @@ A repeatable checklist for publishing **SprigConfig** releases
 | Prep | Ensure version, changelog, tests are ready | ☑ |
 | Build | Generate clean, verifiable artifacts | ☑ |
 | Tag | Create annotated version tag | ☑ |
-| CI/CD | Confirm GitHub validation/publish runs or the GitLab publish pipeline, and verify the registry upload | ☑ |
+| CI/CD | Confirm GitHub validation/publish runs and verify the registry upload | ☑ |
 | Post | Verify install, update docs, announce release | ☑ |
 
 ---
