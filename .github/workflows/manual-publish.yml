@@ -65,13 +65,18 @@ jobs:
         run: sh ./scripts/prepare-testpypi-version.sh
 
       - name: Build TestPyPI artifacts
+        id: build_testpypi
         run: poetry build
 
       - name: Validate TestPyPI artifacts
         run: poetry run twine check dist/*
 
+      - name: Show TestPyPI build outputs
+        if: ${{ always() && steps.build_testpypi.outcome != 'skipped' }}
+        run: ls -lh dist/
+
       - name: Upload TestPyPI artifacts
-        if: always()
+        if: ${{ always() && steps.build_testpypi.outcome != 'skipped' }}
         uses: actions/upload-artifact@v4
         with:
           name: testpypi-publish-dist
@@ -129,13 +134,18 @@ jobs:
         run: sh ./scripts/verify-release-tag.sh
 
       - name: Build PyPI artifacts
+        id: build_pypi
         run: poetry build
 
       - name: Validate PyPI artifacts
         run: poetry run twine check dist/*
 
+      - name: Show PyPI build outputs
+        if: ${{ always() && steps.build_pypi.outcome != 'skipped' }}
+        run: ls -lh dist/
+
       - name: Upload PyPI artifacts
-        if: always()
+        if: ${{ always() && steps.build_pypi.outcome != 'skipped' }}
         uses: actions/upload-artifact@v4
         with:
           name: pypi-publish-dist
