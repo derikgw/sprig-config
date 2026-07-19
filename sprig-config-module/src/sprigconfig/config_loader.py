@@ -25,6 +25,7 @@ from .lazy_secret import LazySecret
 from .exceptions import ConfigLoadError
 from .deepmerge import deep_merge
 from .parsers import YamlParser, JsonParser, TomlParser
+from .validation import validate_schema
 
 # ======================================================================
 # CONSTANTS
@@ -86,6 +87,7 @@ class ConfigLoader:
         profile: str,
         *,
         config_format: Optional[str] = None,
+        schema: Optional[type] = None,
     ):
         if config_dir is None:
             env_dir = os.getenv("APP_CONFIG_DIR")
@@ -106,6 +108,7 @@ class ConfigLoader:
 
         self.format = self._normalize_format(raw_format)
         self.parser = PARSERS[self.format]
+        self.schema = schema
 
         # Import + merge tracking
         self._merge_trace: List[str] = []
@@ -173,6 +176,9 @@ class ConfigLoader:
         # 3. Merge
         # --------------------------------------------------
         merged = deep_merge(base_data, profile_data, suppress=suppress)
+
+        if self.schema is not None:
+            validate_schema(merged, self.schema)
 
         merged.setdefault("app", {})["profile"] = self.profile
 

@@ -30,7 +30,7 @@ from .config import Config
 from .config_loader import ConfigLoader
 from .config_singleton import ConfigSingleton
 from .deepmerge import deep_merge
-from .exceptions import ConfigLoadError
+from .exceptions import ConfigLoadError, ConfigValidationError
 
 # Dependency Injection
 from .injection import (
@@ -44,7 +44,7 @@ from .instantiate import instantiate
 # Backward-compatible load_config()
 # ---------------------------------------------------------------------------
 
-def load_config(*, profile: str, config_dir: Path = None):
+def load_config(*, profile: str, config_dir: Path = None, schema: type | None = None):
     """
     Legacy-compatible convenience function.
 
@@ -58,7 +58,7 @@ def load_config(*, profile: str, config_dir: Path = None):
 
     This function delegates entirely to ConfigLoader.
     """
-    loader = ConfigLoader(config_dir=config_dir, profile=profile)
+    loader = ConfigLoader(config_dir=config_dir, profile=profile, schema=schema)
     cfg = loader.load()
 
     if not isinstance(cfg, Config):
@@ -74,6 +74,7 @@ __all__ = [
     "ConfigSingleton",
     "deep_merge",
     "ConfigLoadError",
+    "ConfigValidationError",
     "load_config",
     # Dependency Injection
     "ConfigValue",
