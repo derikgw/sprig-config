@@ -12,7 +12,7 @@ license = "MIT"
 packages = [{ include = "sprigtools", from = "src" }]
 
 [tool.poetry.dependencies]
-python = ">=3.13,<4.0"
+python = ">=3.11,<4.0"
 tomli = ">=2.2.1"
 tomli-w = ">=1.2.0"   # note: package name uses a hyphen; import is `tomli_w`
 cryptography = "^46.0.5"
