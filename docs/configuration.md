@@ -15,7 +15,7 @@ When you load configuration, SprigConfig returns a `Config` object—an immutabl
 ```python
 from sprigconfig import load_config
 
-cfg = load_config(profile="dev")
+cfg = load_config(profile="dev", config_dir="config")
 ```
 
 ### Dictionary-like access
@@ -75,7 +75,7 @@ print(server.get("host", "localhost"))
 from sprigconfig import load_config
 
 # Load with profile
-cfg = load_config(profile="dev")
+cfg = load_config(profile="dev", config_dir="config")
 
 # Load with custom directory
 cfg = load_config(profile="prod", config_dir=Path("/opt/myapp/config"))
@@ -92,7 +92,7 @@ from sprigconfig import ConfigLoader
 loader = ConfigLoader(
     config_dir=Path("config"),
     profile="dev",
-    ext="yml"  # or "json", "toml"
+    config_format="yaml"  # or "json", "toml"
 )
 cfg = loader.load()
 ```
@@ -103,7 +103,8 @@ cfg = loader.load()
 |-----------|------|-------------|
 | `config_dir` | `Path` | Directory containing configuration files |
 | `profile` | `str` | Active profile (dev, test, prod, etc.) |
-| `ext` | `str` | File extension (yml, yaml, json, toml) |
+| `config_format` | `str`, optional | Format (`yml`, `yaml`, `json`, or `toml`) |
+| `schema` | dataclass type, optional | Opt-in schema validation |
 
 ---
 
@@ -143,9 +144,9 @@ host = "localhost"
 
 The format is determined by:
 
-1. **Explicit parameter:** `ConfigLoader(ext="json")`
+1. **Explicit parameter:** `ConfigLoader(config_format="json", ...)`
 2. **Environment variable:** `SPRIGCONFIG_FORMAT=json`
-3. **Default:** `yml`
+3. **Default:** `yaml`
 
 **Important:** All files in a single load must use the same format. You cannot mix YAML and JSON files.
 
@@ -178,7 +179,7 @@ export DB_HOST=db.example.com
 ```
 
 ```python
-cfg = load_config(profile="prod")
+cfg = load_config(profile="prod", config_dir="config")
 print(cfg["database.host"])  # db.example.com
 print(cfg["database.port"])  # 5432 (default used)
 ```
@@ -190,7 +191,7 @@ print(cfg["database.port"])  # 5432 (default used)
 Every loaded configuration includes metadata under `sprigconfig._meta`:
 
 ```python
-cfg = load_config(profile="dev")
+cfg = load_config(profile="dev", config_dir="config")
 
 meta = cfg["sprigconfig"]["_meta"]
 print(meta["profile"])       # dev
@@ -232,14 +233,19 @@ data = cfg.to_dict()
 data = cfg.to_dict(reveal_secrets=True)
 ```
 
-### Dumping to YAML/JSON
+### Debugging the fully assembled configuration
+
+`Config.dump()` renders the final configuration after recursive imports and
+the profile overlay have been merged, environment placeholders expanded,
+runtime metadata injected, and encrypted values wrapped. This makes it useful
+for understanding exactly what the application received.
 
 ```python
 # Dump to YAML string (secrets redacted)
 yaml_str = cfg.dump()
 
-# Dump to JSON string
-json_str = cfg.dump(output_format="json")
+# Put provenance metadata first when inspecting merge behavior
+yaml_str = cfg.dump(sprigconfig_first=True)
 
 # Write to file
 cfg.dump(Path("config-snapshot.yml"))
@@ -247,6 +253,19 @@ cfg.dump(Path("config-snapshot.yml"))
 # Dump with secrets (unsafe!)
 cfg.dump(safe=False)
 ```
+
+`Config.dump()` always emits YAML. To inspect the same assembled configuration
+as JSON, use the CLI:
+
+```bash
+sprigconfig dump \
+  --config-dir=config \
+  --profile=dev \
+  --output-format=json
+```
+
+Secrets are redacted unless explicitly revealed. Avoid `safe=False` and the
+CLI's `--secrets` flag in logs or shared build output.
 
 ---
 
@@ -293,7 +312,7 @@ SprigConfig raises `ConfigLoadError` for configuration problems:
 from sprigconfig import load_config, ConfigLoadError
 
 try:
-    cfg = load_config(profile="prod")
+    cfg = load_config(profile="prod", config_dir="config")
 except ConfigLoadError as e:
     print(f"Configuration error: {e}")
 ```
@@ -302,11 +321,14 @@ except ConfigLoadError as e:
 
 | Error | Cause |
 |-------|-------|
-| Missing file | Required file (e.g., `application-prod.yml`) not found |
 | Invalid YAML/JSON/TOML | Syntax error in configuration file |
 | Circular import | Import chain creates a cycle |
 | Missing secret key | `APP_SECRET_KEY` not set for encrypted values |
 | Invalid secret key | Key is not a valid Fernet key |
+
+Missing base or profile files currently contribute an empty layer rather than
+raising an error. Applications that require particular files should check that
+policy at startup.
 
 ---
 
@@ -338,7 +360,7 @@ port = cfg.get("server", {}).get("database", {}).get("connection", {}).get("port
 
 ```python
 def test_production_config():
-    cfg = load_config(profile="prod")
+    cfg = load_config(profile="prod", config_dir="config")
     assert cfg["sprigconfig._meta.profile"] == "prod"
     assert "application-prod.yml" in str(cfg["sprigconfig._meta.sources"])
 ```

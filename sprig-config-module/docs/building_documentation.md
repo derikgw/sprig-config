@@ -197,21 +197,28 @@ poetry run mkdocs build --strict
 
 ## Deploying Documentation
 
-### GitHub Pages (Automated)
+### GitHub Pages (current deployment)
 
-Documentation is automatically deployed to GitHub Pages on push to `main`:
+GitHub Pages is configured in the repository settings to publish from the
+`main` branch's `/docs` directory. GitHub's built-in
+`pages-build-deployment` workflow renders that directory with Jekyll using
+`docs/_config.yml`.
 
-```bash
-# Manual deployment (if needed)
-poetry run mkdocs gh-deploy
-```
+There is no checked-in GitHub Actions workflow for documentation deployment,
+and there is no `gh-pages` branch. `mkdocs build --strict` remains the local
+validation and preview command, but its generated site is not the artifact
+currently served by GitHub Pages.
 
-This will:
-1. Build the documentation
-2. Push to `gh-pages` branch
-3. Trigger GitHub Pages deployment
+If the project later switches production deployment to MkDocs, add a dedicated
+GitHub Actions Pages workflow and change the repository Pages source to GitHub
+Actions. Do not use `mkdocs gh-deploy` while Pages is configured for
+`main:/docs`.
 
 ### GitLab Pages
+
+The current `.gitlab-ci.yml` `pages` job publishes the dependency-vulnerability
+dashboard, not this MkDocs documentation site. The following is an example of
+how a documentation deployment could be configured; it is not the active job:
 
 For GitLab Pages, add to `.gitlab-ci.yml`:
 

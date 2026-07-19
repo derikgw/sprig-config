@@ -21,7 +21,9 @@ from typing import Any, Dict
 logger = logging.getLogger(__name__)
 
 
-def deep_merge(base: Dict[str, Any], override: Dict[str, Any], *, suppress=False, path=""):
+def deep_merge(
+    base: Dict[str, Any], override: Dict[str, Any], *, suppress=False, path=""
+) -> Dict[str, Any]:
     """
     Recursively deep-merge override → base, modifying base in-place.
 

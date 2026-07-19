@@ -172,7 +172,7 @@ database:
 Encrypted values become `LazySecret` objects:
 
 ```python
-cfg = load_config(profile="prod")
+cfg = load_config(profile="prod", config_dir="config")
 
 # Returns LazySecret, not the plaintext
 secret = cfg["database"]["password"]
@@ -211,7 +211,7 @@ Note: Python's garbage collection makes guaranteed memory cleanup impossible.
 Secrets are redacted in dumps and serialization:
 
 ```python
-cfg = load_config(profile="prod")
+cfg = load_config(profile="prod", config_dir="config")
 
 # Redacted output
 print(cfg.to_dict())
@@ -322,7 +322,7 @@ deploy:
 from sprigconfig import load_config, ConfigLoadError
 
 try:
-    cfg = load_config(profile="prod")
+    cfg = load_config(profile="prod", config_dir="config")
     password = cfg["database"]["password"].get()
 except ConfigLoadError as e:
     if "Fernet key" in str(e):

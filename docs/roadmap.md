@@ -110,7 +110,9 @@ Configuration is loaded once at startup. Hot reloading introduces complexity and
 
 ### Schema validation
 
-Use Pydantic or similar for validation after loading. SprigConfig focuses on loading and merging.
+Dataclass schema validation is now available as an opt-in loader feature. See
+[Schema Validation](schema-validation.md). Rich constraints such as ranges and
+patterns remain future work.
 
 ---
 
@@ -170,7 +172,7 @@ Use Pydantic or similar for validation after loading. SprigConfig focuses on loa
 - Secure lazy secrets
 - CLI tooling
 
-See [CHANGELOG](https://gitlab.com/dgw_software/sprig-config/-/blob/main/CHANGELOG.md) for complete version history.
+See [CHANGELOG](https://github.com/derikgw/sprig-config/blob/main/CHANGELOG.md) for complete version history.
 
 ---
 
@@ -191,7 +193,7 @@ Open an issue describing:
 - Ensure backward compatibility
 - Include tests for new behavior
 
-See [CONTRIBUTING.md](https://gitlab.com/dgw_software/sprig-config/-/blob/main/sprig-config-module/CONTRIBUTING.md) for guidelines.
+See [CONTRIBUTING.md](https://github.com/derikgw/sprig-config/blob/main/CONTRIBUTING.md) for guidelines.
 
 ---
 

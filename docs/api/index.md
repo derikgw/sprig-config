@@ -17,7 +17,7 @@ SprigConfig exposes a minimal, stable API surface designed for ease of use and b
 
 ```python
 from sprigconfig import load_config, Config, ConfigLoader
-from sprigconfig import ConfigLoadError
+from sprigconfig import ConfigLoadError, ConfigValidationError
 from sprigconfig.lazy_secret import LazySecret
 ```
 
@@ -35,13 +35,13 @@ from sprigconfig.lazy_secret import LazySecret
 from sprigconfig import load_config
 
 # Load with automatic profile detection
-cfg = load_config()
+cfg = load_config(profile="dev", config_dir="config")
 
 # Load with explicit profile
-cfg = load_config(profile="prod")
+cfg = load_config(profile="prod", config_dir="config")
 
 # Load from custom directory
-cfg = load_config(config_dir="/path/to/config")
+cfg = load_config(profile="prod", config_dir="/path/to/config")
 ```
 
 ### Using ConfigLoader Directly
@@ -105,7 +105,7 @@ SprigConfig is fully type-annotated. Use type checkers like mypy:
 ```python
 from sprigconfig import Config, load_config
 
-cfg: Config = load_config(profile="dev")
+cfg: Config = load_config(profile="dev", config_dir="config")
 ```
 
 ## Next Steps
@@ -113,4 +113,4 @@ cfg: Config = load_config(profile="dev")
 - Browse the [Core API](core.md) for main functionality
 - Check [Secrets](secrets.md) for encrypted configuration
 - See [Configuration Guide](../configuration.md) for usage patterns
-- Review [Examples](https://gitlab.com/dgw_software/sprig-config/-/tree/main/sprig-config-module/examples) for real-world code
+- Review [Examples](https://github.com/derikgw/sprig-config/tree/main/sprig-config-module/examples) for real-world code

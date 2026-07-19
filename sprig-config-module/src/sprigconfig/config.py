@@ -60,7 +60,7 @@ class Config(Mapping):
         """
         Support:
             cfg["a.b.c"]
-            cfg["a"]["b"]["c"]
+            ``cfg["a"]["b"]["c"]``
         Strict: raises KeyError if any part is missing.
         """
         if isinstance(key, str) and "." in key:
