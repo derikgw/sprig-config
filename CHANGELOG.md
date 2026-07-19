@@ -4,6 +4,42 @@ All notable changes to **SprigConfig** will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.12] — 2026-07-19
+
+### 🎯 Summary
+
+This release includes schema validation updates and standardizes the local Linux
+development workflow with a committed VS Code devcontainer setup.
+
+---
+
+### ✨ Added
+
+* **Schema validation** — Added modular schema validation support for config
+  loading
+* **Devcontainer baseline** — Added committed `.devcontainer` configuration to
+  provide a reproducible Linux development environment
+* **GitHub CLI in container** — Installs `gh` during devcontainer image build
+* **Environment checklist** — Added `scripts/dev-env-check.sh` for quick
+  baseline verification across tooling and project setup
+
+---
+
+### 🔧 Changed
+
+* Updated setup documentation with devcontainer usage and rebuild guidance
+* Updated `sprig-tools` Python compatibility range to align with the container
+  baseline (`>=3.11,<4.0`)
+
+---
+
+### 🚚 Removed
+
+* Removed `.gitlab-ci.yml` to complete migration away from GitLab CI in this
+  repository
+
+---
+
 ## [1.4.11] — TBD
 
 ### 🎯 Summary
