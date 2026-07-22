@@ -8,3 +8,14 @@ description = "Allow known test Fernet key used in CI and docs"
 regexes = [
     '''Y1PvJOeB_Dhak0oNJecfKRaKb4VcvmTwlFUo8-gVr7Q=''',
 ]
+commits = [
+    '''7af10a0639e967ce7a6f20d409d17602d9c48ddb''',
+    '''37844662bdb4a3d075c7a6ce2ebca3257e4f77cd''',
+    '''2812d93182838e32f3fb868ae0973abc79213377''',
+]
+paths = [
+    '''^sprig-config-module/examples/secrets/README\.md$''',
+    '''^combined_documentation\.md$''',
+    '''^sprig-config-module/docs/SprigConfig_ENC_BestPractices\.md$''',
+    '''^sprig-config-module/docs/security/SprigConfig_ENC_Best_Practices\.md$''',
+]
