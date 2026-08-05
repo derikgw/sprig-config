@@ -4,6 +4,27 @@ All notable changes to **SprigConfig** will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.13] — 2026-08-05
+
+### 🎯 Summary
+
+This is a security patch release that upgrades the runtime `cryptography`
+dependency to remediate the vulnerabilities addressed by PR #19.
+
+---
+
+### 🔒 Security
+
+* **Runtime dependency update** — Updated `cryptography` in
+  `sprig-config-module` from `^48.0.1` to `^50.0.0`
+* **Audit remediation** — Refreshes the resolved dependency graph so
+  `pip-audit` no longer installs the previously vulnerable locked runtime
+  version
+* **Release scope** — No API or configuration behavior changes are expected;
+  this release is limited to dependency and lockfile remediation
+
+---
+
 ## [1.4.12] — 2026-07-19
 
 ### 🎯 Summary
