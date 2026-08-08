@@ -10,7 +10,6 @@
   "workspaceFolder": "/workspaces/sprig-config",
   "mounts": [
     "source=sprig-config-module-venv,target=/workspaces/sprig-config/sprig-config-module/.venv,type=volume",
-    "source=sprig-tools-venv,target=/workspaces/sprig-config/sprig-tools/.venv,type=volume",
     "source=sprig-poetry-cache,target=/home/vscode/.cache/pypoetry,type=volume"
   ],
   "postCreateCommand": "bash .devcontainer/post-create.sh",

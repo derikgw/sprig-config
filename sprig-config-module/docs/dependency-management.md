@@ -196,18 +196,27 @@ SprigConfig uses **pip-audit** for vulnerability scanning (official PyPA tool).
 ```bash
 cd sprig-config-module
 
+# Use project-local caches in containers where ~/.cache is not writable
+mkdir -p .cache/pip .cache/pip-audit
+
 # Basic vulnerability scan
-poetry run pip-audit
+PIP_CACHE_DIR=$PWD/.cache/pip poetry run pip-audit --cache-dir .cache/pip-audit
 
 # Generate JSON report
-poetry run pip-audit --format json --output pip-audit-report.json
+PIP_CACHE_DIR=$PWD/.cache/pip poetry run pip-audit --cache-dir .cache/pip-audit --format json --output pip-audit-report.json
 
 # Show detailed vulnerability descriptions
-poetry run pip-audit --desc
+PIP_CACHE_DIR=$PWD/.cache/pip poetry run pip-audit --cache-dir .cache/pip-audit --desc
 
 # Attempt to automatically fix vulnerabilities
-poetry run pip-audit --fix
+PIP_CACHE_DIR=$PWD/.cache/pip poetry run pip-audit --cache-dir .cache/pip-audit --fix
 ```
+
+If `pip-audit` fails with a `PermissionError` for `/home/.../.cache/pip-audit`,
+the home-directory cache is not writable in your environment. Passing
+`--cache-dir .cache/pip-audit` keeps the `pip-audit` cache inside the repository
+instead. Setting `PIP_CACHE_DIR=$PWD/.cache/pip` does the same for `pip`, which
+removes the warning about `/home/.../.cache/pip` being unavailable.
 
 ### Understanding pip-audit Output
 

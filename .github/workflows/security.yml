@@ -4,7 +4,6 @@ on:
   pull_request:
     paths:
       - "sprig-config-module/**"
-      - "sprig-tools/**"
       - ".github/workflows/security.yml"
       - ".gitleaks.toml"
   push:
@@ -12,7 +11,6 @@ on:
       - main
     paths:
       - "sprig-config-module/**"
-      - "sprig-tools/**"
       - ".github/workflows/security.yml"
       - ".gitleaks.toml"
   schedule:
@@ -105,16 +103,10 @@ jobs:
 
   pip-audit:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        project:
-          - sprig-config-module
-          - sprig-tools
     defaults:
       run:
         shell: bash
-        working-directory: ${{ matrix.project }}
+        working-directory: sprig-config-module
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -124,7 +116,7 @@ jobs:
         with:
           python-version: "3.11"
           cache: "pip"
-          cache-dependency-path: ${{ matrix.project }}/poetry.lock
+          cache-dependency-path: sprig-config-module/poetry.lock
 
       - name: Install Poetry
         run: python -m pip install --upgrade "pip>=26.1,<27" "poetry==2.3.1"
@@ -179,11 +171,11 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pip-audit-reports-${{ matrix.project }}
+          name: pip-audit-reports-sprig-config-module
           path: |
-            ${{ matrix.project }}/pip-audit-report.json
-            ${{ matrix.project }}/pip-audit-report.md
-            ${{ matrix.project }}/pip-audit-report.txt
+            sprig-config-module/pip-audit-report.json
+            sprig-config-module/pip-audit-report.md
+            sprig-config-module/pip-audit-report.txt
           if-no-files-found: warn
 
   gitleaks:

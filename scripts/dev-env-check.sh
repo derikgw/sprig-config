@@ -28,7 +28,7 @@ Options:
 Examples:
   scripts/dev-env-check.sh
   scripts/dev-env-check.sh --quick
-  scripts/dev-env-check.sh sprig-config-module sprig-tools
+  scripts/dev-env-check.sh sprig-config-module
 
 Optional environment variable:
   DEV_ENV_CI_CMDS    Semicolon-separated commands to run as CI parity smoke checks
@@ -103,7 +103,7 @@ discover_projects() {
     if [[ "$dir" != "." ]]; then
       found+=("$dir")
     fi
-  done < <(find . -mindepth 2 -maxdepth 2 -name pyproject.toml | sort)
+  done < <(find . -mindepth 2 -maxdepth 2 -name pyproject.toml ! -path './sprig-tools/*' | sort)
 
   printf '%s\n' "${found[@]}" | awk 'NF && !seen[$0]++'
 }

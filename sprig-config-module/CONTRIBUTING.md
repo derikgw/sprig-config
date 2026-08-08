@@ -111,7 +111,8 @@ Both tools run automatically in CI and can be run locally:
 
 ```bash
 # Scan for dependency vulnerabilities
-poetry run pip-audit
+mkdir -p .cache/pip .cache/pip-audit
+PIP_CACHE_DIR=$PWD/.cache/pip poetry run pip-audit --cache-dir .cache/pip-audit
 
 # Scan for code security issues locally
 poetry run bandit -r src

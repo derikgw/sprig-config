@@ -2,7 +2,7 @@
 
 Thanks for your interest in contributing to **SprigConfig**.
 
-This repository contains multiple components. Please read the section below to ensure your contribution lands in the right place.
+This repository centers on the core SprigConfig module. Please read the section below to ensure your contribution lands in the right place.
 
 ---
 
@@ -10,9 +10,6 @@ This repository contains multiple components. Please read the section below to e
 
 - `sprig-config-module/`  
   Core SprigConfig implementation, including config loading, merging, and parsing logic.
-
-- `sprig-tools/`  
-  Supporting tools, utilities, or experimental helpers.
 
 - `docs/` (if/when present)  
   Documentation and guides.
