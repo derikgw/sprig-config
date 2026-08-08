@@ -1036,18 +1036,18 @@ files = [
 
 [[package]]
 name = "sprig-config"
-version = "1.4.12"
+version = "1.4.13"
 description = "Spring-like deep merge configuration loader for Python"
 optional = false
 python-versions = "<4.0,>=3.11"
 groups = ["main"]
 files = [
-    {file = "sprig_config-1.4.12-py3-none-any.whl", hash = "sha256:50180fb6d85d79de930db708cab235ad8b08f0a72e79acad7f3829a81ccfe17c"},
-    {file = "sprig_config-1.4.12.tar.gz", hash = "sha256:b5071662c8d6fe955b57ea1f37503ff59dadc774a353cfef3c30effae1be4eac"},
+    {file = "sprig_config-1.4.13-py3-none-any.whl", hash = "sha256:f17af6ce0c08b766ff2db526f80fcd81508b210c70ec4b1b50df7d26237ba7a2"},
+    {file = "sprig_config-1.4.13.tar.gz", hash = "sha256:05c9d4e0d774731ca32931527431c66da21d3b548083576cd2d810fd96a87d73"},
 ]
 
 [package.dependencies]
-cryptography = ">=48.0.1,<49.0.0"
+cryptography = ">=50.0.0,<51.0.0"
 PyYAML = ">=6.0.2"
 
 [[package]]
@@ -1165,4 +1165,4 @@ zstd = ["backports-zstd (>=1.0.0) ; python_version < \"3.14\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0"
-content-hash = "295ce24cfb9db287d56f2c6333a939a0ee6991e5a8590fb08c492f9c42b1a492"
+content-hash = "65038dca22db5d67f108678ef2463ab827238db9871b3956a051b0593a2ee290"
