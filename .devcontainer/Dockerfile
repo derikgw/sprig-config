@@ -2,7 +2,8 @@ FROM mcr.microsoft.com/devcontainers/python:1-3.11-bookworm
 
 ARG POETRY_VERSION=2.3.1
 
-RUN apt-get update \
+RUN rm -f /etc/apt/sources.list.d/yarn.list \
+    && apt-get update \
     && apt-get install -y --no-install-recommends gh \
     && rm -rf /var/lib/apt/lists/*
 

@@ -4,12 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This is a **monorepo** containing two Python projects:
-
-1. **sprig-config-module/** — Core SprigConfig runtime library (Spring Boot-style configuration for Python)
-2. **sprig-tools/** — Developer utilities (not required to use SprigConfig)
-
-Each project maintains its own isolated virtual environment managed by Poetry.
+This repository is centered on **sprig-config-module/** — the core SprigConfig runtime library (Spring Boot-style configuration for Python).
 
 ## Working with sprig-config-module (Primary Project)
 
@@ -75,27 +70,6 @@ Custom pytest flags available:
 - `--dump-config-no-redact` — Show plaintext secrets
 - `--debug-dump=file.yml` — Write merged config snapshot
 - `RUN_CRYPTO=true` — Enable crypto-heavy tests
-
-## Working with sprig-tools
-
-Developer utilities in `sprig-tools/` include:
-- `sprig-sync` — Keep pytest.ini and pyproject.toml in sync
-- CLI tools for secret management
-
-Commands (from `sprig-tools/` directory):
-
-```bash
-# Install dependencies
-poetry install
-
-# Run tests
-poetry run pytest
-
-# Run specific tool
-poetry run sprig-tool
-poetry run secret-cli
-poetry run secret-quickdemo
-```
 
 ## Architecture Notes
 
@@ -221,7 +195,6 @@ Pre-release versions (e.g., `-rc1`) are release candidates not recommended for p
 ## Python Version Support
 
 - **sprig-config-module**: Python 3.13+ (strict requirement)
-- **sprig-tools**: Python 3.12-3.13
 
 ## Key Dependencies
 
@@ -229,11 +202,6 @@ Pre-release versions (e.g., `-rc1`) are release candidates not recommended for p
 - PyYAML ≥6.0.2
 - cryptography ^46.0.1
 - python-dotenv (dev)
-
-**sprig-tools**:
-- tomli ≥2.2.1
-- tomli-w ≥1.2.0 (import as `tomli_w`)
-- cryptography ^46.0.1
 
 ## UTF-8 BOM Handling
 
