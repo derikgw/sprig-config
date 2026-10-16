@@ -63,7 +63,11 @@ The validator checks:
 - unknown keys at every dataclass level;
 - nested dataclasses;
 - `Any`, unions such as `int | None`, lists, and dictionaries;
-- strict runtime types, including treating `bool` as distinct from `int`.
+- strict runtime types without coercion: `bool` is distinct from `int`, and an
+  integer value does not satisfy a `float` annotation.
+
+For annotations using ordinary classes, validation follows `isinstance()`
+semantics, so instances of a subclass satisfy an annotation for its base class.
 
 Defaulted fields may be absent from configuration. Defaults are used only to
 decide whether a field is required; validation does not instantiate the
@@ -93,5 +97,6 @@ Unknown key 'database.driver'.
 ## Current scope
 
 The initial validator does not enforce enum membership, numeric ranges,
-patterns, tuples, sets, or arbitrary third-party model types. Unsupported
-typing constructs fail validation instead of being silently accepted.
+patterns, `Literal` values, `Annotated` metadata, tuples, sets, or arbitrary
+third-party model types. Unsupported typing constructs fail validation instead
+of being silently accepted.
