@@ -4,18 +4,6 @@ All notable changes to **SprigConfig** will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
-
-### 🔒 Security
-
-* **Fixed multiple Pillow CVEs** — Updated dev dependency `pillow` in
-  `sprig-config-module` from `^12.3.0` to `^13.0.0` to remediate the
-  vulnerabilities reported by `pip-audit` in GitHub Actions
-* **Audit remediation** — Refreshed the lockfile so CI and local contributor
-  environments resolve the patched Pillow release
-
----
-
 ## [1.4.13] — 2026-08-05
 
 ### 🎯 Summary
