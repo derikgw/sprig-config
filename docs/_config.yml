@@ -66,3 +66,5 @@ navigation:
     url: "{{ site.baseurl }}/instantiation"
   - title: FAQ
     url: "{{ site.baseurl }}/faq"
+  - title: Site Operations
+    url: "{{ site.baseurl }}/site-operations"
