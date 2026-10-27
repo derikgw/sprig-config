@@ -4,6 +4,9 @@ title: Roadmap
 
 # Roadmap
 
+> This file is the canonical roadmap source for SprigConfig.
+> Other roadmap files in the repository are compatibility pointers.
+
 SprigConfig follows a phased development approach, prioritizing stability and backward compatibility. This roadmap outlines planned features and the principles guiding development.
 
 ---
@@ -52,18 +55,48 @@ Released: January 2026
 
 ## Phase 5: 1.5.x
 
-**Focus: Validation and Enhanced Type Support**
+**Focus: Policy and Explainability**
 
 ### Potential Enhancements
 
-- Validation framework (`@Min`, `@Max`, `@Pattern`)
-- Complex type hints (`list[str]`, `Optional[str]`)
-- Nested collection binding (`list[NestedConfig]`)
-- Enhanced error messages for configuration binding
+- Configuration policy engine (guardrails as code)
+  - Forbid plaintext secrets in `prod`
+  - Require mandatory keys by profile/environment
+  - Block risky runtime settings in production
+- Explainability command (`sprigconfig explain <path>`)
+  - Winning value + override chain
+  - Source/provenance trail
+  - Environment expansion details
 
 ---
 
-## Phase 6: 2.0.0
+## Phase 6: 1.6.x
+
+**Focus: Type Contracts and Drift Detection**
+
+### Potential Enhancements
+
+- Typed config contracts (dataclass/Pydantic-aligned)
+- Strict mode for unknown keys
+- Drift detection and redacted configuration fingerprints
+- Environment-to-environment effective config comparisons
+
+---
+
+## Phase 7: 1.7.x
+
+**Focus: Remote Providers and Secret Lifecycle**
+
+### Potential Enhancements
+
+- Pluggable remote configuration providers (S3, Vault, SSM, etc.)
+- Layer-preserving remote imports
+- Secret rotation workflows (multi-key decrypt/re-encrypt)
+- Secret age/staleness reporting
+
+---
+
+## Phase 8: 2.0.0
 
 **Focus: Stable Parser Platform**
 
@@ -102,7 +135,8 @@ Flat formats require inventing behavior (dot-splitting, type inference) that con
 
 ### Remote configuration
 
-SprigConfig loads local files. Remote configuration (Consul, etcd, etc.) is a separate concern better handled by specialized tools.
+Remote configuration is intentionally deferred until after policy, explainability, type contracts, and drift detection are stable in 1.x.
+It is planned as a later 1.x theme, not an immediate milestone.
 
 ### Hot reloading
 
@@ -113,6 +147,30 @@ Configuration is loaded once at startup. Hot reloading introduces complexity and
 Dataclass schema validation is now available as an opt-in loader feature. See
 [Schema Validation](schema-validation.md). Rich constraints such as ranges and
 patterns remain future work.
+
+---
+
+## Competitive Positioning (ML and MLOps)
+
+SprigConfig and Hydra can coexist. Hydra is optimized for experiment orchestration and sweep-heavy workflows, while SprigConfig is optimized for deterministic runtime config, secret safety, and provenance-aware operations.
+
+### Hydra vs SprigConfig (where each excels)
+
+| Capability | Hydra | SprigConfig | Best fit |
+|---|---|---|---|
+| Experiment sweeps / multirun | ✅ Excellent | ⚠️ Limited today | Hydra |
+| CLI override ergonomics for run variants | ✅ Excellent | ⚠️ Basic/moderate | Hydra |
+| Config composition for research workflows | ✅ Excellent | ✅ Strong | Slight Hydra edge |
+| Deterministic layered merge for app/runtime config | ✅ Good | ✅✅ Strong | SprigConfig |
+| Profile overlays (dev/test/prod) | ✅ Good | ✅✅ Strong | SprigConfig |
+| Secret handling (encrypted config-native) | ❌ Usually external | ✅ Native | SprigConfig |
+| Provenance / explainability | ⚠️ Some visibility | ✅✅ Strong focus | SprigConfig |
+| Governance guardrails / policy-as-code | ⚠️ Usually custom | ✅ Planned core | SprigConfig |
+| Drift and compliance operations | ⚠️ Usually custom | ✅ Planned core | SprigConfig |
+
+### Positioning statement
+
+Hydra optimizes experiment velocity. SprigConfig optimizes production-safe configuration governance.
 
 ---
 
