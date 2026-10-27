@@ -174,6 +174,7 @@ usage guide. Start with the repository's `CONTRIBUTING.md` and
 Guides for running SprigConfig in production:
 - **[Security Guide](security.md)** — Secret management and encryption
 - **[Roadmap](roadmap.md)** — Future plans and features
+- **[Site Operations](site-operations.md)** — GitHub Pages publishing settings and verification
 
 ---
 
