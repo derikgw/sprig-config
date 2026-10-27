@@ -24,9 +24,9 @@ Any change violating these principles is either deferred or reserved for a major
 
 ---
 
-## Current Version: 1.4.2
+## Current Version: 1.4.13
 
-Released: January 2026
+Released: August 2026
 
 ### Features
 
@@ -41,15 +41,12 @@ Released: January 2026
 - **Dependency injection** — `ConfigValue`, `@ConfigurationProperties`, `@config_inject`
 - **Dynamic instantiation** — Hydra-style `_target_` support via `instantiate()`
 
-### Recent Additions (1.3.0 - 1.4.2)
+### Recent Additions (1.4.9 - 1.4.13)
 
-- **Dependency injection patterns** (1.3.0) — Spring Boot-style configuration injection with three patterns:
-  - `ConfigValue` — Field-level descriptor for lazy config binding with type conversion
-  - `@ConfigurationProperties` — Class-level decorator for auto-binding config sections
-  - `@config_inject` — Function parameter injection decorator with override support
-- **Dynamic class instantiation** (1.4.0) — Hydra-style `_target_` support for instantiating classes from configuration
-- **Type conversion system** — Automatic conversion based on Python type hints
-- **Security patches** (1.4.1, 1.4.2) — Dependency vulnerability fixes
+- **Python support expansion** (1.4.9) — Support floor moved to Python 3.11+.
+- **Publishing hardening** (1.4.10) — Trusted Publishing workflow and packaging pipeline updates.
+- **Security maintenance** (1.4.11, 1.4.13) — Runtime `cryptography` upgrades and dependency graph remediation.
+- **Developer workflow upgrades** (1.4.12) — Committed devcontainer baseline and environment checks.
 
 ---
 
@@ -174,63 +171,10 @@ Hydra optimizes experiment velocity. SprigConfig optimizes production-safe confi
 
 ---
 
-## Version History
+## Release History
 
-### 1.4.2 (January 2026)
-
-- Security patch for jaraco-context CVE-2026-23949
-
-### 1.4.1 (January 2026)
-
-- Security patches for weasyprint and filelock vulnerabilities
-
-### 1.4.0 (January 2026)
-
-- Hydra-style `_target_` support for dynamic class instantiation
-- `instantiate()` function for creating instances from configuration
-- Type conversion based on Python type hints
-- Seamless `@config_inject` integration
-
-### 1.3.0 (January 2026)
-
-- Spring Boot-style dependency injection patterns
-- `ConfigValue` field-level descriptor
-- `@ConfigurationProperties` class-level decorator
-- `@config_inject` function parameter injection
-- LazySecret integration with configurable decrypt behavior
-
-### 1.2.5 (January 2026)
-
-- Security scanning with pip-audit and Bandit
-- Pre-commit hooks for local security scanning
-- Dependency management documentation
-
-### 1.2.4 (December 2025)
-
-- Full TOML format support with feature parity
-
-### 1.2.0 (December 2025)
-
-- TOML configuration format support
-- `--format` CLI flag
-- Merge order bug fix
-
-### 1.1.0 (December 2025)
-
-- Format-agnostic configuration loading
-- JSON configuration format support
-- Internal parser abstraction
-
-### 1.0.0 (December 2025)
-
-- Initial stable release
-- YAML-based deep-merge configuration
-- Profile overlays
-- Recursive imports
-- Secure lazy secrets
-- CLI tooling
-
-See [CHANGELOG](https://github.com/derikgw/sprig-config/blob/main/CHANGELOG.md) for complete version history.
+For complete release history and patch-level detail, see
+[CHANGELOG](https://github.com/derikgw/sprig-config/blob/main/CHANGELOG.md).
 
 ---
 
