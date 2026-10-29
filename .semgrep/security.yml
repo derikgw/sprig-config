@@ -1,0 +1,42 @@
+rules:
+  - id: unsafe-yaml-loader
+    languages: [python]
+    severity: ERROR
+    message: Use yaml.safe_load for configuration; other loaders require review.
+    patterns:
+      - pattern-either:
+          - pattern: yaml.load(...)
+          - pattern: yaml.unsafe_load(...)
+          - pattern: yaml.full_load(...)
+    metadata:
+      category: security
+      cwe: "CWE-502: Deserialization of Untrusted Data"
+  - id: dynamic-evaluation
+    languages: [python]
+    severity: ERROR
+    message: Configuration handling must not evaluate Python source.
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: exec(...)
+    metadata:
+      category: security
+      cwe: "CWE-95: Eval Injection"
+  - id: shell-command-execution
+    languages: [python]
+    severity: ERROR
+    message: Avoid shell execution in configuration handling.
+    pattern-either:
+      - pattern: subprocess.$FUNC(..., shell=True, ...)
+      - pattern: os.system(...)
+      - pattern: os.popen(...)
+    metadata:
+      category: security
+      cwe: "CWE-78: OS Command Injection"
+  - id: sensitive-value-in-diagnostic
+    languages: [python]
+    severity: WARNING
+    message: "Review raw configuration values in diagnostics; tracked in issue #41."
+    pattern: f"...{value!r}..."
+    metadata:
+      category: security
+      cwe: "CWE-532: Insertion of Sensitive Information into Log File"
