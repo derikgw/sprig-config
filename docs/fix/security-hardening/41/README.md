@@ -98,6 +98,20 @@ Checklist:
 - [x] Best-effort Python memory cleanup is a documented limitation, not a newly demonstrated vulnerability.
 - [ ] Clarify that default serialization redacts `LazySecret` wrappers, rather than detecting every sensitive plaintext configuration value.
 
+## 6. Conditional dependency advisory — Critical advisory severity
+
+**Status:** GitHub Dependabot alert [#99](https://github.com/derikgw/sprig-config/security/dependabot/99)
+identified `brotlicffi==1.2.0.1` in `sprig-config-module/poetry.lock` as affected
+by `GHSA-9v8h-qqgm-4m35` / `PYSEC-2026-4323`. This is a confirmed vulnerable
+dependency pin, not a demonstrated critical exploit in SprigConfig. The
+dependency is conditional and absent from the audited CPython environment.
+
+- [x] Reproduce the advisory by auditing every lockfile pin, independent of the installed environment.
+- [x] Update the lock entry to patched `brotlicffi==1.2.1.0` without changing other locked versions.
+- [x] Add local/CI lockfile auditing that includes inactive platforms and dependency groups without installing them.
+- [x] Verify the updated complete lockfile audit reports no known vulnerabilities.
+- [ ] Merge the patch and verify GitHub closes the default-branch alert.
+
 ## Verification and completion
 
 The review used source inspection and isolated extracted-function checks with synthetic values and mocked filesystem/environment access. The complete package test suite could not run with the available compatible dependencies. No dependencies were installed, credential stores inspected, or repository secrets decrypted during verification. Git history secret scanning and a current dependency vulnerability audit were outside the completed review.
@@ -113,3 +127,12 @@ Semgrep and generated security tests supplement the existing Bandit, pip-audit,
 and Gitleaks workflow. Five known issue cases remain explicit strict expected
 failures, and five Semgrep diagnostic-value findings remain visible as warnings.
 Infrastructure setup does not mark the hardening fixes above complete.
+
+Validation after adding the lockfile audit: 16 tests passed and five documented
+issue cases remained expected failures under the deep generated-test profile.
+Strict-known mode previously reproduced all five failures. Semgrep's four custom
+rule tests passed; scanning found five diagnostic-value warnings and no ERROR
+findings. Bandit and the installed-environment audit passed, and the expanded
+lockfile audit passed after the conditional dependency patch. Ruff, actionlint,
+and Poetry lock validation passed. The initial draft PR's GitHub checks passed;
+the lockfile audit is included in the follow-up revision.

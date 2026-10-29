@@ -84,6 +84,9 @@ jobs:
         env:
           DEEP: ${{ github.event_name == 'schedule' && '--deep' || '' }}
         run: poetry run python scripts/security_check.py --only tests $DEEP
+      - name: Audit all locked dependencies, including inactive platforms and groups
+        if: matrix.python == '3.11'
+        run: poetry run python scripts/security_check.py --only lock-audit
       - name: Upload test report
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

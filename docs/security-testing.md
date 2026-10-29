@@ -31,6 +31,10 @@ returns a nonzero status if any check fails:
   missing/malformed reports, and scans with no source files also fail.
 - pytest and Hypothesis exercise security properties using generated inputs.
 - pip-audit checks the installed environment for known dependency advisories.
+- A second pip-audit pass checks every exact pin in `poetry.lock`, including
+  inactive platforms and documentation dependencies. It disables pip and
+  dependency resolution so these packages are queried rather than installed.
+  An installed-environment audit alone misses inactive conditional dependencies.
 
 Semgrep's own summary may call findings "blocking"; the runner's documented
 gate uses the report's ERROR severity. Custom diagnostic-value findings are
@@ -58,6 +62,9 @@ poetry run python scripts/security_check.py --only tests --strict-known
 
 # Run a single scanner.
 poetry run python scripts/security_check.py --only semgrep
+
+# Audit every locked package, including inactive conditional dependencies.
+poetry run python scripts/security_check.py --only lock-audit
 ```
 
 `security_tests/` is separate from the existing test fixtures so these checks do
@@ -82,7 +89,7 @@ runs, and manual dispatch. CodeQL uses the repository's existing managed setup:
 | Workflow | Checks |
 | --- | --- |
 | `Security` | Existing Bandit, pip-audit, and Gitleaks jobs |
-| `Security analysis` | Semgrep and security properties on Python 3.11 and 3.14 |
+| `Security analysis` | Semgrep, security properties on Python 3.11/3.14, and all locked dependency pins |
 | Managed CodeQL | Python and GitHub Actions analysis using the extended suite and local/remote sources |
 
 Scheduled property tests use the deeper randomized profile. A manual Security

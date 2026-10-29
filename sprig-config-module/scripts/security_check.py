@@ -3,9 +3,11 @@ import argparse
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
+import tomllib
 
 
 PROJECT = Path(__file__).resolve().parents[1]
@@ -61,9 +63,38 @@ def scan_semgrep():
     return int(blocking > 0)
 
 
+def audit_lock():
+    """Audit every pinned package, including inactive platform/dependency groups.
+
+    No installation or dependency resolution is needed for these exact pins.
+    """
+    try:
+        lock = tomllib.loads((PROJECT / "poetry.lock").read_text())
+        packages = lock["package"]
+        requirements = set()
+        for package in packages:
+            name, version = package["name"], package["version"]
+            if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", name):
+                raise ValueError("Invalid locked package name")
+            if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.!+_-]*", version):
+                raise ValueError("Invalid locked package version")
+            requirements.add(f"{name}=={version}")
+        if not requirements:
+            raise ValueError("No locked dependencies found")
+        target = REPORTS / "locked-requirements.txt"
+        target.write_text("\n".join(sorted(requirements)) + "\n")
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        print(f"Cannot audit lock file: {error}", file=sys.stderr)
+        return 2
+    return run([
+        sys.executable, "-m", "pip_audit", "--strict", "--disable-pip", "--no-deps",
+        "-r", str(target),
+    ])
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--only", choices=["bandit", "semgrep", "tests", "audit"])
+    parser.add_argument("--only", choices=["bandit", "semgrep", "tests", "audit", "lock-audit"])
     parser.add_argument("--deep", action="store_true", help="500 generated examples per property")
     parser.add_argument("--strict-known", action="store_true", help="Fail on unresolved issue #41 cases")
     args = parser.parse_args()
@@ -80,6 +111,7 @@ def main():
             f"--junitxml={REPORTS / 'security-tests.xml'}",
         ], env=env),
         "audit": lambda: run([sys.executable, "-m", "pip_audit"]),
+        "lock-audit": audit_lock,
     }
     results = {name: check() for name, check in checks.items() if args.only in (None, name)}
     print("\nSecurity check exit codes:", results)
