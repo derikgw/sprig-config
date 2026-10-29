@@ -154,4 +154,10 @@ build/
 # ==========================
 .claude*
 claude.md
+
+# ==========================
+# OpenCode AI Handoff
+# ==========================
+.opencode_handoff.md
+AGENTS.md
 .DS_Store
