@@ -12,6 +12,7 @@ All tests use actual config files in tests/config/ to verify format-agnostic beh
 """
 
 import pytest
+
 from pathlib import Path
 
 from sprigconfig import ConfigSingleton, instantiate
@@ -396,7 +397,6 @@ class TestInstantiateErrors:
         error_msg = str(exc_info.value).lower()
         assert "failed to convert" in error_msg or "int" in error_msg
 
-
 # =============================================================================
 # Integration Tests
 # =============================================================================
@@ -477,6 +477,11 @@ class BooleanAdapter:
     def __init__(self, enabled: bool, debug: bool = False):
         self.enabled = enabled
         self.debug = debug
+
+
+class LeakingConstructor:
+    def __init__(self, password: str):
+        raise ValueError(f"Invalid password: {password}")
 
 
 class NestedAdapter:

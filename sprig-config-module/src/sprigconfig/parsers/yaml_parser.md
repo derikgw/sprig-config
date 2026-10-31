@@ -14,7 +14,12 @@ class YamlParser:
         try:
             return yaml.safe_load(text)
         except yaml.YAMLError as e:
-            raise ValueError(str(e))
+            mark = getattr(e, "problem_mark", None)
+            if mark is None:
+                raise ValueError("Invalid YAML syntax") from None
+            raise ValueError(
+                f"Invalid YAML syntax at line {mark.line + 1}, column {mark.column + 1}"
+            ) from None
 ```
 
 ## Design Decisions
@@ -28,13 +33,14 @@ Uses `yaml.safe_load()` instead of `yaml.load()` to prevent arbitrary code execu
 
 ### Error Handling
 
-YAML parsing errors are converted to `ValueError` for consistent error handling across all parsers:
+YAML parsing errors are converted to `ValueError` with a safe source position.
+PyYAML's raw exception can include the source excerpt, so it is not propagated:
 
 ```python
 try:
     config = yaml_parser.parse(invalid_yaml)
 except ValueError as e:
-    print(f"Parse error: {e}")
+    print(f"Parse error: {e}")  # e.g. "Invalid YAML syntax at line 2, column 4"
 ```
 
 ## File Extensions

@@ -1,32 +1,33 @@
 # Documentation for `tests/test_meta.py`
 
-This document explains the purpose, expectations, and design rules established by the metadata test suite:
+This document explains the purpose and behaviors exercised by the metadata
+test suite:
 
 ```
 tests/test_meta.py
 ```
 
-These tests validate **runtime metadata injection** performed by `ConfigLoader`, specifically the automatic insertion of:
+These tests check selected runtime-profile metadata behavior performed by
+`ConfigLoader`:
 
 ```
 sprigconfig._meta.profile
 ```
 
-This metadata key tracks the **active runtime profile** and must meet strict behavioral guarantees.
+The tests assert the configured profile at this path for selected fixtures.
 
 ---
 
 # 🎯 Purpose of Metadata Tests
 
-Metadata injection is a critical feature of SprigConfig because it:
+These tests exercise selected runtime-profile metadata behavior:
 
-- Records the *actual* runtime profile used (`dev`, `test`, `prod`, etc.)
-- Allows applications to introspect configuration state
-- Must **not** interfere with user-provided configuration
-- Must **not** mutate YAML trees in a way that changes business logic
-- Must remain consistent regardless of overlay availability
+- Records the profile passed to the loader in the tested cases
+- Coexists with selected application and user metadata fixture values
+- Remains available when the selected profile overlay is absent
 
-These tests define the **contract** that `ConfigLoader` must satisfy for metadata behavior.
+These fixture-based tests are regression checks, not a complete specification
+for every metadata field or user-provided metadata structure.
 
 ---
 
@@ -56,11 +57,11 @@ Ensures that after loading:
 cfg.get("sprigconfig._meta.profile") == profile_argument
 ```
 
-This must hold **even if YAML files specify something completely different**.
+The test checks the `dev` fixture's loaded value.
 
 ### Why?
 The runtime profile is a loader-level concern, not a user-configurable field.  
-It must always reflect the actual entrypoint call.
+The assertion ties that value to the profile supplied in this test.
 
 ---
 
@@ -109,7 +110,8 @@ sprigconfig._meta.profile → "dev"   # independent metadata key
 ```
 
 ### Why?
-Metadata is additive — it must never change or override user keys.
+The tested fixture's application-tree value remains visible alongside the
+runtime profile metadata.
 
 ---
 
@@ -130,7 +132,8 @@ Instead, it must respect user-defined metadata.
 ### Why?
 Users may supply metadata intentionally; overriding it would be destructive.
 
-This test enforces **non-destructive metadata augmentation**.
+This test checks the profile field for the `user-meta` fixture; it does not
+establish non-overwrite behavior for every metadata key or configuration tree.
 
 ---
 
@@ -145,7 +148,7 @@ Ensures:
 - Metadata profile is a **string**
 - Value equals the runtime profile
 
-This forbids accidental insertion of other types (e.g., numbers, dicts).
+The assertion checks the profile value's type and value for the tested case.
 
 ---
 
@@ -153,14 +156,23 @@ This forbids accidental insertion of other types (e.g., numbers, dicts).
 
 These tests define the rules for SprigConfig’s metadata injection system:
 
-| Requirement | Behavior |
+| Behavior | Tested assertion |
 |------------|----------|
 | Always inject runtime profile | ✔️ |
 | Inject even if no profile overlay exists | ✔️ |
-| **Never modify** actual YAML structures | ✔️ |
-| **Never override** user-defined metadata | ✔️ |
+| Selected YAML application value remains visible | ✔️ |
+| Selected user `_meta.profile` fixture value is preserved | ✔️ |
 | Store metadata as simple strings | ✔️ |
 | Metadata exists in parallel to user config | ✔️ |
 
-This suite ensures metadata is **correct**, **non-destructive**, and **predictable**, serving only as supplemental diagnostic information for the runtime.
+This suite uses shared YAML fixtures and asserts the profile value and selected
+user-config interactions. It does not exercise every metadata field or every
+possible user-provided `sprigconfig` tree.
 
+## Run
+
+From `sprig-config-module/`:
+
+```bash
+poetry run pytest tests/test_meta.py
+```

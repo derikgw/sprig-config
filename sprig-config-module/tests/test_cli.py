@@ -1,12 +1,10 @@
 # tests/test_cli.py
 
-import json
 import logging
 import subprocess
 import sys
 
 import pytest
-
 
 @pytest.fixture(autouse=True)
 def disable_logging_handlers():

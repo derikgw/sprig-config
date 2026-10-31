@@ -153,6 +153,14 @@ These CLI tests ensure:
 | Ability to redirect merged output to a file | ✔️ |
 | CLI exit codes reflect success or failure | ✔️ |
 
-Together, they provide **real-world validation** of the SprigConfig command‑line
-interface in exactly the way end users invoke it.
+Security assertions for diagnostic redaction are centralized in
+[`security_tests/`](../security_tests/README.md). These functional CLI tests
+focus on command behavior and output routing.
 
+## Run
+
+From `sprig-config-module/`:
+
+```bash
+poetry run pytest tests/test_cli.py
+```

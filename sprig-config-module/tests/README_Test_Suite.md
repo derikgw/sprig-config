@@ -1,281 +1,75 @@
+# SprigConfig Test Suite Guide
 
-# SprigConfig Test Suite  
-**Location:** `sprig-config-module/tests/`  
-**Purpose:** Validate the core configuration engine, secret-handling, deep-merge logic, profile overlays, import tracing, CLI behavior, and metadata propagation for SprigConfig.
+This is the index to the test suites under `tests/` and their companion
+documentation. The source tests are the executable specification; suite docs
+explain their intent and the scope of their evidence.
 
-This test suite is designed to be:
+## Reading test evidence
 
-- **Deterministic** – reproducible across machines & CI  
-- **Environment-aware** – driven by `APP_CONFIG_DIR`, `.env`, and pytest CLI flags  
-- **Debug-friendly** – extensive logging & merged-config dumps  
-- **Architecture-verifying** – tests import future public APIs (`ConfigLoader`, `Config`, `LazySecret`, etc.)  
-- **High-coverage** – each subsystem has focused tests *plus* full integration routes  
+A passing test establishes that the asserted behavior held for the code,
+fixtures, and inputs exercised by that test. It does not by itself establish
+universal correctness, production safety, performance, or absence of other
+failure modes. Security tests are especially bounded: synthetic inputs verify
+specific paths and output surfaces, not every possible exception, logger, or
+consumer.
 
----
+Prefer wording such as “the test verifies/asserts” over “proves,” “guarantees,”
+or “is secure.” For each test suite, the companion document should make clear:
 
-# 🧱 Test Suite Structure
+1. **Intent** — the behavior or regression being exercised.
+2. **Setup and observation** — which inputs are prepared and which output or
+   state is asserted.
+3. **Evidence** — what a passing assertion supports.
+4. **Limits** — what the test does not exercise or establish.
+5. **Command** — how to run the test.
 
-```
-tests/
-│
-├── config/                   # Static test config tree used by many fixtures
-├── test_logs/                # Log output generated automatically during testing
-├── utils/                    # Test utilities, helpers, support modules
-│
-├── conftest.py               # Global fixtures, CLI flags, serialization helpers
-├── conftest.md               # Documentation for conftest.py
-│
-├── test_cli.py               # Tests for CLI rendering, YAML dump, secret redaction
-├── test_cli.md
-│
-├── test_config.py            # Tests for Config object, dotted-key lookup, immutability
-├── test_config.md
-│
-├── test_config_singleton.py  # Tests for cached/global config singleton behavior
-├── test_config_singleton.md
-│
-├── test_deep_merge.py        # Deep merge algorithm tests
-├── test_deep_merge.md
-│
-├── test_import_trace.py      # Tests for recursive imports + detection of cycles
-├── test_import_trace.md
-│
-├── test_integration.py       # End-to-end config loading with overlays, imports, meta
-├── test_integration.md
-│
-├── test_meta.py              # Tests for _meta generation (sources, profile, trace)
-├── test_meta.md
-│
-├── test_meta_sources.py      # Focused tests on metadata source annotations
-├── test_meta_sources.md
-│
-├── test_profiles.py          # Profile overlay resolution, precedence, overrides
-├── test_profile_behavior.md
-│
-└── .env                      # Optional test-time environment file
-```
+Tests generally use temporary directories or the shared fixtures described in
+[conftest.md](./conftest.md). Avoid changing committed files under `tests/config`
+from a test; use `tmp_path` or the `full_config_dir` copy fixture when mutation
+is needed.
 
----
+## Suite index
 
-# 🔍 Overview of Technologies Used
+Run commands below from `sprig-config-module/`, typically with
+`poetry run pytest <path>`.
 
-### **1. Pytest**
-Used for:
+| Test module and documentation | Intent and what the assertions observe | Evidence limits |
+|---|---|---|
+| [test_cli.py](./test_cli.md) | Runs the module CLI as a subprocess; checks output, exit status, and output-file behavior. | Covers these CLI invocations, not every command, terminal, or logging configuration. |
+| [test_config.py](./test_config.md) | Checks mapping-style access, nested wrapping, dotted lookup, conversion to dict, and YAML output. | The tested copy behavior does not imply the entire `Config` object is immutable. |
+| [test_config_singleton.py](./test_config_singleton.md) | Checks initialization, identity, concurrent initialization, test reload/clear behavior, and access through the singleton. | Thread tests exercise their constructed race, not every scheduling or application lifecycle. |
+| [test_deep_merge.py](./test_deep_merge.md) | Checks representative merge, overlay, import, list replacement, cycle, and dotted-access cases using repository fixtures. | Fixture examples do not exhaust all tree shapes or prove a global merge ordering for every input. |
+| [test_full_merge_provenance.py](./test_full_merge_provenance.md) | Loads the `dev` fixture tree and compares expected source paths, selected metadata fields, and selected merged values. | It is one fixed YAML fixture and selected assertions, not a general audit of all files, formats, or configuration semantics. |
+| [test_import_trace.py](./test_import_trace.md) | Checks trace entry fields, selected direct-import relationships, monotonic order, and alignment with `sources`. | The fixture currently has direct imports; the test named `nested_imports` does not exercise a genuinely nested import chain. |
+| [test_injection.py](./test_injection.md) | Exercises `ConfigValue`, `ConfigurationProperties`, and `config_inject`, including selected conversion errors. | Does not cover every custom type conversion or every user-defined exception path. |
+| [test_instantiate.py](./test_instantiate.md) | Checks target loading, constructor parameters, recursion, type conversion, and error cases. | Uses local test classes/configs; not a sandbox or security boundary for untrusted `_target_` configuration. |
+| [test_integration.py](./test_integration.md) | Combines loader, profile, import, metadata, environment, secret, CLI-adjacent API, and singleton behavior in representative flows. | Integration coverage is limited to the listed fixture flows and synthetic test inputs. |
+| [test_meta.py](./test_meta.md) | Checks active-profile metadata and selected interactions with user configuration. | Does not validate every `_meta` field; metadata source/trace details have separate suites. |
+| [test_meta_sources.py](./test_meta_sources.md) | Reads top-level YAML imports from the test fixture and checks the expected loaded source paths. | The helper and assertions are YAML-fixture-specific; they do not establish format parity or independently verify every ordering rule. |
+| [test_positional_import_nested_merges_in_place.py](./test_positional_import_nested_merges_in_place.md) | Checks one fixture result at `etl.jobs.etl.jobs.foo`. | It does not assert trace contents, sibling preservation, CLI output, or broad positional-import behavior. |
+| [test_profiles.py](./test_profile_behavior.md) | Checks profile overlays, missing profiles, profile imports, selected precedence, metadata, and dotted access. | Assertions apply to the repository's named fixture profiles; they are not exhaustive over profile names or filesystem paths. |
+| [test_subdirectory_imports.py](./test_subdirectory_imports.md) | Checks that an ordinary in-directory subdirectory import loads its selected value. | Does not exercise path escape rejection; security boundary cases are under `security_tests/`. |
+| [test_target_config.py](./test_target_config.md) | Directly constructs a local adapter and checks its fields. | This smoke test does not exercise `instantiate()` or configuration loading. |
+| [test_toml_support.py](./test_toml_support.md) | Checks TOML loading, imports, overlays, and substitution. | Covers its test documents, not all TOML grammar or substitution contexts; parser diagnostic redaction is covered in `security_tests/`. |
+| [test_validation.py](./test_validation.md) | Checks opt-in dataclass schema validation, selected errors, legacy behavior without a schema, merged input, and three-format parity. | It covers the defined schema/value cases, not every Python typing construct or all malformed schemas. |
 
-- Fixture dependency injection  
-- Parameterized testing  
-- CLI extension (`pytest_addoption`)  
-- Conditional test skipping  
+### Security tests
 
-### **2. YAML + JSON Handling**
-SprigConfig uses:
+The dedicated [security test guide](../security_tests/README.md) indexes the
+security suite and describes the evidence limits. Security-focused tests live
+under `security_tests/`; functional suites under `tests/` focus on API and
+feature behavior.
 
-- `yaml.safe_load` / `safe_dump`  
-- A custom deep merge implementation  
-- Redaction and safe serialization wrappers  
+## Running tests
 
-### **3. Environment-Based Config Loading**
-Tests validate:
+From `sprig-config-module/`:
 
-- `APP_CONFIG_DIR` discovery  
-- `.env` loading using python-dotenv  
-- The `--env-path` override for test-time `.env` selection  
-
-### **4. Secret Handling**
-Using `LazySecret` with:
-
-- Safe, redacted serialization  
-- Optional secret resolution (`--dump-config-secrets`)  
-- Optional plaintext dump (`--dump-config-no-redact`)  
-
-### **5. Logging**
-Full-session debug logs are produced:
-
-```
-test_logs/pytest_<timestamp>.log
+```bash
+poetry run pytest
+poetry run pytest tests/test_injection.py
+poetry run pytest security_tests
 ```
 
-containing:
-
-- Trace-level diagnostics  
-- Import maps  
-- Merge order  
-- File resolutions  
-
----
-
-# 🚀 Pytest CLI Options (“Adoption Flags”)
-
-These allow configurable behavior during test runs:
-
-| Flag | Purpose |
-|------|---------|
-| `--env-path <file>` | Override which `.env` file tests use |
-| `--dump-config` | Print merged config for each test |
-| `--dump-config-format yaml|json` | Select print format |
-| `--dump-config-secrets` | Resolve LazySecret values before printing |
-| `--dump-config-no-redact` | Output plaintext secrets |
-| `--debug-dump <file>` | Write merged config snapshot after test |
-| `RUN_CRYPTO=true` | Run crypto-heavy tests |
-
----
-
-# 🧪 Test Categories
-
-## **1. Config Object & API**
-`test_config.py`, `test_config_singleton.py`
-
-Ensures:
-
-- Dotted-key lookup  
-- Deep copying  
-- Immutability guarantees  
-- Consistent `.to_dict()` round-tripping  
-
----
-
-## **2. Deep Merge Algorithm**
-`test_deep_merge.py`
-
-Validates:
-
-- Overlays  
-- Replacement semantics  
-- Collision rules  
-- Recursive merge behavior  
-
----
-
-## **3. Import Tracing**
-`test_import_trace.py`
-
-Ensures:
-
-- Recursive file imports  
-- Cycle detection  
-- Metadata chain-building  
-
----
-
-## **4. Profiles (application-<profile>.yml)**
-`test_profiles.py`
-
-Covers:
-
-- File precedence  
-- Profile inheritance  
-- Environment-driven selection  
-
----
-
-## **5. Metadata Plumbing**
-`test_meta.py`, `test_meta_sources.py`
-
-Ensures:
-
-- Source tracking  
-- Import trace awareness  
-- Storage in:  
-  ```
-  sprigconfig._meta
-  ```
-
----
-
-## **6. CLI Behavior**
-`test_cli.py` validates:
-
-- Pretty YAML output  
-- Redacted vs resolved secret output  
-- CLI error messaging  
-
----
-
-## **7. Full Integration Tests**
-`test_integration.py`
-
-Simulates:
-
-- Real config directory  
-- Overlays  
-- Imports  
-- Metadata  
-- LazySecret injection  
-- Environment discovery  
-
-This is the closest to real runtime behavior.
-
----
-
-# 🔧 Running the Test Suite
-
-Run all tests:
-
-```
-pytest
-```
-
-Enable debug logging + see merged configs:
-
-```
-pytest --dump-config
-```
-
-Use a custom `.env` file:
-
-```
-pytest --env-path=tests/.env.dev
-```
-
-Capture merged config snapshots:
-
-```
-pytest --debug-dump=/tmp/config.yml
-```
-
-Run crypto tests:
-
-```
-RUN_CRYPTO=true pytest
-```
-
----
-
-# 🧩 Adding New Tests
-
-Follow this pattern:
-
-1. Create a `.py` test file  
-2. Create a `.md` file with the same name (optional but recommended)  
-3. If tests need a config tree:  
-   - Use `full_config_dir` or  
-   - Create a temporary directory  
-4. If coverage touches import or overlay behavior, include:  
-   ```
-   cfg = capture_config(lambda: ConfigLoader(...).load())
-   ```  
-   This ensures `.yml` snapshots can be captured.
-
----
-
-# 📎 Notes
-
-- **Do not** modify `tests/config/` during tests — use `full_config_dir` instead.  
-- All `.md` files in the test suite are **developer documentation**, not used by pytest.  
-- `conftest.py` is the authoritative specification of test mechanics.  
-
----
-
-# ✔️ Final Thoughts
-
-SprigConfig’s test suite is intentionally *dense* and *diagnostic-rich*.  
-It exists not just to assert correctness, but to illuminate exactly:
-
-- how configs merge  
-- where imports originate  
-- how metadata propagates  
-- how environment variables influence resolution  
-- and how secrets are safely handled  
-
-This ensures the configuration engine remains predictable, secure, and transparent — even as the architecture evolves.
-
+Relevant optional controls and shared fixtures are documented in
+[conftest.md](./conftest.md). Do not use secret-revealing dump options with real
+credentials or in logs intended for sharing.

@@ -63,6 +63,7 @@ twine = "^6.2.0"
 brotli = ">=1.2.1"
 certifi = ">=2026.10.19"
 msgpack = ">=1.2.3"
+hypothesis = "^6.170.13"
 
 [tool.poetry.group.docs.dependencies]
 mkdocs = "^1.6.1"

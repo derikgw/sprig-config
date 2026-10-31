@@ -1,20 +1,14 @@
 # tests/test_full_merge_provenance.py — Documentation
 
-This integration test validates **SprigConfig’s full merge provenance** — confirming
-that the configuration engine merges all expected files, respects import order,
-applies profile overlays correctly, and produces truthful metadata in `_meta`.
+This integration test checks selected merged values and provenance fields for
+the repository's `dev` YAML fixture.
 
 ---
 
 ## Purpose
 
-To ensure that `ConfigLoader` not only merges configurations correctly but that
-the resulting `_meta` information (sources, import order, and profile) **accurately
-reflects the merge process**.
-
-This is the highest‑level test in the suite: it exercises `ConfigLoader` across
-real files and real merge paths, providing end‑to‑end validation of SprigConfig’s
-core behavioral contract.
+It is a fixed-fixture integration check, not a general audit of all merge
+paths, formats, or metadata combinations.
 
 ---
 
@@ -34,14 +28,13 @@ tests/test_full_merge_provenance.py
 
 ## Behavior Verified
 
-| Category | Guarantee | Description |
+| Category | Assertion | Description |
 |-----------|------------|--------------|
-| **Meta completeness** | ✅ `_meta.sources` includes every file loaded | Ensures that all base, import, and profile files appear in metadata |
+| **Expected sources** | ✅ `_meta.sources` has exactly four expected paths | Checks the current base, import, and profile fixture files |
 | **Meta correctness** | ✅ Each `_meta` source actually exists on disk | Protects against stale or missing entries |
-| **Import order** | ✅ `_meta.import_trace` respects file precedence | Validates deterministic merge order |
+| **Selected trace order** | ✅ Base trace entry precedes profile entry | Checks these entries, not the full merge order |
 | **Overlay behavior** | ✅ Profile overlays override base values | Confirms profile-specific behavior (e.g., `application-dev.yml`) |
-| **Additive merges** | ✅ Lists and maps merge correctly | Verifies additive semantics rather than destructive overwrites |
-| **Key preservation** | ✅ Base keys persist unless explicitly overridden | Ensures no unexpected data loss |
+| **Selected values** | ✅ Expected profile values appear | Checks `app.profile` and `app.debug_mode` |
 | **Profile truthfulness** | ✅ `_meta.profile` matches active profile | Confirms provenance metadata integrity |
 
 ---
@@ -50,14 +43,14 @@ tests/test_full_merge_provenance.py
 
 ### 1️⃣ Setup
 
-The test uses real files under `tests/config/`, including:
+The test uses fixed files under `tests/config/`, including:
 
 - `application.yml` (base configuration)
 - `application-dev.yml` (profile overlay)
 - `imports/common.yml` (imported values)
 
-These files contain nested maps, lists, and overlays representative of typical
-SprigConfig usage.
+The test compares the set of source paths with four expected fixture paths;
+duplicate entries in `_meta.sources` would not be detected by that set check.
 
 ### 2️⃣ Execution
 
@@ -67,16 +60,15 @@ config = loader.load()
 meta = config["_meta"]
 ```
 
-The loader processes all files, recursively following imports and overlays.
+The loader processes the imports and profile overlay used by this fixture.
 
 ### 3️⃣ Assertions
 
 | Step | Purpose |
 |------|----------|
-| `_meta.sources` contains all expected files | Verifies full provenance |
-| `_meta.import_trace` ordering is correct | Ensures deterministic merge sequence |
+| `_meta.sources` contains the four expected files and no extras | Checks fixture source membership |
+| The base trace entry precedes the profile entry | Checks selected trace ordering |
 | Overlays override base keys | Confirms correct profile behavior |
-| Additive merges succeed | Ensures list/dict merges behave correctly |
 | `_meta.profile` matches `"dev"` | Confirms metadata consistency |
 
 ### 4️⃣ Sanity & Integrity Checks
@@ -84,7 +76,7 @@ The loader processes all files, recursively following imports and overlays.
 The test also verifies:
 
 - Each file in `_meta.sources` exists on disk
-- Nothing essential (like `app` or `metadata`) disappears during merge
+- The `app` and `sprigconfig._meta` sections are present
 - `_meta` fields (`profile`, `sources`, `import_trace`) are all present
 
 ---
@@ -99,17 +91,15 @@ The test also verifies:
 
 ## Why This Test Matters
 
-SprigConfig’s merging engine is the **core feature** of the library.
-This test proves that:
+For this fixture, the test checks that:
 
-- Merges are deterministic  
-- Imports are traceable  
-- Profiles apply predictably  
-- Metadata is trustworthy  
+- Selected merged values match expectations
+- Expected source paths and selected trace entries are present
+- The runtime profile metadata matches the chosen fixture profile
 
-It provides the single strongest assurance that SprigConfig behaves consistently
-across environments, which is essential for stable CI/CD pipelines and 1.0.0‑level
-confidence.
+It does not establish behavior across other profiles, formats, arbitrary import
+graphs, or all possible merge inputs. More focused suites cover some of those
+cases independently.
 
 ---
 
@@ -124,13 +114,10 @@ confidence.
 
 ---
 
-## Future Enhancements
+## Run
 
-- Validate `_meta.import_trace` against generated `Config.sources`
-- Add diff visualization for import layering (future `--trace` CLI mode)
-- Extend test to include `LazySecret` behavior in merged context
-- Consider a `ConfigIntegrityReport` helper for automated provenance checks
+From `sprig-config-module/`:
 
----
-
-Generated documentation for `tests/test_full_merge_provenance.py`.
+```bash
+poetry run pytest tests/test_full_merge_provenance.py
+```

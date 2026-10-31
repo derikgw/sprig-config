@@ -93,13 +93,12 @@ class ConfigValue:
         # Get current config from singleton
         try:
             cfg = ConfigSingleton.get()
-        except ConfigLoadError as e:
+        except ConfigLoadError:
             raise ConfigLoadError(
                 f"ConfigSingleton not initialized when accessing "
                 f"{self._owner_name}.{self._attr_name}\n"
-                f"Original error: {e}\n"
                 f"Hint: Call ConfigSingleton.initialize(profile, config_dir) at startup"
-            )
+            ) from None
 
         # Resolve from config (use sentinel if no default)
         default_to_use = None if self.default is _MISSING else self.default
@@ -132,14 +131,13 @@ class ConfigValue:
             if self.decrypt:
                 try:
                     value = value.get()  # Auto-decrypt
-                except Exception as e:
+                except Exception:
                     raise ConfigLoadError(
                         f"Failed to decrypt LazySecret for key '{self.key}'\n"
                         f"Descriptor: ConfigValue('{self.key}', decrypt=True) "
                         f"on {self._owner_name}.{self._attr_name}\n"
-                        f"Reason: {e}\n"
                         f"Hint: Check APP_SECRET_KEY environment variable"
-                    )
+                    ) from None
             # else: return LazySecret object (decrypt on .get())
 
         # Type conversion (only if not LazySecret and type hint present)
@@ -171,13 +169,12 @@ class ConfigValue:
         # Get current config from singleton
         try:
             cfg = ConfigSingleton.get()
-        except ConfigLoadError as e:
+        except ConfigLoadError:
             raise ConfigLoadError(
                 f"ConfigSingleton not initialized when resolving "
                 f"ConfigValue('{self.key}')\n"
-                f"Original error: {e}\n"
                 f"Hint: Call ConfigSingleton.initialize(profile, config_dir) at startup"
-            )
+            ) from None
 
         # Resolve from config
         default_to_use = None if self.default is _MISSING else self.default
@@ -196,13 +193,12 @@ class ConfigValue:
             if self.decrypt:
                 try:
                     value = value.get()  # Auto-decrypt
-                except Exception as e:
+                except Exception:
                     raise ConfigLoadError(
                         f"Failed to decrypt LazySecret for key '{self.key}'\n"
                         f"ConfigValue('{self.key}', decrypt=True)\n"
-                        f"Reason: {e}\n"
                         f"Hint: Check APP_SECRET_KEY environment variable"
-                    )
+                    ) from None
 
         # Type conversion (only if not LazySecret and type hint present)
         if self._type_hint and value is not None and not isinstance(value, LazySecret):
@@ -261,16 +257,15 @@ class ConfigValue:
             else:
                 # Unknown type - return as-is (may be custom class)
                 return value
-        except (ValueError, TypeError) as e:
+        except (ValueError, TypeError):
             raise ConfigLoadError(
                 f"Cannot convert config value to type '{target_type.__name__}'\n"
                 f"Key: {self.key}\n"
-                f"Value: {value!r} (type: {type(value).__name__})\n"
+                f"Value type: {type(value).__name__}\n"
                 f"Expected: {target_type.__name__}\n"
                 f"Descriptor: ConfigValue('{self.key}') on {self._owner_name}.{self._attr_name}\n"
-                f"Reason: {e}\n"
                 f"Hint: Check your config file and ensure the value is a valid {target_type.__name__}"
-            )
+            ) from None
 
 
 # =============================================================================
@@ -323,13 +318,12 @@ def ConfigurationProperties(prefix: str):
             # Resolve config section
             try:
                 cfg = ConfigSingleton.get()
-            except ConfigLoadError as e:
+            except ConfigLoadError:
                 raise ConfigLoadError(
                     f"ConfigSingleton not initialized for @ConfigurationProperties "
                     f"on {cls.__name__}\n"
-                    f"Original error: {e}\n"
                     f"Hint: Call ConfigSingleton.initialize(profile, config_dir) at startup"
-                )
+                ) from None
 
             section = cfg.get(prefix)
 
@@ -375,26 +369,24 @@ def ConfigurationProperties(prefix: str):
                             # Assumes nested class also has @ConfigurationProperties
                             nested_instance = attr_type()
                             setattr(self, attr_name, nested_instance)
-                        except Exception as e:
+                        except Exception:
                             raise ConfigLoadError(
                                 f"Failed to instantiate nested config class "
                                 f"{attr_type.__name__}\n"
                                 f"Parent: {cls.__name__}.{attr_name}\n"
-                                f"Reason: {e}\n"
                                 f"Hint: Ensure nested class has @ConfigurationProperties decorator"
-                            )
+                            ) from None
                     else:
                         # Type conversion
                         try:
                             converted = _convert_type_for_properties(value, attr_type, cls.__name__, attr_name)
                             setattr(self, attr_name, converted)
-                        except Exception as e:
+                        except Exception:
                             raise ConfigLoadError(
                                 f"Type conversion failed for {cls.__name__}.{attr_name}\n"
-                                f"Value: {value!r} (type: {type(value).__name__})\n"
+                                f"Value type: {type(value).__name__}\n"
                                 f"Expected: {attr_type.__name__ if hasattr(attr_type, '__name__') else str(attr_type)}\n"
-                                f"Reason: {e}"
-                            )
+                            ) from None
 
         cls.__init__ = __init__
         return cls
@@ -440,14 +432,13 @@ def _convert_type_for_properties(value: Any, target_type: type, class_name: str,
         else:
             # Unknown type - return as-is
             return value
-    except (ValueError, TypeError) as e:
+    except (ValueError, TypeError):
         raise ConfigLoadError(
             f"Cannot convert config value to type '{target_type.__name__}'\n"
             f"Class: {class_name}.{attr_name}\n"
-            f"Value: {value!r} (type: {type(value).__name__})\n"
+            f"Value type: {type(value).__name__}\n"
             f"Expected: {target_type.__name__}\n"
-            f"Reason: {e}"
-        )
+        ) from None
 
 
 # =============================================================================
@@ -508,12 +499,12 @@ def config_inject(func: Callable) -> Callable:
                 try:
                     resolved = param.default.resolve()
                     bound_args[param_name] = resolved
-                except Exception as e:
+                except Exception:
                     raise ConfigLoadError(
                         f"Failed to resolve ConfigValue parameter '{param_name}' "
-                        f"in function {func.__name__}\n"
-                        f"Reason: {e}"
-                    )
+                        f"in function {func.__name__} "
+                        f"for config key '{param.default.key}'\n"
+                    ) from None
             elif param.default != inspect.Parameter.empty:
                 # Regular default value
                 bound_args[param_name] = param.default

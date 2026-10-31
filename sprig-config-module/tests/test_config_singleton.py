@@ -142,16 +142,6 @@ def test_singleton_provides_dotted_key_access(config_dir):
 
 
 # ----------------------------------------------------------------------
-# SECRET HANDLING THROUGH SINGLETON
-# ----------------------------------------------------------------------
-
-def test_singleton_preserves_lazysecret_objects(config_dir):
-    cfg = ConfigSingleton.initialize(profile="secrets", config_dir=config_dir)
-    secret = cfg.get("secrets.api_key")
-    assert hasattr(secret, "is_secret") or isinstance(secret, object)
-
-
-# ----------------------------------------------------------------------
 # BACKWARD COMPAT: load_config() remains separate
 # ----------------------------------------------------------------------
 

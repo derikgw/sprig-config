@@ -1,7 +1,8 @@
-# Profile-Specific Behavior Tests (SprigConfig RC3)
+# Profile-Specific Behavior Tests
 
-This document explains the purpose and expectations of the profile‑related test suite in **tests/test_profile_behavior.py**.  
-These tests validate how **SprigConfig RC3** handles base configuration, profile overlays, imports, merge order, and runtime metadata recording.
+This document describes the tests in `tests/test_profiles.py`. They exercise
+selected base/profile overlays, imports, metadata, and dotted-key access using
+the repository's configuration fixtures.
 
 ---
 
@@ -13,24 +14,17 @@ Profiles modify or extend the base configuration loaded from:
 - `application.yml`
 - `application-<profile>.yml`
 
-The loader must:
+The tests check selected fixture behavior:
 
-- Load **base first**
-- Apply **profile overlays second**
-- Preserve YAML field values exactly
-- Store the **actual runtime profile** only in `sprigconfig._meta.profile`
-- Never overwrite user keys under `app.*`
+- Base values and selected profile values appear in the merged config
+- The runtime profile appears in `sprigconfig._meta.profile`
+- Selected YAML-defined `app.profile` values remain in the application tree
 
 ---
 
 ## ✔ 2. Profile Overrides Base Values
 
-**Expected deep merge behavior:**
-
-- Base fields appear in the final config.
-- Profile fields override existing ones.
-- New fields from profile are added.
-- YAML-defined `app.profile` remains in **application tree**.
+The `dev` fixture test checks the following resulting values:
 
 Example:
 
@@ -46,7 +40,7 @@ app:
   debug_mode: true
 ```
 
-The merge must produce:
+The test asserts:
 
 | Key | Value |
 |-----|--------|
@@ -57,17 +51,16 @@ The merge must produce:
 
 ---
 
-## ✔ 3. Missing Profile Files Must **Not** Raise Errors
+## ✔ 3. Missing Profile File Case
 
 If `application-<profile>.yml` is not found:
 
-- Loader **must succeed**
-- Runtime profile still recorded
-- A warning is allowed, an error is not
+- Loading succeeds for the tested missing-profile name.
+- The supplied profile name appears in metadata.
 
 ---
 
-## ✔ 4. Runtime Profile Must Never Be Overwritten
+## ✔ 4. Runtime Profile Metadata
 
 Even if YAML contains:
 
@@ -76,13 +69,14 @@ app:
   profile: dev
 ```
 
-The runtime profile passed to the loader **must only appear here**:
+The test checks that the runtime profile passed to the loader appears here:
 
 ```text
 sprigconfig._meta.profile
 ```
 
-YAML values stay untouched.
+The tests also check selected YAML values in the application tree; they do not
+cover every possible YAML value or metadata collision.
 
 ---
 
@@ -96,10 +90,9 @@ Some profiles trigger their own imports:
 chain1.yml → chain2.yml → chain3.yml
 ```
 
-Tests ensure:
+The tests check:
 
-- All files load in correct order
-- Merged values appear under expected keys
+- Selected values from the fixture chain appear under expected keys
 
 ---
 
@@ -118,16 +111,12 @@ etl.jobs.misc.value = 123
 
 ---
 
-## ✔ 6. Merge Order Must Be Correct
+## ✔ 6. Selected Values for the Merge-Order Case
 
-Correct merge ordering:
-
-1. `application.yml`  
-2. `application-<profile>.yml`  
-3. Imports from *base* YAML  
-4. Imports from *profile* YAML  
-
-Tests assert precedence and override semantics.
+`test_profile_then_import_order` checks `app.debug_mode`, `common.feature_flag`,
+and `etl.jobs.root`. These resulting values do not independently establish a
+complete source order because the test does not compare conflicting values or
+inspect a full source trace.
 
 ---
 
@@ -145,7 +134,7 @@ Tests only assert the value is preserved; they do not capture logs.
 
 ## ✔ 8. Dotted-Key Access Across Profile Merges
 
-The merged configuration must support:
+The test checks dotted-key access for:
 
 ```python
 cfg.get("etl.jobs.repositories.inmemory.class")
@@ -157,19 +146,31 @@ cfg.get("sprigconfig._meta.profile")
 
 # Summary Table
 
-| Behavior | Required? | Notes |
+| Behavior | Tested? | Notes |
 |---------|-----------|-------|
-| Base loads first | ✅ | Core RC3 rule |
-| Profile overlays base | ✅ | Deep-merge semantics |
-| Profile adds new fields | ✅ | Additive |
-| Profile-specific imports | ✅ | Must follow merge order |
-| Missing profile allowed | ✅ | Must not error |
-| Runtime profile stored only in metadata | ✅ | Never override YAML |
-| Dotted-key access | ✅ | Must work across merged config |
-| Suppress merge warnings | Optional → Preserved | Flag only |
-| ConfigSingleton profile validation | Tested | Ensures correctness |
+| Base and selected profile values appear | ✅ | Fixed `dev` fixture |
+| Profile adds selected fields | ✅ | Fixed `dev` fixture |
+| Profile-specific imports | ✅ | Selected result values are asserted |
+| Missing profile accepted | ✅ | One missing-profile name |
+| Runtime profile recorded in metadata | ✅ | Selected fixture profiles |
+| Dotted-key access | ✅ | Selected merged keys |
+| Suppress merge warnings | ✅ | Flag value only; no log capture |
+| Missing profile rejected by singleton | ✅ | One `None` profile case |
 
 ---
 
-If you need a **full RC3 merge architecture diagram** or **API reference**, I can generate those too!
+## Evidence limits
 
+The suite uses named fixture profiles (`dev`, `chain`, `nested`, `prod`,
+`suppress`) and checks selected values. It does not validate all possible
+profile strings, path containment, or every precedence relationship. In
+particular, the order test checks output values rather than inspecting
+`_meta.import_trace`.
+
+## Run
+
+From `sprig-config-module/`:
+
+```bash
+poetry run pytest tests/test_profiles.py
+```

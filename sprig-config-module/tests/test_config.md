@@ -1,39 +1,31 @@
 # Documentation for `tests/test_config.py`
 
-This document explains the purpose, design goals, and expected behavior defined
+This document explains the purpose and behavior exercised
 by the tests in:
 
 ```
 tests/test_config.py
 ```
 
-These tests collectively define the **specification** for the future
+These tests exercise the current
 `Config` class — the object returned by both `ConfigLoader` and
 `load_config()`.  
-They represent a **contract**, ensuring stability, clarity, and correctness in
-SprigConfig’s configuration representation.
-
-The Markdown file corresponds directly to:
-
-```
-tests/test_config.md
-```
+They provide regression evidence for the specific behaviors asserted below.
 
 ---
 
 # 🎯 Purpose of This Test Suite
 
-`Config` is intended to be:
+The suite checks that `Config`:
 
-- A **read-only Mapping**
-- A wrapper around nested dicts  
+- Behaves as a mapping
+- Wraps nested dictionaries in selected access paths
 - Capable of **dotted-key lookup**
 - Able to serialize cleanly via `to_dict()` and `dump()`
-- Safe by default in how it handles `LazySecret`
-- Fully backward compatible with dict-style access (`cfg["key"]`, iteration, etc.)
+- Supports tested dict-style access (`cfg["key"]`, iteration, etc.)
 
-This test suite is a **blueprint for the implementation**.  
-If a behavior is expressed here, the final `Config` class MUST adhere to it.
+The tests do not establish that `Config` is immutable: they check selected
+lookup, copy, and serialization behavior only.
 
 ---
 
@@ -62,7 +54,7 @@ Validates the Mapping API:
 - Membership testing (`"a" in cfg`)
 
 **Why:**  
-The `Config` object must behave like a Python mapping to support existing code.
+These assertions check compatibility with the mapping operations used by callers.
 
 ---
 
@@ -100,8 +92,9 @@ Verifies:
 
 - Lookup must NOT mutate underlying data structures.
 
-**Why:**  
-Protects consumers who rely on immutability and deep copies.
+**Evidence scope:**
+This checks that the tested lookup does not mutate the source data. It does not
+establish that `Config` is immutable.
 
 ---
 
@@ -154,61 +147,11 @@ Verifies:
 
 ---
 
-# 🔒 6. Secret Redaction & Exposure Rules
-
-## `test_config_to_dict_redacts_lazysecret`
-
-Ensures:
-
-- When converting to a plain dict,
-- `LazySecret` is replaced by the placeholder:
-
-```
-<LazySecret>
-```
-
-**Why:**  
-Never expose secrets by default.
-
----
-
-## `test_config_dump_redacts_lazysecret`
-
-Ensures:
-
-- YAML dump redacts secrets (`safe=True`).
-
----
-
-## `test_config_dump_can_output_plaintext_secrets`
-
-Uses monkeypatching to override `LazySecret.get()`.
-
-Ensures:
-
-- `dump(..., safe=False)` outputs decrypted secrets.
-
-**Why:**  
-Accessible only when explicitly requested.
-
----
-
-## `test_config_dump_raises_if_cannot_reveal_secret`
-
-Ensures:
-
-- Attempting `safe=False` when no key is available raises `ConfigLoadError`.
-
-**Why:**  
-Fail fast rather than silently omitting secrets.
-
----
-
 # 🧪 Summary
 
-These tests define the **intended public interface** of the `Config` object.
+These tests exercise selected public behaviors of `Config`.
 
-| Feature | Required Behavior |
+| Feature | Behavior exercised |
 |--------|-------------------|
 | Mapping-like behavior | ✔️ |
 | Recursive wrapping | ✔️ |
@@ -217,12 +160,14 @@ These tests define the **intended public interface** of the `Config` object.
 | No mutation during access | ✔️ |
 | `to_dict()` deep-copy semantics | ✔️ |
 | YAML dumping | ✔️ |
-| Secret redaction | ✔️ |
-| Secret exposure rules | ✔️ |
 
-The suite ensures the `Config` class is intuitive, safe, consistent, and powerful.
+Secret redaction, explicit reveal, and reveal-failure checks are centralized in
+[`security_tests/`](../security_tests/README.md).
 
----
+## Run
 
-If you'd like, I can also generate a **developer README** describing how to implement `Config` to satisfy this test suite.
+From `sprig-config-module/`:
 
+```bash
+poetry run pytest tests/test_config.py
+```

@@ -1,8 +1,7 @@
 """
 Test TOML format support in ConfigLoader.
 """
-import pytest
-from pathlib import Path
+from sprigconfig.config_loader import ConfigLoader
 from sprigconfig.config_loader import ConfigLoader
 
 

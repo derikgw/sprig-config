@@ -6,6 +6,9 @@ title: Security
 
 SprigConfig provides secure handling of sensitive configuration values through encrypted secrets with lazy decryption. This guide covers key management, encryption workflow, and security best practices.
 
+For local scanners, GitHub security checks, and generated security tests, see
+[Security testing](security-testing.md).
+
 ---
 
 ## Overview

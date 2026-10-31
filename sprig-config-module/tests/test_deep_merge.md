@@ -1,12 +1,13 @@
 # Documentation for `tests/test_deep_merge.py`
 
-This document describes the purpose and required behavior outlined in the test suite:
+This document describes the purpose and behavior exercised by the test suite:
 
 ```
 tests/test_deep_merge.py
 ```
 
-These tests establish the **exact contract** for SprigConfig’s deep-merge implementation and how `ConfigLoader` must process:
+These tests exercise representative deep-merge behavior and how `ConfigLoader`
+processes:
 
 - base config  
 - profile overlays  
@@ -18,7 +19,8 @@ These tests establish the **exact contract** for SprigConfig’s deep-merge impl
 - dotted-key access after merge  
 - suppression flags  
 
-This file defines the authoritative reference for correct deep-merge behavior in SprigConfig.
+These fixture-based checks are regression evidence for the cases below, not an
+exhaustive specification for every possible configuration tree.
 
 Corresponding Markdown file:
 
@@ -98,7 +100,8 @@ Ensures:
 - If a nested key imports unrelated root-level YAML, it must be inserted *as-is* beneath the calling node.
 - No “structural fixups” are allowed.
 
-This guarantees imports behave predictably regardless of shape.
+This checks the selected nested value for this fixture; other shapes are not
+covered by this assertion.
 
 ---
 
@@ -203,10 +206,8 @@ suppress_config_merge_warnings = true
 
 Merge warnings should be suppressed throughout the entire pipeline.
 
-The test only confirms the flag survives, but implementation must ensure:
-
-- logging suppression  
-- correct propagation  
+The assertion checks only that the flag survives loading. It does **not**
+capture logs or establish that merge warnings were actually suppressed.
 
 ---
 
@@ -243,9 +244,9 @@ Meaning:
 
 # ✔️ Summary
 
-The deep-merge test suite defines a strict and comprehensive merging model:
+The deep-merge suite exercises representative cases:
 
-| Feature | Required Behavior |
+| Feature | Behavior exercised |
 |--------|-------------------|
 | Recursive merge | ✔️ |
 | Strict precedence rules | ✔️ |
@@ -254,16 +255,19 @@ The deep-merge test suite defines a strict and comprehensive merging model:
 | Lists overwrite | ✔️ |
 | Circular import detection | ✔️ |
 | Dotted-key access after merge | ✔️ |
-| Warning suppression flag | ✔️ |
+| Warning suppression flag survives loading | ✔️ |
 | Raw dict merge backward compatibility | ✔️ |
 
-These tests collectively enforce a predictable, powerful, and safe merging system—central to the SprigConfig architecture.
+The tests cover the particular checked values, fixture profiles, and import
+chains listed above; they do not prove all merge orderings or structures behave
+identically.
 
 ---
 
-If you want, I can now generate:
+## Run
 
-- an **implementation guide** describing how to build deep_merge and import resolution to satisfy these tests  
-- a **visual diagram** showing merge order and nesting  
-- a **design doc** for the future ConfigLoader merging engine
+From `sprig-config-module/`:
 
+```bash
+poetry run pytest tests/test_deep_merge.py
+```

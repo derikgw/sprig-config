@@ -83,6 +83,12 @@ Encrypted values remain encrypted until accessed, preventing accidental logging.
 
 Given the same directory, profile, and format, the result is always identical.
 
+### ✔ Safe parse diagnostics
+
+Parse errors identify the file and, when available, the line and column. Raw
+parser messages and expanded source excerpts are omitted so environment
+substitutions cannot leak values through exceptions or CLI stderr.
+
 ---
 
 ## 4. High-Level Flow of the Loader
