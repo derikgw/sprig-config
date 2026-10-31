@@ -163,13 +163,12 @@ def instantiate(
                 except ConfigLoadError:
                     # Re-raise with added context
                     raise
-                except Exception as e:
+                except Exception:
                     raise ConfigLoadError(
                         f"Failed to recursively instantiate parameter '{param_name}'\n"
                         f"Parent class: {target_class.__name__}\n"
                         f"Nested _target_: {value.get('_target_') if isinstance(value, dict) else 'N/A'}\n"
-                        f"Reason: {e}"
-                    )
+                    ) from None
 
             # Step 4b: Type conversion (if type hint present)
             if _convert_types_ and param_name in type_hints:
@@ -179,14 +178,13 @@ def instantiate(
                 except ConfigLoadError:
                     # Re-raise with added context
                     raise
-                except Exception as e:
+                except Exception:
                     raise ConfigLoadError(
                         f"Failed to convert parameter '{param_name}' to {target_type.__name__}\n"
                         f"Class: {target_class.__name__}\n"
-                        f"Value: {value!r} (type: {type(value).__name__})\n"
-                        f"Reason: {e}\n"
+                        f"Value type: {type(value).__name__}\n"
                         f"Hint: Check that the config value matches the expected type"
-                    )
+                    ) from None
 
             init_params[param_name] = value
 
@@ -208,21 +206,19 @@ def instantiate(
     # Step 6: Instantiate the class
     try:
         instance = target_class(**init_params)
-    except TypeError as e:
+    except TypeError:
         raise ConfigLoadError(
             f"Failed to instantiate {target_class.__name__}\n"
             f"Parameters passed: {list(init_params.keys())}\n"
             f"Target: '{target}'\n"
-            f"Reason: {e}\n"
             f"Hint: Check that parameter names match __init__ signature"
-        )
-    except Exception as e:
+        ) from None
+    except Exception:
         raise ConfigLoadError(
             f"Error during {target_class.__name__} instantiation\n"
             f"Target: '{target}'\n"
-            f"Reason: {e}\n"
             f"Hint: Check the __init__ method for runtime errors"
-        )
+        ) from None
 
     return instance
 
@@ -279,7 +275,7 @@ def _convert_type(value: Any, target_type: type) -> Any:
         else:
             # Unknown type - return as-is (may be custom class)
             return value
-    except (ValueError, TypeError) as e:
+    except (ValueError, TypeError):
         raise ValueError(
-            f"Cannot convert {value!r} (type: {type(value).__name__}) to {target_type.__name__}: {e}"
-        )
+            f"Cannot convert value of type {type(value).__name__} to {target_type.__name__}"
+        ) from None

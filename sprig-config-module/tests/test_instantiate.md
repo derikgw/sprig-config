@@ -32,7 +32,7 @@ Tests that `MSSQLDatabase.connect()` (which uses @config_inject) works after ins
 
 | Test Class | Purpose |
 |------------|---------|
-| `TestInstantiateTypeConversion` | int, float, bool conversion during instantiation |
+| `TestInstantiateTypeConversion` | int, float, bool conversion |
 
 ### Recursive Instantiation
 
@@ -44,7 +44,10 @@ Tests that `MSSQLDatabase.connect()` (which uses @config_inject) works after ins
 
 | Test Class | Purpose |
 |------------|---------|
-| `TestInstantiateErrors` | Missing _target_, invalid format, module not found, class not found, missing required params, type conversion errors |
+| `TestInstantiateErrors` | Missing _target_, invalid format, module not found, class not found, missing required params, and conversion/constructor errors |
+
+Security assertions for sensitive-value redaction in conversion and constructor
+exceptions are centralized in [`security_tests/`](../security_tests/README.md).
 
 ### Edge Cases
 

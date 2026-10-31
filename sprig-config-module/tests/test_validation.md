@@ -10,7 +10,8 @@ Validates opt-in schema validation behavior for `ConfigLoader` using typed datac
 - Unknown key rejection.
 - Nested path error reporting.
 - Backward-compatible loading when no schema is supplied.
-- Proof that the validator is never invoked on the legacy no-schema path.
+- A monkeypatched validator that raises if called, verifying it is not invoked
+  for the tested legacy no-schema load.
 - A config value that conflicts with a code-side schema type still loads when
   `schema=` is omitted.
 - Validation through both `ConfigLoader` and `load_config`.
@@ -22,4 +23,14 @@ Validates opt-in schema validation behavior for `ConfigLoader` using typed datac
 
 ## Why this matters
 
-Schema validation should fail fast with precise diagnostics while remaining fully opt-in and backward-compatible for existing users who do not provide a schema.
+These tests support opt-in schema validation for the listed dataclass schemas,
+values, and formats. They do not cover every typing feature or every possible
+schema error.
+
+## Run
+
+From `sprig-config-module/`:
+
+```bash
+poetry run pytest tests/test_validation.py
+```

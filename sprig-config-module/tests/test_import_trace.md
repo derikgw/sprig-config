@@ -1,19 +1,17 @@
 # Documentation for `tests/test_import_trace.py`
 
 This document explains the purpose and expected behavior defined by the import-trace test suite.  
-These tests validate the **import tracing** feature within the SprigConfig configuration-loading engine.
+These tests check selected import-trace metadata for the repository's YAML
+fixture.
 
-This suite corresponds to:
-
-```
-tests/test_import_trace.md
-```
+The companion test module is `tests/test_import_trace.py`.
 
 ---
 
 # 🎯 Purpose of Import Trace Tests
 
-SprigConfig must provide complete visibility into **how configuration files are loaded**, especially when `imports:` directives are used.  
+The loader records metadata about files loaded through `imports:`. This suite
+checks selected fields and relationships in the shared fixture.
 
 To support debugging, analysis, and deterministic loading, SprigConfig records metadata under:
 
@@ -31,7 +29,8 @@ The tests in this file verify that:
 - The trace order matches the `sources[]` list  
 - The literal `import_key` values from YAML are preserved  
 
-This ensures SprigConfig users can fully reconstruct the import tree.
+This provides evidence for the tested fixture relationships; it is not a
+general guarantee that every import graph is represented correctly.
 
 ---
 
@@ -56,7 +55,7 @@ Ensures every `import_trace` entry contains:
 - `depth`: Integer nesting depth  
 - `order`: Monotonic load order  
 
-Guarantees the structure and schema of import-trace nodes.
+Checks required fields and integer types for entries in this fixture's trace.
 
 ---
 
@@ -79,13 +78,15 @@ Each direct import must:
 - have `import_key` matching the literal (extension-less) value from the config
 - have `file` path with the appropriate extension appended
 
-Ensures exact, literal propagation of import directives while supporting format-agnostic imports.
+Checks the direct imports defined in the YAML fixture. It does not test the
+same import metadata in JSON or TOML.
 
 ---
 
 ## 3. `test_import_trace_nested_imports`
 
-Even though the real config set contains **no nested imports**, this test verifies:
+Despite its name, the current fixture has **no nested import chain**. This test
+verifies that:
 
 - job-default.yml and common.yml both have `imported_by == root`
 - their depth equals `root.depth + 1`
@@ -102,9 +103,11 @@ Ensures:
 entry.order = 0, 1, 2, 3…
 ```
 
-The test enforces strict monotonic ordering.  
+The test checks that `order` values are sorted; it does not assert that they
+are contiguous or unique.
 
-This is vital for reproducibility and matching merge order.
+This checks sorted order values in the fixture, not every possible merge
+ordering.
 
 ---
 
@@ -130,35 +133,28 @@ Ensures the `import_key` stored in the trace is **exactly** what appeared in the
 
 The `import_key` field preserves the literal value from the config, while the `file` field contains the fully-resolved path with the appropriate extension for the active format.
 
-This guarantees:
-
-- Literal preservation of user input
-- Format portability (same imports work for .yml, .json, .toml)
-- Debuggable import metadata
-- Separation of logical imports from physical file paths  
+This checks literal import-key preservation for the selected YAML fixture.
 
 ---
 
 # ✔️ Summary
 
-This import-trace suite ensures SprigConfig provides complete visibility into configuration loading, supporting advanced debugging and reproducibility.
+This suite provides regression evidence for the fixture's trace data, not
+complete visibility for arbitrary configuration graphs.
 
 | Behavior | Required |
 |---------|----------|
 | Structured import metadata | ✔️ |
 | Literal import key preservation | ✔️ |
-| Depth and ordering guarantees | ✔️ |
+| Selected depth and sorted order values | ✔️ |
 | Alignment between sources[] and import_trace[] | ✔️ |
 | Correct attribution of direct imports | ✔️ |
 | Robustness for nested import hierarchies | ✔️ |
 
-Together, these tests define a **clear, stable import-trace contract** that SprigConfig must follow.
+## Run
 
----
+From `sprig-config-module/`:
 
-If you'd like, I can generate:
-
-- a visualization of the import graph  
-- a merge-order timeline diagram  
-- a debugging guide explaining how users interpret import_trace  
-
+```bash
+poetry run pytest tests/test_import_trace.py
+```

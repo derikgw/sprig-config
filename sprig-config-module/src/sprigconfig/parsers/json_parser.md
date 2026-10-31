@@ -14,7 +14,9 @@ class JsonParser:
         try:
             return json.loads(text)
         except json.JSONDecodeError as e:
-            raise ValueError(str(e))
+            raise ValueError(
+                f"Invalid JSON syntax at line {e.lineno}, column {e.colno}"
+            ) from None
 ```
 
 ## Design Decisions
@@ -29,7 +31,8 @@ Uses the stdlib `json` module rather than third-party alternatives:
 
 ### Error Handling
 
-JSON decode errors are converted to `ValueError` for consistent error handling:
+JSON decode errors are converted to `ValueError` containing only line and
+column; the parser's raw error text is not propagated:
 
 ```python
 try:

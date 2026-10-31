@@ -16,6 +16,7 @@ Test Coverage Goals:
 """
 
 import pytest
+
 from pathlib import Path
 
 from sprigconfig import (
@@ -131,7 +132,6 @@ class TestConfigValueTypeConversion:
     def test_configvalue_bool_conversion_from_true_string(self, config_dir):
         """ConfigValue should convert 'true' string to bool True."""
         # Create temp config with boolean
-        import yaml
         import tempfile
         import shutil
 
@@ -668,7 +668,6 @@ class TestConfigurationPropertiesPartialBinding:
             assert "Type conversion failed" in str(exc_info.value)
         finally:
             shutil.rmtree(temp_dir)
-
 
 class TestConfigurationPropertiesLazySecret:
     """Test @ConfigurationProperties with LazySecret."""

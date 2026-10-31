@@ -8,24 +8,29 @@ This checklist records the repository review findings and remaining verification
 
 ## 1. Sensitive values in exceptions — Medium
 
-**Status:** reproduced using extracted repository functions and synthetic markers. Actual credential exposure was not investigated.
+**Status:** diagnostic leaks reproduced with synthetic markers and fixed. Actual credential exposure was not investigated.
 
-Environment expansion precedes YAML parsing. Parser errors can include expanded source excerpts, which the loader propagates and the CLI prints to stderr. Separately, `ConfigValue(decrypt=True)` can decrypt a secret before a failed type conversion embeds the plaintext value in an exception. Exposure requires access to the resulting diagnostics; no remote disclosure endpoint was established.
+Environment expansion precedes YAML parsing, so raw parser errors could include expanded source excerpts. Conversion and constructor diagnostics could likewise contain configuration values or decrypted secrets. The loader, dependency-injection wrappers, and `instantiate()` now omit raw values and exception causes while retaining safe field/type and parser location context. Regression tests assert synthetic markers are absent from exception strings, formatted tracebacks, and CLI stderr. Exposure required access to diagnostics; no remote disclosure endpoint was established.
 
 Evidence:
 
-- `sprig-config-module/src/sprigconfig/config_loader.py`: `_load_file()`, lines 253–266; `_expand_env()`, lines 268–273.
-- `sprig-config-module/src/sprigconfig/parsers/yaml_parser.py`: `YamlParser.parse()`, lines 4–8.
+- `sprig-config-module/src/sprigconfig/config_loader.py`: `_load_file()`, lines 253–278; `_expand_env()`, lines 272–277.
+- `sprig-config-module/src/sprigconfig/parsers/yaml_parser.py`: `YamlParser.parse()`, lines 3–13.
 - `sprig-config-module/src/sprigconfig/cli.py`: `run_dump()`, lines 59–61.
-- `sprig-config-module/src/sprigconfig/injection.py`: `ConfigValue.__get__()`, lines 130–147; `ConfigValue._convert_type()`, lines 264–272.
+- `sprig-config-module/src/sprigconfig/injection.py`: `ConfigValue.__get__()`, lines 83–145; `ConfigValue._convert_type()`, lines 209–270; `ConfigurationProperties()`, lines 275–400.
+- `sprig-config-module/src/sprigconfig/instantiate.py`: `instantiate()`, lines 45–225; `_convert_type()`, lines 226–287.
 
 Checklist:
 
-- [ ] Remove sensitive values and expanded source excerpts from library-generated diagnostics.
-- [ ] Ensure formatted exception chains cannot disclose the original values or parser excerpts.
-- [ ] Review equivalent diagnostics in `instantiate()` and `ConfigurationProperties`.
-- [ ] Add regression checks using synthetic markers, including decryption followed by conversion failure and CLI stderr.
-- [ ] Preserve useful field names, expected types, and source positions in errors.
+- [x] Remove sensitive values and expanded source excerpts from library-generated diagnostics.
+- [x] Ensure formatted exception chains cannot disclose the original values or parser excerpts.
+- [x] Review equivalent diagnostics in `instantiate()` and `ConfigurationProperties`.
+- [x] Add regression checks using synthetic markers, including decryption followed by conversion failure and CLI stderr.
+- [x] Preserve useful field names, expected types, and source positions in errors.
+
+Validation: 89 focused CLI, dependency-injection, instantiation, and TOML tests
+passed; the five in-scope security diagnostic regressions passed; Ruff passed
+for the changed source and test files.
 
 ## 2. Environment substitution can inject structure — Conditional Medium
 

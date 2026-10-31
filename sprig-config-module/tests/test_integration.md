@@ -6,7 +6,8 @@ This document describes the purpose and behavior of the integration tests define
 tests/test_integration.py
 ```
 
-These tests validate the complete configuration-loading pipeline of **SprigConfig RC3**, ensuring correct merging, metadata injection, secret handling, environment expansion, and backward compatibility.
+These tests exercise representative end-to-end flows of the configuration
+loader, metadata, secrets, environment expansion, and singleton.
 
 ---
 
@@ -24,7 +25,8 @@ The integration suite verifies:
 - Circular import detection  
 - Ability to use `APP_CONFIG_DIR` when no directory is explicitly provided  
 
-These tests represent **end-to-end validation** of the SprigConfig system.
+These tests cover the specific fixture flows and assertions listed below; they
+are not exhaustive validation of every supported configuration.
 
 ---
 
@@ -111,7 +113,8 @@ The test now uses an isolated temporary copy of `tests/config` so committed
 fixture files are not modified during test runs.
 
 **Why:**  
-Security-sensitive functionality must never regress.
+The assertions cover the synthetic ciphertext and key used by this test; they
+do not establish secret handling for every key source or failure mode.
 
 ---
 
@@ -143,7 +146,7 @@ The singleton is widely used in long-running services.
 
 # ✔️ Summary
 
-This test suite is **legitimate**, **high-value**, and **crucial** for guaranteeing the correctness of:
+This suite checks selected fixture-based flows for:
 
 - Core merge logic  
 - Environment expansion  
@@ -153,4 +156,13 @@ This test suite is **legitimate**, **high-value**, and **crucial** for guarantee
 - Import resolution  
 - Singleton behavior  
 
-Every test validates a meaningful and intentional part of SprigConfig’s design.
+The suite does not prove correctness for all configurations, environments, or
+consumer applications.
+
+## Run
+
+From `sprig-config-module/`:
+
+```bash
+poetry run pytest tests/test_integration.py
+```

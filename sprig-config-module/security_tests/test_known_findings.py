@@ -1,15 +1,26 @@
-"""Executable issue #41 cases, not assertions that these paths are secure.
+"""Executable issue #41 cases and regression checks for resolved findings.
 
-Strict xfails keep known defects visible and detect when fixes require removing
-the annotation. SECURITY_ENFORCE_KNOWN=1 makes every case a normal failing test.
+Open findings remain strict xfails; resolved findings run as normal regression
+tests. SECURITY_ENFORCE_KNOWN=1 makes every remaining case a normal test.
 """
 import os
+import subprocess
+import sys
 import traceback
 
 import pytest
 from cryptography.fernet import Fernet
+from sprigconfig.parsers import JsonParser
 
-from sprigconfig import Config, ConfigLoader, ConfigLoadError, ConfigSingleton, ConfigValue
+from sprigconfig import (
+    Config,
+    ConfigLoader,
+    ConfigLoadError,
+    ConfigSingleton,
+    ConfigValue,
+    ConfigurationProperties,
+    instantiate,
+)
 from sprigconfig.lazy_secret import LazySecret
 
 
@@ -22,16 +33,63 @@ known = pytest.mark.xfail(
 MARKER = "SYNTHETIC_SECURITY_MARKER"
 
 
-@known
 def test_yaml_errors_do_not_disclose_expanded_values(tmp_path, monkeypatch):
     monkeypatch.setenv("SPRIG_SECURITY_TEST_VALUE", MARKER + '"broken')
     (tmp_path / "application.yaml").write_text('password: "${SPRIG_SECURITY_TEST_VALUE}"\n')
     with pytest.raises(ConfigLoadError) as error:
         ConfigLoader(tmp_path, "test").load()
-    assert MARKER not in "".join(traceback.format_exception(error.value))
+    formatted = "".join(traceback.format_exception(error.value))
+    assert MARKER not in str(error.value)
+    assert MARKER not in formatted
+    assert "line 1" in str(error.value)
+    assert "column" in str(error.value)
 
 
-@known
+def test_cli_parse_errors_do_not_disclose_expanded_values(tmp_path, monkeypatch):
+    monkeypatch.setenv("SPRIG_SECURITY_TEST_VALUE", MARKER + '"broken')
+    (tmp_path / "application.yml").write_text(
+        'password: "${SPRIG_SECURITY_TEST_VALUE}"\n'
+    )
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "sprigconfig.cli",
+            "dump",
+            "--config-dir",
+            str(tmp_path),
+            "--profile",
+            "dev",
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 2
+    assert MARKER not in result.stdout
+    assert MARKER not in result.stderr
+    assert "line 1" in result.stderr
+    assert "column" in result.stderr
+
+
+def test_json_parser_errors_do_not_disclose_source_text():
+    with pytest.raises(ValueError) as error:
+        JsonParser().parse(f'{{"password": "{MARKER}" invalid}}')
+    assert MARKER not in str(error.value)
+    assert "line 1" in str(error.value)
+    assert "column" in str(error.value)
+
+
+def test_toml_errors_do_not_disclose_source_text(tmp_path):
+    (tmp_path / "application.toml").write_text(f'value = "{MARKER}" invalid\n')
+    with pytest.raises(ConfigLoadError) as error:
+        ConfigLoader(tmp_path, "test", config_format="toml").load()
+    assert MARKER not in str(error.value)
+    assert "line 1" in str(error.value)
+    assert "column" in str(error.value)
+
+
 def test_decrypted_binding_errors_do_not_disclose_values(monkeypatch):
     key = Fernet.generate_key()
     token = Fernet(key).encrypt(MARKER.encode()).decode()
@@ -43,7 +101,57 @@ def test_decrypted_binding_errors_do_not_disclose_values(monkeypatch):
 
     with pytest.raises(ConfigLoadError) as error:
         _ = Binding().value
-    assert MARKER not in "".join(traceback.format_exception(error.value))
+    formatted = "".join(traceback.format_exception(error.value))
+    assert MARKER not in str(error.value)
+    assert MARKER not in formatted
+    assert "secret" in str(error.value)
+    assert "int" in str(error.value)
+
+
+def test_configuration_properties_errors_do_not_disclose_values(monkeypatch):
+    monkeypatch.setattr(
+        ConfigSingleton,
+        "_instance",
+        Config({"section": {"value": MARKER}}),
+    )
+
+    @ConfigurationProperties(prefix="section")
+    class Binding:
+        value: int
+
+    with pytest.raises(ConfigLoadError) as error:
+        Binding()
+    formatted = "".join(traceback.format_exception(error.value))
+    assert MARKER not in str(error.value)
+    assert MARKER not in formatted
+    assert "Binding.value" in str(error.value)
+    assert "int" in str(error.value)
+
+
+def test_instantiate_conversion_errors_do_not_disclose_values():
+    with pytest.raises(ConfigLoadError) as error:
+        instantiate({
+            "_target_": "tests.test_instantiate.SimpleAdapter",
+            "url": "postgres://localhost",
+            "port": MARKER,
+        })
+    formatted = "".join(traceback.format_exception(error.value))
+    assert MARKER not in str(error.value)
+    assert MARKER not in formatted
+    assert "port" in str(error.value)
+    assert "int" in str(error.value)
+
+
+def test_instantiate_constructor_errors_do_not_disclose_values():
+    with pytest.raises(ConfigLoadError) as error:
+        instantiate({
+            "_target_": "tests.test_instantiate.LeakingConstructor",
+            "password": MARKER,
+        })
+    formatted = "".join(traceback.format_exception(error.value))
+    assert MARKER not in str(error.value)
+    assert MARKER not in formatted
+    assert "LeakingConstructor" in str(error.value)
 
 
 @known

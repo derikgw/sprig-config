@@ -1,8 +1,8 @@
 # Documentation for `tests/test_meta_sources.py`
 
-This document explains the purpose and required behavior of the metadata
+This document explains the purpose and behavior exercised by the metadata
 **sources tracking** test suite. These tests validate how SprigConfig records the
-complete list of configuration files loaded during the merge process.
+source paths for the shared YAML fixture.
 
 The tests verify correctness of:
 
@@ -10,31 +10,17 @@ The tests verify correctness of:
 sprigconfig._meta.sources
 ```
 
-This metadata field must contain a **deterministic, complete, ordered list**
-of all configuration files (YAML, JSON, or TOML) that contributed to the final merged configuration.
-
 ---
 
 # 🎯 Purpose of `sources[]`
-
-The `sources[]` list is critical for:
-
-- Debugging configuration merge order  
-- Auditing which files influenced runtime behavior  
-- Reconstructing the full config-loading sequence  
-- Ensuring deterministic, testable configuration merges  
-- Guaranteeing correctness of import processing  
 
 The test ensures that:
 
 | Requirement | Description |
 |------------|-------------|
-| Include all loaded config files | Base, profile, imports, nested imports (any format) |
-| Preserve actual load order | Reflects deep-merge precedence |
-| No missing entries allowed | Every real loaded file must appear |
-| No extra entries allowed | Only actually-loaded files may appear |
-| Profile-aware | Must include the profile overlay and its imports |
-| Format-agnostic | Works with YAML, JSON, and TOML equally |
+| Include expected paths | Base, profile, and top-level imports in those YAML files |
+| Reject unexpected paths | Sources match the helper's expected paths |
+| Profile-aware | The YAML fixture's profile overlay is included |
 
 ---
 
@@ -48,19 +34,20 @@ imports:
   - imports/common
 ```
 
-**Note**: Since v1.1.0, import paths are **extension-less** for format portability. The test automatically appends the correct extension (`.yml`, `.json`, or `.toml`) based on the active format when constructing expected file paths.
+**Note**: The test reads YAML and appends `.yml` to extension-less imports.
 
-This lets the test automatically adjust to changes in `tests/config` without modification.
+The helper reads only each file's top-level imports list. It does not recurse
+through nested imported files when constructing the expected list.
 
 ---
 
 # 🧪 Test: `test_meta_sources_records_all_loaded_files`
 
-This test dynamically inspects the real config tree to verify:
+This test reads selected fixture files to determine:
 
 1. Which files should be loaded  
-2. The correct merge order  
-3. That `sources[]` matches reality exactly  
+2. The expected source paths
+3. Whether those paths are present and unexpected paths are absent
 
 ### **Test Steps**
 
@@ -75,9 +62,8 @@ sources = cfg.get("sprigconfig._meta.sources")
 
 Assertions:
 
-- `sources` must be a list  
-- Must contain **at least one** entry  
-- Paths are normalized to absolute paths
+- `sources` is a non-empty list
+- Paths are normalized to absolute paths before comparison
 
 ---
 
@@ -95,26 +81,23 @@ imports_base = _load_import_list(application_yml)
 imports_dev  = _load_import_list(profile_yml)
 ```
 
-This ensures correctness even as config files change.
+This keeps expectations coupled to those two fixture files.
 
 ---
 
-## 3. Expected Merge Order
+## 3. Expected Source Paths
 
-Expected order is:
+The helper constructs expected paths by appending:
 
 1. `application.yml`
 2. Imports from `application.yml` (in YAML list order)
 3. `application-dev.yml`
 4. Imports from `application-dev.yml` (in YAML list order)
 
-This matches SprigConfig’s design:
-
-```
-base < profile < profile-imports
-```
-
-and ensures deterministic ordering.
+The test checks membership in both directions but does not compare order or
+list length, so duplicate entries are not detected. Its helper does not recurse
+through nested imports. The test also writes `config-dump.yml` to the current
+working directory.
 
 ---
 
@@ -138,20 +121,19 @@ This enforces exact alignment between loader behavior and import metadata.
 
 # ✔️ Summary
 
-This test suite defines the **contract** for metadata source tracking in SprigConfig:
+This test checks source membership for the current YAML fixture:
 
-| Behavior | Must be True |
+| Behavior | Assertion |
 |----------|--------------|
-| `sources[]` lists all config files actually loaded (any format) | ✔ |
-| Ordering matches merge precedence | ✔ |
-| No duplicates, no omissions | ✔ |
-| Uses absolute resolved paths | ✔ |
-| Respects extension-less import lists | ✔ |
-| Profile-aware, import-aware | ✔ |
-| Format-agnostic (YAML, JSON, TOML) | ✔ |
+| Expected paths are present and no unexpected paths appear | ✔ |
+| Paths are normalized before comparison | ✔ |
 
-This ensures SprigConfig provides **complete, transparent, auditable** insight into all configuration sources.
+It does not establish ordering, recursive coverage, or JSON/TOML parity.
 
----
+## Run
 
-If you'd like a combined metadata design document or import-trace diagram, I can generate that as well.
+From `sprig-config-module/`:
+
+```bash
+poetry run pytest tests/test_meta_sources.py
+```

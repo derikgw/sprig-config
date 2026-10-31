@@ -254,7 +254,8 @@ At runtime, the correct adapter is loaded based on the profile!
 
 ## Error Handling
 
-Clear, actionable error messages with context:
+Errors include safe target and parameter context without echoing configuration
+values or constructor exception messages:
 
 ```python
 config = {
@@ -265,7 +266,6 @@ config = {
 instantiate(config)
 # ConfigLoadError: Module not found for _target_: 'nonexistent.Module'
 # Module path: 'nonexistent'
-# Reason: No module named 'nonexistent'
 # Hint: Check that the module is installed and importable
 ```
 

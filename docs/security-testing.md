@@ -67,19 +67,21 @@ poetry run python scripts/security_check.py --only semgrep
 poetry run python scripts/security_check.py --only lock-audit
 ```
 
-`security_tests/` is separate from the existing test fixtures so these checks do
-not load `.env` files or repository credential values. They use synthetic
-markers, fresh test encryption keys, and temporary files. Generated checks cover
-nested default redaction, explicit reveal round trips, import traversal,
-outside-file symlinks, and literal encoded-path lookalikes.
+The [`security_tests/`](../sprig-config-module/security_tests/README.md)
+directory is the central home for security-focused regression and property
+tests; its README indexes the modules and their scope. The tests do not load
+`.env` files or repository credentials. They use synthetic markers, fresh test
+encryption keys, and temporary files. Generated checks cover nested default
+redaction, explicit reveal round trips, import traversal, outside-file symlinks,
+and literal encoded-path lookalikes. Sensitive-diagnostic cases cover parser,
+CLI, binding, and instantiation exceptions.
 
-Five issue #41 cases currently use **strict expected failures**: expanded YAML
-error excerpts, decrypted binding errors, structural substitution, profile
-traversal, and root symlinks. These are outstanding defects/policy gaps, not
-passing security guarantees. Unexpected errors still fail, and fixing a case
-causes an unexpected pass that requires removing its expected-failure annotation.
-`--strict-known` disables all five annotations and should fail until hardening
-is complete. See the [issue checklist](fix/security-hardening/41/README.md).
+Three issue #41 cases currently use **strict expected failures**: structural
+substitution, profile traversal, and root symlinks. These are outstanding
+defects/policy gaps, not passing security guarantees. Unexpected errors still
+fail, and fixing a case causes an unexpected pass that requires removing its
+expected-failure annotation. `--strict-known` disables all three annotations.
+See the [issue checklist](fix/security-hardening/41/README.md).
 
 ## GitHub Actions
 

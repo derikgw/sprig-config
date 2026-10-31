@@ -60,7 +60,7 @@ By supporting TOML, SprigConfig allows teams to use a single configuration forma
 
 - Uses Python's built-in `tomllib` module (Python 3.11+)
 - TOML files are read as text, environment variables are expanded, then parsed
-- Parsing errors raise `ConfigLoadError` with clear messages
+- Parse-error redaction is covered in the dedicated security tests.
 
 ### Format Portability
 
@@ -90,6 +90,14 @@ The loader automatically resolves imports to the correct format based on the act
 
 ## Related Tests
 
-- `test_import_trace.py` - Verifies import tracking works across all formats
-- `test_deep_merge.py` - Tests merge semantics that apply to all formats
+- `test_import_trace.py` - Checks import-trace metadata for the YAML fixture
+- `test_deep_merge.py` - Checks merge semantics using the shared YAML fixtures
 - `test_profiles.py` - Profile overlay behavior is format-agnostic
+
+## Run
+
+From `sprig-config-module/`:
+
+```bash
+poetry run pytest tests/test_toml_support.py
+```

@@ -462,21 +462,22 @@ if value is None and self.default is None:
 
 ### Conversion Errors
 
-Type conversion failures raise `ConfigLoadError` with full context:
+Type conversion failures raise `ConfigLoadError` with field and type context,
+but omit the supplied value and underlying conversion error because either can
+contain sensitive data:
 
 ```python
 try:
     converted = int(value)
-except (ValueError, TypeError) as e:
+except (ValueError, TypeError):
     raise ConfigLoadError(
         f"Cannot convert config value to type 'int'\n"
         f"Key: database.port\n"
-        f"Value: \"not_a_number\" (type: str)\n"
+        f"Value type: str\n"
         f"Expected: int\n"
         f"Descriptor: ConfigValue('database.port') on MyService.db_port\n"
-        f"Reason: invalid literal for int() with base 10: 'not_a_number'\n"
         f"Hint: Check your config file and ensure the value is a valid int"
-    )
+    ) from None
 ```
 
 ---
@@ -536,13 +537,12 @@ LazySecret decryption failures are wrapped with descriptor context:
 if self.decrypt:
     try:
         value = value.get()
-    except Exception as e:
+    except Exception:
         raise ConfigLoadError(
             f"Failed to decrypt LazySecret for key '{self.key}'\n"
             f"Descriptor: ConfigValue('{self.key}', decrypt=True) on {self._owner_name}.{self._attr_name}\n"
-            f"Reason: {e}\n"
             f"Hint: Check APP_SECRET_KEY environment variable"
-        )
+        ) from None
 ```
 
 ---
@@ -615,15 +615,17 @@ print(connect())  # "prod-host" - auto-refreshed!
 
 ### Error Message Template
 
-All ConfigLoadError messages follow this template:
+ConfigLoadError messages include safe diagnostic context:
 
 ```
 ConfigLoadError: <brief description>
-<Key/Value context>
+<Key/type context; never the rejected value>
 <Location context (descriptor/class/function)>
-Reason: <underlying error>
 Hint: <actionable suggestion>
 ```
+
+Underlying parser and conversion exceptions are suppressed so formatted
+tracebacks cannot expose expanded source text or configuration values.
 
 ### Context Capture
 

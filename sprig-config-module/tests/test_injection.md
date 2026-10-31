@@ -22,7 +22,7 @@ Comprehensive test suite for SprigConfig's dependency injection features. Tests 
 |------------|---------|
 | `TestConfigurationPropertiesBasic` | Section binding, nested sections, ._config attribute |
 | `TestConfigurationPropertiesTypeConversion` | Type conversion for bound attributes |
-| `TestConfigurationPropertiesErrors` | Missing sections, non-dict sections |
+| `TestConfigurationPropertiesErrors` | Missing sections, non-dict sections, conversion errors |
 | `TestConfigurationPropertiesPartialBinding` | Missing keys, custom __init__ |
 | `TestConfigurationPropertiesLazySecret` | LazySecret preservation |
 
@@ -80,6 +80,17 @@ with pytest.raises(ConfigLoadError) as exc_info:
 
 assert "does.not.exist" in str(exc_info.value)
 assert "not found" in str(exc_info.value)
+```
+
+Security assertions for sensitive-value redaction in conversion exceptions and
+tracebacks are centralized in [`security_tests/`](../security_tests/README.md).
+
+## Run
+
+From `sprig-config-module/`:
+
+```bash
+poetry run pytest tests/test_injection.py
 ```
 
 ## Key Scenarios Covered

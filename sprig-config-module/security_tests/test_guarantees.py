@@ -1,4 +1,4 @@
-"""Security guarantees exercised against the complete installed package."""
+"""Security properties checked against the complete installed package."""
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -7,7 +7,8 @@ import pytest
 from cryptography.fernet import Fernet
 from hypothesis import given, strategies as st
 
-from sprigconfig import Config, ConfigLoader, ConfigLoadError
+from sprigconfig import Config, ConfigLoader, ConfigLoadError, ConfigSingleton
+from sprigconfig import lazy_secret as lazy_secret_module
 from sprigconfig.lazy_secret import LazySecret
 
 
@@ -53,6 +54,27 @@ def test_secret_round_trip_requires_explicit_reveal(plaintext):
     cfg = Config({"secret": LazySecret(f"ENC({token})", key=key)})
     assert cfg.to_dict() == {"secret": "<LazySecret>"}
     assert cfg.to_dict(reveal_secrets=True) == {"secret": plaintext}
+
+
+def test_secret_reveal_without_key_fails(tmp_path, monkeypatch):
+    monkeypatch.delenv("APP_SECRET_KEY", raising=False)
+    monkeypatch.setattr(lazy_secret_module, "_GLOBAL_KEY", None)
+    monkeypatch.setattr(lazy_secret_module, "_KEY_PROVIDER", None)
+    cfg = Config({"secret": LazySecret("ENC(synthetic-invalid-ciphertext)")})
+    with pytest.raises(ConfigLoadError):
+        cfg.dump(tmp_path / "revealed.yml", safe=False)
+
+
+def test_singleton_preserves_lazysecret_objects(tmp_path):
+    (tmp_path / "application.yml").write_text(
+        "secrets:\n  api_key: ENC(synthetic-ciphertext)\n"
+    )
+    ConfigSingleton._clear_all()
+    try:
+        cfg = ConfigSingleton.initialize(profile="test", config_dir=tmp_path)
+        assert isinstance(cfg.get("secrets.api_key"), LazySecret)
+    finally:
+        ConfigSingleton._clear_all()
 
 
 @given(st.integers(min_value=1, max_value=8), safe_keys)

@@ -259,11 +259,20 @@ class ConfigLoader:
 
         try:
             text = path.read_text(encoding="utf-8-sig")
-            expanded = self._expand_env(text)
+        except (OSError, UnicodeError):
+            raise ConfigLoadError(f"Unable to read {self.format.upper()} config in {path}") from None
+
+        expanded = self._expand_env(text)
+        try:
             data = self.parser.parse(expanded)
-            return data or {}
-        except Exception as e:
-            raise ConfigLoadError(f"Invalid {self.format.upper()} in {path}: {e}") from e
+        except ValueError as e:
+            raise ConfigLoadError(f"Invalid {self.format.upper()} in {path}: {e}") from None
+        except Exception:
+            raise ConfigLoadError(
+                f"Unable to parse {self.format.upper()} config in {path}"
+            ) from None
+
+        return data or {}
 
     def _expand_env(self, text: str) -> str:
         def replacer(match):
